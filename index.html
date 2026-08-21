@@ -117,11 +117,17 @@ tfoot .num{color:var(--teal-d)}
 .scroll{flex:1;min-height:0;overflow:auto}
 .scroll::-webkit-scrollbar{width:8px}
 .scroll::-webkit-scrollbar-thumb{background:#CBD0D9;border-radius:4px}
-.shooting{height:auto!important;flex:none!important;overflow:visible!important}
-.shooting .panels{flex:none}
-.shooting .scroll{overflow:visible;max-height:none}
-.shooting .panel{min-height:0}
-body.shooting-mode .wrap{height:auto;overflow:visible}
+/* ---- โหมดถ่ายรูป ---- */
+body.cap .wrap{height:auto;overflow:visible;padding:0}
+/* 16:9 ขนาดสไลด์ 1600x900 (ส่งออก 3840x2160) */
+#shot.cap-slide{width:1600px;height:900px;flex:none;overflow:hidden;
+  border-radius:0;padding:26px 20px}
+/* เต็มทุกรายการ: ยืดตามเนื้อหา */
+#shot.cap-full{height:auto;flex:none;overflow:visible}
+#shot.cap-full .panels{flex:none}
+#shot.cap-full .scroll{overflow:visible;max-height:none}
+#shot.cap-full .panel{min-height:0}
+
 .foot{margin-top:14px;flex:none;padding-top:12px;border-top:1px solid var(--line);
   color:var(--mute);font-size:22.2px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 @media(max-width:1400px){.panels{grid-template-columns:1fr 1fr}.kpis{grid-template-columns:repeat(3,1fr)}}
@@ -151,6 +157,10 @@ body.shooting-mode .wrap{height:auto;overflow:visible}
   </div>
   <button class="btn ghost" id="clear">ล้างตัวกรอง</button>
   <button class="btn ghost" id="reload">ดึงข้อมูลใหม่</button>
+  <select id="shotMode" autocomplete="off" title="ขนาดรูปที่บันทึก">
+    <option value="slide">รูป 16:9 (ขนาดสไลด์)</option>
+    <option value="full">รูปเต็มทุกรายการ</option>
+  </select>
   <button class="btn" id="save">บันทึกเป็นรูป</button>
   <div class="stat" id="stat">กำลังดึงข้อมูล…</div>
 </div>
@@ -400,18 +410,27 @@ el('clear').addEventListener('click',()=>{
   ['fy','fm','fw'].forEach(i=>el(i).value=''); FD.value=''; calYM=null; fillFilters(); render();});
 el('reload').addEventListener('click',load);
 el('save').addEventListener('click',async()=>{
-  const b=el('save');b.disabled=true;b.textContent='กำลังบันทึก…';
+  const b=el('save'), sh=el('shot'), mode=el('shotMode').value;
+  b.disabled=true; b.textContent='กำลังบันทึก…';
+  document.body.classList.add('cap');
+  sh.classList.add(mode==='slide'?'cap-slide':'cap-full');
+  await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
   try{
-    const sh=el('shot');
-    sh.classList.add('shooting'); document.body.classList.add('shooting-mode');
-    const c=await html2canvas(sh,{scale:2,backgroundColor:'#FFFFFF',useCORS:true});
-    sh.classList.remove('shooting'); document.body.classList.remove('shooting-mode');
+    const opt={backgroundColor:'#FFFFFF',useCORS:true};
+    /* สไลด์: 1600x900 x scale 2.4 = 3840x2160 (4K 16:9) */
+    if(mode==='slide') Object.assign(opt,{scale:2.4,width:1600,height:900,
+      windowWidth:1640,windowHeight:940});
+    else opt.scale=2;
+    const c=await html2canvas(sh,opt);
     const a=document.createElement('a');
     const f=[el('fy').value,el('fm').value,el('fw').value,FD.value].filter(Boolean).join('-');
-    a.download=`delivery-report${f?'-'+f:''}-${new Date().toISOString().slice(0,10)}.png`;
-    a.href=c.toDataURL('image/png');a.click();
-  }catch(e){alert('บันทึกรูปไม่สำเร็จ: '+e.message);}
-  b.disabled=false;b.textContent='บันทึกเป็นรูป';
+    a.download=`delivery-report${f?'-'+f:''}-${mode==='slide'?'16x9-':''}`
+      +`${new Date().toISOString().slice(0,10)}.png`;
+    a.href=c.toDataURL('image/png'); a.click();
+  }catch(e){ alert('บันทึกรูปไม่สำเร็จ: '+e.message); }
+  sh.classList.remove('cap-slide','cap-full');
+  document.body.classList.remove('cap');
+  b.disabled=false; b.textContent='บันทึกเป็นรูป';
 });
 load();
 </script>
