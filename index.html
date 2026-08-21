@@ -18,6 +18,23 @@ body{margin:0;background:var(--page);color:var(--ink);
 .wrap{max-width:1760px;margin:0 auto;padding:24px 90px 26px;
   height:100vh;display:flex;flex-direction:column;overflow:hidden}
 
+.teams{display:flex;gap:6px;align-items:center;margin-bottom:14px;flex:none;
+  background:#E4E7EC;padding:5px;border-radius:11px;width:fit-content}
+.teams button{background:none;border:0;font-family:inherit;font-size:20px;
+  padding:10px 26px;border-radius:8px;color:var(--mute);cursor:pointer}
+.teams button[aria-selected="true"]{background:var(--teal);color:#fff;font-weight:bold}
+.teams button:hover:not([aria-selected="true"]){background:#F2F4F7;color:var(--ink)}
+.teams button:focus-visible{outline:2px solid var(--plum);outline-offset:2px}
+.teams a{margin-left:14px;color:var(--teal);font-size:17px}
+#viewDelivery{flex:1;display:flex;flex-direction:column;min-height:0}
+#viewWarehouse{flex:1;min-height:0;display:flex}
+#whFrame{flex:1;width:100%;border:0;border-radius:14px;background:#fff;
+  box-shadow:0 1px 3px rgba(20,24,40,.07),0 8px 24px rgba(20,24,40,.05)}
+.soon{flex:1;display:flex;flex-direction:column;justify-content:center;text-align:center;
+  background:var(--card);border-radius:14px;color:var(--mute);font-size:21px;line-height:1.9;
+  border:1px dashed var(--line)}
+.soon b{display:block;color:var(--ink);font-weight:normal;font-size:26px;margin-bottom:10px}
+#viewAdmin{flex:1;min-height:0;display:flex}
 .toolbar{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-bottom:12px;flex:none}
 .btn{background:var(--teal);color:#fff;border:0;font-family:inherit;font-weight:bold;
   font-size:23px;padding:11px 22px;border-radius:7px;cursor:pointer}
@@ -139,6 +156,15 @@ body.cap .wrap{height:auto;overflow:visible;padding:0}
 <body>
 <div class="wrap">
 
+<nav class="teams" role="tablist" aria-label="เลือกทีม">
+  <button role="tab" data-team="delivery" aria-selected="true">Delivery</button>
+  <button role="tab" data-team="warehouse" aria-selected="false">Warehouse</button>
+  <button role="tab" data-team="admin" aria-selected="false">Admin</button>
+  <a id="openNew" href="https://phetcharat-sy.github.io/tdfb-dashboard-v2/"
+     target="_blank" rel="noopener" hidden>เปิดในแท็บใหม่ ↗</a>
+</nav>
+
+<div id="viewDelivery">
 <div class="toolbar">
   <select id="fy" autocomplete="off"><option value="">ทุกปี</option></select>
   <select id="fm" autocomplete="off"><option value="">ทุกเดือน</option></select>
@@ -205,6 +231,18 @@ body.cap .wrap{height:auto;overflow:visible;padding:0}
   <div class="foot">
     <span>ที่มา: Job Dairy Delivery (MO Delivery · รายการ Dairy อื่นๆ) และ แจ้งรายการมีปัญหาประจำวันของ Operation (แท็บ Delivery)</span>
     <span id="ts">—</span>
+  </div>
+</div>
+</div><!-- /viewDelivery -->
+
+<div id="viewWarehouse" hidden>
+  <iframe id="whFrame" title="Warehouse Operations Dashboard" loading="lazy"></iframe>
+</div>
+
+<div id="viewAdmin" hidden>
+  <div class="soon">
+    <b>ยังไม่ได้สร้างรายงานทีม Admin</b>
+    ใช้โครงเดียวกับทีม Delivery ได้ทันที<br>เหลือแค่ระบุว่าจะดึงจากชีตไหนและแท็บอะไร
   </div>
 </div>
 
@@ -434,6 +472,24 @@ el('save').addEventListener('click',async()=>{
   document.body.classList.remove('cap');
   b.disabled=false; b.textContent='บันทึกเป็นรูป';
 });
+/* ---------- สลับทีม ---------- */
+const WH='https://phetcharat-sy.github.io/tdfb-dashboard-v2/';
+function team(name){
+  document.querySelectorAll('.teams button').forEach(b=>
+    b.setAttribute('aria-selected', b.dataset.team===name));
+  el('viewDelivery').hidden = name!=='delivery';
+  el('viewWarehouse').hidden = name!=='warehouse';
+  el('viewAdmin').hidden = name!=='admin';
+  el('openNew').hidden = name!=='warehouse';
+  /* โหลด iframe ครั้งแรกที่เปิดเท่านั้น จะได้ไม่หน่วงตอนเข้าหน้า */
+  const f=el('whFrame');
+  if(name==='warehouse' && !f.src) f.src=WH;
+  history.replaceState(null,'','#'+name);
+}
+document.querySelectorAll('.teams button').forEach(b=>
+  b.addEventListener('click',()=>team(b.dataset.team)));
+team((location.hash||'#delivery').slice(1));
+
 load();
 </script>
 </body>
