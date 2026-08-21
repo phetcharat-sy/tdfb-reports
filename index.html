@@ -14,7 +14,9 @@
   padding:13px 16px;font-family:inherit;font-size:26.9px}#vKPI .btn:focus-visible, #vKPI select:focus-visible{outline:2px solid var(--plum);outline-offset:2px}#vKPI .stat{color:var(--mute);font-size:25px;margin-left:auto}#vKPI .stat b{color:var(--teal-d)}#vKPI .stat.err b{color:var(--rose)}#vKPI .tabs{display:flex;gap:6px;background:#E4E7EC;padding:5px;border-radius:11px;width:fit-content;margin-bottom:14px}#vKPI .tabs a{text-decoration:none;font-size:25.6px;padding:10px 26px;border-radius:8px;color:var(--mute)}#vKPI .tabs a.on{background:var(--teal);color:#fff;font-weight:bold}#vKPI #kShot{background:var(--card);border-radius:14px;padding:34px 46px 40px;
   box-shadow:0 1px 3px rgba(20,24,40,.07),0 8px 24px rgba(20,24,40,.05)}#vKPI header{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;
   flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:16px;margin-bottom:22px}#vKPI h1{margin:0;font-size:63.2px;letter-spacing:-.2px;line-height:1.25;
-  border-left:7px solid var(--teal);padding-left:14px}#vKPI .sub{color:var(--mute);font-size:29.4px;margin:8px 0 0 21px}#vKPI .period{text-align:right;color:var(--mute);font-size:25px}#vKPI .period b{display:block;color:var(--ink);font-size:39.9px;font-weight:normal}#vKPI h2.sec{font-size:34.6px;margin:30px 0 12px;display:flex;align-items:center;gap:12px}#vKPI h2.sec span{flex:1;height:1px;background:var(--line)}#vKPI h2.sec em{font-style:normal;font-size:24.3px;color:var(--mute);font-weight:normal}#vKPI .top{display:grid;grid-template-columns:1fr 1fr;gap:16px}#vKPI .big{border-radius:12px;padding:32px 36px;color:#fff}#vKPI .big.a{background:var(--teal)}#vKPI .big.b{background:var(--plum)}#vKPI .big .l{font-size:29.4px;opacity:.95}#vKPI .big .v{font-size:94px;font-weight:bold;line-height:1.05;letter-spacing:-1px;margin-top:4px}#vKPI .big .n{font-size:24.3px;opacity:.9;margin-top:4px}/* KPI เรียงบรรทัดละใบ · จัดเนื้อหาแนวนอนไม่ให้การ์ดสูงเกินไป */
+  border-left:7px solid var(--teal);padding-left:14px}#vKPI .sub{color:var(--mute);font-size:29.4px;margin:8px 0 0 21px}#vKPI .period{text-align:right;color:var(--mute);font-size:25px}#vKPI .period b{display:block;color:var(--ink);font-size:39.9px;font-weight:normal}#vKPI .kchip{display:inline-block;background:#6B5CA5;color:#fff;
+  padding:3px 15px;border-radius:20px;font-size:19px;margin-top:8px}
+#vKPI h2.sec{font-size:34.6px;margin:30px 0 12px;display:flex;align-items:center;gap:12px}#vKPI h2.sec span{flex:1;height:1px;background:var(--line)}#vKPI h2.sec em{font-style:normal;font-size:24.3px;color:var(--mute);font-weight:normal}#vKPI .top{display:grid;grid-template-columns:1fr 1fr;gap:16px}#vKPI .big{border-radius:12px;padding:32px 36px;color:#fff}#vKPI .big.a{background:var(--teal)}#vKPI .big.b{background:var(--plum)}#vKPI .big .l{font-size:29.4px;opacity:.95}#vKPI .big .v{font-size:94px;font-weight:bold;line-height:1.05;letter-spacing:-1px;margin-top:4px}#vKPI .big .n{font-size:24.3px;opacity:.9;margin-top:4px}/* KPI เรียงบรรทัดละใบ · จัดเนื้อหาแนวนอนไม่ให้การ์ดสูงเกินไป */
 #vKPI .kpis{display:grid;grid-template-columns:1fr;gap:14px}
 #vKPI .kpi{display:grid;grid-template-columns:minmax(300px,1.15fr) auto 1fr;
   align-items:center;column-gap:34px;row-gap:6px;padding:24px 30px}
@@ -86,7 +88,11 @@ body.present .navbar{display:none}
 <div class="wrap">
 
 <div class="toolbar">
+  <select id="kY" autocomplete="off"><option value="">ทุกปี</option></select>
+  <select id="kM" autocomplete="off"><option value="">ทุกเดือน</option></select>
+  <select id="kW" autocomplete="off"><option value="">ทุกสัปดาห์</option></select>
   <select id="day" autocomplete="off"><option value="">กำลังโหลด…</option></select>
+  <button class="btn ghost" id="kClear">ล้างตัวกรอง</button>
   <button class="btn ghost" id="kReload">ดึงข้อมูลใหม่</button>
   <button class="btn" id="kSave">บันทึกเป็นรูป</button>
   <div class="stat" id="kStat">กำลังดึงข้อมูล…</div>
@@ -250,24 +256,67 @@ async function dayStats(key){
   return {orders,items,lines,onTime,inStock,otp:onTime/orders*100,oos:inStock/orders*100};
 }
 
-async function loadStatic(){
-  /* Stock Diff — ทั้งไฟล์เล็ก ดึงมาคำนวณเองได้ */
-  const d=await gviz(S_DIFF,'0','select A, I');
-  const by={};
-  d.forEach(r=>{const mth=(r[0]||'').trim(),ck=(r[1]||'').trim();
-    if(!mth||!ck)return;
-    (by[mth]=by[mth]||{n:0,bad:0}).n++;
-    if(ck.includes('ไม่ตรง'))by[mth].bad++;});
-  DIFF=by;
+/* อ่านทั้งแท็บแล้วหาคอลัมน์จาก "ชื่อหัวตาราง" แทนการอ้างตำแหน่งตัวอักษร
+   เพราะชีตชุดนี้มีหลายแท็บที่เรียงคอลัมน์ไม่เหมือนกัน */
+function table(rows){
+  let hi=-1;
+  for(let i=0;i<Math.min(8,rows.length);i++)
+    if(rows[i].some(c=>/เกณฑ์|เช็ค|week|สัปดาห์/i.test(c))){hi=i;break;}
+  if(hi<0)return null;
+  const H=rows[hi].map(c=>String(c).replace(/\s+/g,''));
+  const col=(...p)=>{for(const x of p){const i=H.findIndex(v=>v.includes(x));if(i>=0)return i;}return -1;};
+  return {H,col,rows:rows.slice(hi+1)};
+}
+const dnum=s=>{const m=String(s||'').match(/-?[\d.]+/);return m?parseFloat(m[0]):NaN;};
+const dparse=s=>{const m=String(s||'').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  return m?Date.UTC(+m[3],+m[2]-1,+m[1]):NaN;};
 
-  /* Dock to Stock */
-  const k=await gviz(S_DOCK,G_DOCK,'select B, J');
-  const by2={};
-  k.forEach(r=>{const mth=(r[0]||'').trim(),g=(r[1]||'').trim();
-    if(!mth||!g)return;
-    (by2[mth]=by2[mth]||{n:0,ok:0}).n++;
-    if(g.includes('ผ่าน')&&!g.includes('ไม่ผ่าน'))by2[mth].ok++;});
-  DOCK=by2;
+async function loadStatic(){
+  /* ---- Stock Diff (รายเดือน) ---- */
+  try{
+    const t=table(await gviz(S_DIFF,'0',null));
+    if(t){
+      const cM=t.col('เดือน'), cC=t.col('เช็ค');
+      const by={};
+      t.rows.forEach(r=>{
+        const m=(r[cM]||'').trim(), c=(r[cC]||'').trim();
+        if(!m||!c)return;
+        (by[m]=by[m]||{n:0,bad:0}).n++;
+        if(c.includes('ไม่ตรง'))by[m].bad++;
+      });
+      DIFF=by;
+    }
+  }catch(e){console.warn('stock diff',e);}
+
+  /* ---- Dock to Stock (รายสัปดาห์ · 2 เกณฑ์: รับเข้า / จัดเก็บ) ---- */
+  try{
+    const t=table(await gviz(S_DOCK,G_DOCK,null));
+    if(t){
+      const cW=t.col('Week','week','สัปดาห์'),
+            cIn=t.col('เกณฑ์รับเข้า'), cSt=t.col('เกณฑ์จัดเก็บ'),
+            cDur=t.col('ระยะเวลาจัดเก็บ'),
+            cSend=t.col('วันที่ของมาส่ง'), cStore=t.col('วันที่จัดเก็บ');
+      const pass=v=>/ผ่านเกณฑ์/.test(v)&&!/ไม่ผ่าน/.test(v);
+      const by={};
+      t.rows.forEach(r=>{
+        const w=String(parseInt(r[cW])||'');
+        if(!w)return;
+        const vi=(r[cIn]||'').trim(), vs=(r[cSt]||'').trim();
+        if(!vi&&!vs)return;
+        const o=by[w]=by[w]||{n:0,inOk:0,stOk:0,days:0,dn:0};
+        o.n++;
+        if(pass(vi))o.inOk++;
+        if(pass(vs))o.stOk++;
+        let d=cDur>=0?dnum(r[cDur]):NaN;
+        if(isNaN(d)&&cSend>=0&&cStore>=0){
+          const a=dparse(r[cSend]),b=dparse(r[cStore]);
+          if(!isNaN(a)&&!isNaN(b))d=(b-a)/86400000;
+        }
+        if(!isNaN(d)){o.days+=d;o.dn++;}
+      });
+      DOCK=by;
+    }
+  }catch(e){console.warn('dock',e);}
 }
 
 /* ---------- แสดงผล ---------- */
@@ -277,7 +326,7 @@ function deltaHTML(cur,prev,goodUp=true,unit='%'){
   if(Math.abs(d)<0.005)return '<span class="delta flat">เท่าเดิม</span>';
   const good=goodUp?d>0:d<0;
   const arrow=d>0?'▲':'▼';
-  const v=unit==='%'?Math.abs(d).toFixed(2)+' จุด':fmt(Math.abs(d));
+  const v=unit==='%'?Math.abs(d).toFixed(2)+' จุด':(unit==='วัน'?Math.abs(d).toFixed(2)+' วัน':fmt(Math.abs(d)));
   const rel=prev!==0?` (${(d/prev*100>0?'+':'')}${(d/prev*100).toFixed(1)}%)`:'';
   return `<span class="delta ${good?'up':'down'}">${arrow} ${v}${unit==='%'?'':rel}</span>`;
 }
@@ -298,6 +347,12 @@ function kpiCard(o){
 
 async function render(key){
   el('kPeriod').textContent=showD(key);
+  const bits=[];
+  if(el('kY').value)bits.push('ปี '+el('kY').value);
+  if(el('kM').value)bits.push(MONTHS[+el('kM').value-1]);
+  if(el('kW').value)bits.push('สัปดาห์ '+el('kW').value);
+  el('kChip').style.display=bits.length?'inline-block':'none';
+  el('kChip').textContent=bits.join(' · ');
   const pk=prevMonth(key);
   el('cmpNote').textContent='เทียบกับ '+showD(pk);
 
@@ -314,14 +369,22 @@ async function render(key){
   /* Stock Diff / Dock to Stock เก็บเป็นรายเดือน จึงเทียบเดือนต่อเดือน */
   const [y,m]=key.split('-');
   const mKey=`${m}-${y}`, pmKey=`${String(+m===1?12:+m-1).padStart(2,'0')}-${+m===1?+y-1:y}`;
+  const thMonth=MONTHS[+m-1], thPrev=MONTHS[(+m+10)%12];
   const dNow=DIFF?DIFF[mKey]:null, dPrev=DIFF?DIFF[pmKey]:null;
   const diffV=dNow?dNow.bad/dNow.n*100:null, diffP=dPrev?dPrev.bad/dPrev.n*100:null;
 
-  const thMonth=MONTHS[+m-1], thPrev=MONTHS[(+m+10)%12];
-  const kNow=DOCK?DOCK[thMonth]:null, kPrev=DOCK?DOCK[thPrev]:null;
-  const dockV=kNow?kNow.ok/kNow.n*100:null, dockP=kPrev?kPrev.ok/kPrev.n*100:null;
+  /* Dock to Stock เก็บเป็นรายสัปดาห์ — ใช้สัปดาห์ของวันที่ที่เลือก (หรือสัปดาห์ที่กรองไว้) */
+  const wkSel=el('kW').value||String(isoWeek(key));
+  const kNow=DOCK?DOCK[wkSel]:null, kPrev=DOCK?DOCK[String(+wkSel-1)]:null;
+  const rate=(o,f)=>o&&o.n?o[f]/o.n*100:null;
+  const inV=rate(kNow,'inOk'),  inP=rate(kPrev,'inOk');
+  const stV=rate(kNow,'stOk'),  stP=rate(kPrev,'stOk');
+  const allV=(inV!=null&&stV!=null)?(inV+stV)/2:null;
+  const allP=(inP!=null&&stP!=null)?(inP+stP)/2:null;
+  const dayV=kNow&&kNow.dn?kNow.days/kNow.dn:null, dayP=kPrev&&kPrev.dn?kPrev.days/kPrev.dn:null;
 
-  el('whNote').textContent=`On-Time / Out of Stock = รายวัน · Stock Diff / Dock to Stock = รายเดือน (${thMonth} ${y})`;
+  el('whNote').textContent=`On-Time / Out of Stock = รายวัน · Stock Diff = รายเดือน (${thMonth} ${y}) `
+    +`· Dock to Stock = รายสัปดาห์ (W${wkSel})`;
 
   el('wh').innerHTML=[
     cur?kpiCard({l:'On-Time Performance',t:'เป้าหมาย ≥ 98% · แพ็คเสร็จในวันที่ต้องส่ง',
@@ -339,11 +402,23 @@ async function render(key){
       delta:deltaHTML(diffV,diffP,false),
       base:`ไม่ตรง ${fmt(dNow.bad)} จาก ${fmt(dNow.n)} รายการที่นับ`}):
       kpiCard({l:'Stock Diff',t:'เป้าหมาย < 2%',wait:true,note:'ยังไม่มีข้อมูลของเดือนนี้'}),
-    dockV!=null?kpiCard({l:'Dock to Stock',t:'สัดส่วนรับเข้าที่ผ่านเกณฑ์เวลา',
-      disp:pct(dockV),v:dockV,pass:dockV>=90,
-      delta:deltaHTML(dockV,dockP,true),
-      base:`ผ่านเกณฑ์ ${fmt(kNow.ok)} จาก ${fmt(kNow.n)} ใบรับเข้า`}):
-      kpiCard({l:'Dock to Stock',t:'สัดส่วนรับเข้าที่ผ่านเกณฑ์เวลา',wait:true,note:'ยังไม่มีข้อมูลของเดือนนี้'})
+    allV!=null?kpiCard({l:'Dock to Stock — ON-TIME รวม',t:`สัปดาห์ ${wkSel} · ค่าเฉลี่ยของรับเข้า+จัดเก็บ`,
+      disp:pct(allV),v:allV,pass:allV>=90,
+      delta:deltaHTML(allV,allP,true),
+      base:`${pct(inV)} (รับเข้า) และ ${pct(stV)} (จัดเก็บ)`}):
+      kpiCard({l:'Dock to Stock — ON-TIME รวม',t:`สัปดาห์ ${wkSel}`,wait:true,note:'ยังไม่มีข้อมูลของสัปดาห์นี้'}),
+    inV!=null?kpiCard({l:'ผ่านเกณฑ์รับเข้า',t:`สัปดาห์ ${wkSel} · ของมาส่ง → รับเข้าระบบ`,
+      disp:pct(inV),v:inV,pass:inV>=90,
+      delta:deltaHTML(inV,inP,true),
+      base:`${fmt(kNow.inOk)} / ${fmt(kNow.n)} ผ่านเกณฑ์รับเข้า`}):'',
+    stV!=null?kpiCard({l:'ผ่านเกณฑ์จัดเก็บ',t:`สัปดาห์ ${wkSel} · รับเข้าระบบ → จัดเก็บ`,
+      disp:pct(stV),v:stV,pass:stV>=90,
+      delta:deltaHTML(stV,stP,true),
+      base:`${fmt(kNow.stOk)} / ${fmt(kNow.n)} ผ่านเกณฑ์จัดเก็บ`}):'',
+    dayV!=null?kpiCard({l:'เวลาเฉลี่ยรวม (วัน)',t:`สัปดาห์ ${wkSel} · มาส่ง → จัดเก็บสำเร็จ`,
+      disp:dayV.toFixed(2)+' วัน',v:dayV,bar:Math.max(0,100-dayV*12),pass:dayV<=5,
+      delta:deltaHTML(dayV,dayP,false,'วัน'),
+      base:`จาก ${fmt(kNow.dn)} รายการที่มีวันที่ครบ`}):''
   ].join('');
 
   el('dl').innerHTML=kpiCard({l:'Human Error',t:'เป้าหมาย 0 เคส/เดือน',wait:true,
@@ -357,6 +432,51 @@ async function render(key){
     +`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')} น.`;
 }
 
+/* ตัวกรองไล่ระดับ: ปี > เดือน > สัปดาห์ > วัน (สัปดาห์คำนวณแบบ ISO จากวันที่) */
+function isoWeek(k){
+  const [y,m,d]=k.split('-').map(Number);
+  const t=new Date(Date.UTC(y,m-1,d));
+  t.setUTCDate(t.getUTCDate()+4-(t.getUTCDay()||7));
+  const s=new Date(Date.UTC(t.getUTCFullYear(),0,1));
+  return Math.ceil(((t-s)/86400000+1)/7);
+}
+function fillDays(){
+  const y=el('kY').value,m=el('kM').value,w=el('kW').value;
+  const uniq=(a)=>[...new Set(a)].sort();
+
+  opts(el('kY'),uniq(DATES.map(d=>d.slice(0,4))),v=>'ปี '+v,'ทุกปี');
+  const byY=DATES.filter(d=>!el('kY').value||d.slice(0,4)===el('kY').value);
+
+  opts(el('kM'),uniq(byY.map(d=>d.slice(5,7))),v=>MONTHS[+v-1],'ทุกเดือน');
+  const byM=byY.filter(d=>!el('kM').value||d.slice(5,7)===el('kM').value);
+
+  opts(el('kW'),uniq(byM.map(d=>String(isoWeek(d)))).sort((a,b)=>a-b),
+       v=>'สัปดาห์ '+v,'ทุกสัปดาห์');
+  const byW=byM.filter(d=>!el('kW').value||String(isoWeek(d))===el('kW').value);
+
+  const cur=el('day').value;
+  const list=byW.slice().reverse();
+  el('day').innerHTML=list.map(d=>`<option value="${d}">${showD(d)}</option>`).join('')
+    ||'<option value="">ไม่มีวันที่ตรงเงื่อนไข</option>';
+  el('day').value=list.includes(cur)?cur:(list[0]||'');
+  el('day').disabled=!list.length;
+  return el('day').value;
+}
+function opts(sel,list,label,all){
+  const cur=sel.value;
+  sel.innerHTML=`<option value="">${all}</option>`
+    +list.map(v=>`<option value="${v}">${label(v)}</option>`).join('');
+  sel.value=list.includes(cur)?cur:'';
+  sel.disabled=!list.length;
+}
+['kY','kM','kW'].forEach(id=>el(id).addEventListener('change',()=>{
+  const d=fillDays(); if(d) render(d);
+}));
+el('kClear').addEventListener('click',()=>{
+  ['kY','kM','kW'].forEach(id=>el(id).value='');
+  const d=fillDays(); if(d) render(d);
+});
+
 async function boot(){
   el('kStat').className='stat';el('kStat').textContent='กำลังดึงข้อมูล…';el('kReload').disabled=true;
   try{
@@ -365,12 +485,12 @@ async function boot(){
       loadStatic().catch(e=>console.warn('static',e))
     ]);
     DATES=[...new Set(dates.map(r=>toKey(r[0])).filter(Boolean))].sort();
-    el('day').innerHTML=DATES.slice().reverse().map(d=>`<option value="${d}">${showD(d)}</option>`).join('');
+    fillDays();
     el('kStat').innerHTML=`เชื่อมกับ Google Sheet แล้ว · <b>ข้อมูลสด</b> · อ่านวันที่ได้ ${DATES.length} วัน`
       +(DATES.length?` (${showD(DATES[0])} – ${showD(DATES[DATES.length-1])})`:'');
     if(!DATES.length){el('kStat').className='stat err';
       el('kStat').innerHTML='<b>อ่านวันที่จากชีตไม่ได้</b> — รูปแบบคอลัมน์ “วันที่ต้องการจัดส่ง” อาจไม่ใช่ชนิดวันที่';}
-    await render(DATES[DATES.length-1]);
+    await render(el('day').value||DATES[DATES.length-1]);
   }catch(e){
     el('kStat').className='stat err';
     el('kStat').innerHTML='<b>ดึงข้อมูลไม่ได้</b> — ตรวจว่าชีตแชร์เป็น “ทุกคนที่มีลิงก์” ('+e.message+')';
