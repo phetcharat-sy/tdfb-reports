@@ -15,7 +15,7 @@
 *{box-sizing:border-box}
 body{margin:0;background:var(--page);color:var(--ink);
   font-family:Tahoma,"Segoe UI",sans-serif;font-size:24.7px;line-height:1.6}
-.wrap{max-width:none;margin:0;padding:12px 10px 12px;
+.wrap{max-width:none;margin:0;padding:10px 4px 8px;
   height:100vh;display:flex;flex-direction:column;overflow:hidden}
 
 .toolbar{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-bottom:12px;flex:none}
@@ -62,22 +62,22 @@ select:disabled{opacity:.45}
 .cal-f .lnk{background:none;border:0;color:var(--teal);font-family:inherit;font-size:18.3px;
   cursor:pointer;text-decoration:underline;padding:0}
 
-#shot{background:var(--card);border-radius:12px;padding:20px 18px;
+#shot{background:var(--card);border-radius:10px;padding:16px 8px;
   display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;
   box-shadow:0 1px 3px rgba(20,24,40,.07),0 8px 24px rgba(20,24,40,.05)}
 
 header{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex:none;
   flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:16px}
 h1{margin:0;font-size:49.4px;letter-spacing:-.2px;line-height:1.25;
-  border-left:7px solid var(--teal);padding-left:13px}
-.sub{color:var(--mute);font-size:23px;margin:7px 0 0 22px}
+  border-left:7px solid var(--teal);padding-left:11px}
+.sub{color:var(--mute);font-size:23px;margin:7px 0 0 18px}
 .period{text-align:right;color:var(--mute);font-size:23px}
 .period b{display:block;color:var(--ink);font-size:31.2px;font-weight:normal}
 .chip{display:inline-block;background:var(--plum);color:#fff;
   padding:3px 15px;border-radius:20px;font-size:23px;margin-top:8px}
 
-.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px;flex:none}
-.kpi{border-radius:10px;padding:20px 18px;color:#fff;
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px;flex:none}
+.kpi{border-radius:10px;padding:18px 12px;color:#fff;
   box-shadow:0 1px 2px rgba(20,24,40,.09),0 3px 10px rgba(20,24,40,.06)}
 .kpi.k1{background:var(--teal)}  .kpi.k2{background:var(--teal-d)}
 .kpi.k3{background:var(--plum)}  .kpi.k4{background:var(--plum-d)}
@@ -87,10 +87,10 @@ h1{margin:0;font-size:49.4px;letter-spacing:-.2px;line-height:1.25;
 .kpi .n{font-size:23px;opacity:.85;margin-top:3px}
 .kpi.pending .v{font-size:36.4px;padding-top:12px}
 
-.panels{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;flex:1;min-height:0}
+.panels{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;flex:1;min-height:0}
 .panel{background:var(--soft);border:1px solid var(--line);border-radius:10px;
   padding:0;display:flex;flex-direction:column;min-height:340px;overflow:hidden}
-.panel .hd{padding:15px 14px 12px;border-bottom:1px solid var(--line);background:#fff}
+.panel .hd{padding:13px 9px 10px;border-bottom:1px solid var(--line);background:#fff}
 .panel .hd.a{border-top:3px solid var(--teal)}
 .panel .hd.b{border-top:3px solid var(--plum)}
 .panel .hd.c{border-top:3px solid var(--amber)}
@@ -101,8 +101,8 @@ h1{margin:0;font-size:49.4px;letter-spacing:-.2px;line-height:1.25;
 
 table{width:100%;border-collapse:collapse;font-size:23px}
 th{background:#F0F2F5;text-align:left;color:var(--mute);font-weight:normal;font-size:23px;
-  padding:11px 12px;position:sticky;top:0}
-td{padding:13px 12px;border-bottom:1px solid #ECEEF2;vertical-align:top}
+  padding:10px 7px;position:sticky;top:0}
+td{padding:12px 7px;border-bottom:1px solid #ECEEF2;vertical-align:top}
 tbody tr:hover td{background:#fff}
 tr.newday td{border-top:1px solid #DDE1E7}
 td.d{color:var(--mute);white-space:nowrap}
@@ -274,8 +274,8 @@ function table(host,rows,label){
         <td class="num">${r.qty!=null?fmt(r.qty):'—'}</td></tr>`; last=r.date;});
   const sum=rows.reduce((s,r)=>s+(r.qty||0),0);
   const blank=rows.filter(r=>r.qty==null).length;
-  host.innerHTML=`<table><thead><tr><th style="width:118px">วันที่</th><th>รายละเอียด</th>
-    <th class="num" style="width:104px">จำนวน</th></tr></thead><tbody>${b}</tbody>
+  host.innerHTML=`<table><thead><tr><th style="width:104px">วันที่</th><th>รายละเอียด</th>
+    <th class="num" style="width:92px">จำนวน</th></tr></thead><tbody>${b}</tbody>
     <tfoot><tr><td colspan="2">รวม ${rows.length} รายการ${blank?` · ไม่ระบุจำนวน ${blank}`:''}</td>
       <td class="num">${fmt(sum)}</td></tr></tfoot></table>`;
 }
