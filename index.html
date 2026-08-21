@@ -209,14 +209,20 @@ function parseCSV(t){
 }
 /* ชีต On-Time มีข้อมูลกว่าแสนแถว จึงให้ Google สรุปมาให้ก่อนด้วย gviz query
    แทนการดึงทั้งไฟล์มาคำนวณในเบราว์เซอร์ */
-async function gviz(sheet,gid,q){
+async function gviz(sheet,gid,q,ms=90000){
   const u=`https://docs.google.com/spreadsheets/d/${sheet}/gviz/tq?tqx=out:csv&gid=${gid}`
         +(q?`&tq=${encodeURIComponent(q)}`:'');
-  const r=await fetch(u);
-  if(!r.ok)throw new Error('HTTP '+r.status);
-  const t=await r.text();
-  if(/^\/\*O_o\*\//.test(t)||/"errors"/.test(t))throw new Error('query error');
-  return parseCSV(t).slice(1);
+  const ac=new AbortController();
+  const timer=setTimeout(()=>ac.abort(),ms);
+  try{
+    const r=await fetch(u,{signal:ac.signal});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const t=await r.text();
+    if(/^\/\*O_o\*\//.test(t)||/"errors"/.test(t))throw new Error('ชีตปฏิเสธคำสั่ง (ตรวจสิทธิ์แชร์)');
+    return parseCSV(t).slice(1);
+  }catch(e){
+    throw new Error(e.name==='AbortError'?'หมดเวลารอ (ชีตใหญ่เกินไป)':e.message);
+  }finally{clearTimeout(timer);}
 }
 const toKey=s=>{s=String(s||'').trim();
   /* gviz คืนคอลัมน์ชนิดวันที่มาในรูป Date(2026,4,11) เดือนเริ่มที่ 0 */
@@ -478,24 +484,28 @@ el('kClear').addEventListener('click',()=>{
 });
 
 async function boot(){
-  el('kStat').className='stat';el('kStat').textContent='กำลังดึงข้อมูล…';el('kReload').disabled=true;
+  el('kStat').className='stat';el('kReload').disabled=true;
+  el('kStat').textContent='กำลังอ่านรายการวันที่จากชีต…';
   try{
-    const [dates]=await Promise.all([
-      gviz(S_OTP,'0','select E, count(F) group by E order by E'),
-      loadStatic().catch(e=>console.warn('static',e))
-    ]);
+    const dates=await gviz(S_OTP,'0','select E, count(F) group by E order by E');
     DATES=[...new Set(dates.map(r=>toKey(r[0])).filter(Boolean))].sort();
+    if(!DATES.length)throw new Error('อ่านคอลัมน์ “วันที่ต้องการจัดส่ง” ไม่ได้');
     fillDays();
-    el('kStat').innerHTML=`เชื่อมกับ Google Sheet แล้ว · <b>ข้อมูลสด</b> · อ่านวันที่ได้ ${DATES.length} วัน`
-      +(DATES.length?` (${showD(DATES[0])} – ${showD(DATES[DATES.length-1])})`:'');
-    if(!DATES.length){el('kStat').className='stat err';
-      el('kStat').innerHTML='<b>อ่านวันที่จากชีตไม่ได้</b> — รูปแบบคอลัมน์ “วันที่ต้องการจัดส่ง” อาจไม่ใช่ชนิดวันที่';}
+    el('kStat').innerHTML=`อ่านวันที่ได้ ${DATES.length} วัน `
+      +`(${showD(DATES[0])} – ${showD(DATES[DATES.length-1])}) · กำลังคำนวณ…`;
     await render(el('day').value||DATES[DATES.length-1]);
+    el('kStat').innerHTML='เชื่อมกับ Google Sheet แล้ว · <b>ข้อมูลสด</b>';
   }catch(e){
     el('kStat').className='stat err';
-    el('kStat').innerHTML='<b>ดึงข้อมูลไม่ได้</b> — ตรวจว่าชีตแชร์เป็น “ทุกคนที่มีลิงก์” ('+e.message+')';
+    el('kStat').innerHTML='<b>ดึงข้อมูลไม่ได้</b> — '+e.message;
+    el('kReload').disabled=false;
+    return;
   }
   el('kReload').disabled=false;
+
+  /* Stock Diff / Dock to Stock โหลดต่อเบื้องหลัง แล้วค่อยวาดซ้ำ */
+  loadStatic().then(()=>{ if(el('day').value) render(el('day').value); })
+              .catch(e=>console.warn('static',e));
 }
 el('day').addEventListener('change',e=>render(e.target.value));
 el('kReload').addEventListener('click',boot);
