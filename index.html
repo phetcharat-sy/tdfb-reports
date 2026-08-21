@@ -13,7 +13,7 @@
 [hidden]{display:none!important}
 body{margin:0;background:var(--page);color:var(--ink);
   font-family:Tahoma,"Segoe UI",sans-serif;font-size:19px;line-height:1.6}
-.wrap{max-width:1760px;margin:0 auto;padding:24px 90px 26px;
+.wrap{max-width:none;margin:0 auto;padding:24px 10% 26px;
   height:100vh;display:flex;flex-direction:column;overflow:hidden}
 
 .teams{display:flex;gap:6px;align-items:center;margin-bottom:14px;flex:none;
@@ -136,9 +136,9 @@ body.cap .wrap{height:auto;overflow:visible;padding:0}
 #shot.cap-full .scroll{overflow:visible;max-height:none}
 #shot.cap-full .panel{min-height:0}
 
-@media(max-width:1600px){.wrap{padding-left:46px;padding-right:46px}#shot{padding-left:30px;padding-right:30px}}
+@media(max-width:1600px){#shot{padding-left:32px;padding-right:32px}}
 @media(max-width:1400px){.panels{grid-template-columns:1fr 1fr!important}.kpis{grid-template-columns:repeat(3,1fr)!important}}
-@media(max-width:1000px){.wrap{padding-left:18px;padding-right:18px}#shot{padding-left:18px;padding-right:18px}}
+@media(max-width:1000px){.wrap{padding-left:4%;padding-right:4%}#shot{padding-left:18px;padding-right:18px}}
 @media(max-width:900px){.panels{grid-template-columns:1fr!important}.kpis{grid-template-columns:1fr 1fr!important}h1{font-size:36.4px}}
 </style>
 </head>
