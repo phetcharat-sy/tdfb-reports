@@ -15,7 +15,7 @@
 *{box-sizing:border-box}
 body{margin:0;background:var(--page);color:var(--ink);
   font-family:Tahoma,"Segoe UI",sans-serif;font-size:24.7px;line-height:1.6}
-.wrap{max-width:none;margin:0;padding:20px 34px 22px;
+.wrap{max-width:1760px;margin:0 auto;padding:24px 90px 26px;
   height:100vh;display:flex;flex-direction:column;overflow:hidden}
 
 .toolbar{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-bottom:12px;flex:none}
@@ -62,7 +62,7 @@ select:disabled{opacity:.45}
 .cal-f .lnk{background:none;border:0;color:var(--teal);font-family:inherit;font-size:18.3px;
   cursor:pointer;text-decoration:underline;padding:0}
 
-#shot{background:var(--card);border-radius:12px;padding:28px 30px;
+#shot{background:var(--card);border-radius:14px;padding:34px 46px;
   display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;
   box-shadow:0 1px 3px rgba(20,24,40,.07),0 8px 24px rgba(20,24,40,.05)}
 
@@ -121,7 +121,7 @@ tfoot .num{color:var(--teal-d)}
 body.cap .wrap{height:auto;overflow:visible;padding:0}
 /* 16:9 ขนาดสไลด์ 1600x900 (ส่งออก 3840x2160) */
 #shot.cap-slide{width:1600px;height:900px;flex:none;overflow:hidden;
-  border-radius:0;padding:30px 34px}
+  border-radius:0;padding:34px 52px}
 /* เต็มทุกรายการ: ยืดตามเนื้อหา */
 #shot.cap-full{height:auto;flex:none;overflow:visible}
 #shot.cap-full .panels{flex:none}
@@ -130,7 +130,9 @@ body.cap .wrap{height:auto;overflow:visible;padding:0}
 
 .foot{margin-top:14px;flex:none;padding-top:12px;border-top:1px solid var(--line);
   color:var(--mute);font-size:22.2px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+@media(max-width:1600px){.wrap{padding-left:46px;padding-right:46px}#shot{padding-left:30px;padding-right:30px}}
 @media(max-width:1400px){.panels{grid-template-columns:1fr 1fr}.kpis{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:1000px){.wrap{padding-left:18px;padding-right:18px}#shot{padding-left:18px;padding-right:18px}}
 @media(max-width:900px){.panels{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr}h1{font-size:31.2px}}
 </style>
 </head>
