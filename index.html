@@ -45,10 +45,18 @@
   display:inline-block;margin-right:6px}
 #vKPI .kcal-f .lnk{background:none;border:0;color:var(--teal);font-family:inherit;font-size:14px;
   cursor:pointer;text-decoration:underline;padding:0}
+#vKPI .subsec{display:flex;align-items:center;gap:12px;margin:20px 0 10px;
+  font-size:22px;font-weight:bold;color:var(--ink)}
+#vKPI .subsec:first-child{margin-top:4px}
+#vKPI .subsec em{font-style:normal;font-size:17px;color:var(--mute);font-weight:normal}
+#vKPI .subsec span.line{flex:1;height:1px;background:var(--line)}
+#vKPI .subsec .no{width:26px;height:26px;border-radius:8px;background:var(--teal);color:#fff;
+  font-size:15px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
 #vKPI .kchip{display:inline-block;background:#6B5CA5;color:#fff;
   padding:3px 15px;border-radius:20px;font-size:19px;margin-top:8px}
 #vKPI h2.sec{font-size:34.6px;margin:30px 0 12px;display:flex;align-items:center;gap:12px}#vKPI h2.sec span{flex:1;height:1px;background:var(--line)}#vKPI h2.sec em{font-style:normal;font-size:24.3px;color:var(--mute);font-weight:normal}#vKPI .top{display:grid;grid-template-columns:1fr 1fr;gap:16px}#vKPI .big{border-radius:12px;padding:32px 36px;color:#fff}#vKPI .big.a{background:var(--teal)}#vKPI .big.b{background:var(--plum)}#vKPI .big .l{font-size:29.4px;opacity:.95}#vKPI .big .v{font-size:94px;font-weight:bold;line-height:1.05;letter-spacing:-1px;margin-top:4px}#vKPI .big .n{font-size:24.3px;opacity:.9;margin-top:4px}/* KPI เรียงบรรทัดละใบ · จัดเนื้อหาแนวนอนไม่ให้การ์ดสูงเกินไป */
 #vKPI .kpis{display:grid;grid-template-columns:1fr;gap:14px}
+#vKPI .kpis>.subsec{grid-column:1/-1}
 #vKPI .kpi{display:grid;grid-template-columns:minmax(300px,1.15fr) auto 1fr;
   align-items:center;column-gap:34px;row-gap:6px;padding:24px 30px}
 #vKPI .kpi>.l{grid-column:1;grid-row:1;margin:0}
@@ -620,7 +628,11 @@ function render(){
   el('whNote').textContent=`On-Time · Out of Stock · Stock Diff = ตามตัวกรอง`
     +(wkSel?` · Dock to Stock = รายสัปดาห์ (Week ${wkSel})`:'');
 
+  const sub=(n,title,note)=>`<div class="subsec"><span class="no">${n}</span>${title}`
+    +(note?` <em>${note}</em>`:'')+`<span class="line"></span></div>`;
+
   el('wh').innerHTML=[
+    sub(1,'Packing &amp; Dispatch','ชีต KPI On-Time / Out of Stock · ตามตัวกรอง'),
     cur?kpiCard({l:'On-Time Performance',t:'Target ≥ 98% · ระดับออเดอร์ · แย่สุดของ WH + Packing',
       disp:pct(cur.otp),v:cur.otp,pass:cur.otp>=98,
       delta:deltaHTML(cur.otp,prev?prev.otp:null,true),
@@ -631,12 +643,16 @@ function render(){
       delta:deltaHTML(cur.oos,prev?prev.oos:null,true),
       base:`${fmt(cur.okQty)} จาก ${fmt(cur.items)} ชิ้น`}):
       kpiCard({l:'Out of Stock',t:'Target ≥ 99%',wait:true,note:'ไม่มีข้อมูลในช่วงที่เลือก'}),
+
+    sub(2,'Stock Accuracy','ชีตนับสต็อก · คอลัมน์ “เช็ค”'),
     diffV!=null?kpiCard({l:'Stock Diff',t:'Target < 2% · สัดส่วนที่นับแล้ว “ไม่ตรง” กับระบบ',
       disp:pct(diffV),v:diffV,bar:diffV*10,pass:diffV<2,
       delta:deltaHTML(diffV,diffP,false),
       base:`ไม่ตรง ${fmt(dNow.bad)} จาก ${fmt(dNow.n)} รายการที่นับ · ตรง ${fmt(dNow.n-dNow.bad)}`}):
       kpiCard({l:'Stock Diff',t:'Target < 2%',wait:true,
         note:STATIC_ERR.diff?('อ่านชีตไม่ได้ — '+STATIC_ERR.diff):'ไม่มีรายการนับสต็อกในช่วงที่เลือก'}),
+
+    sub(3,'GR to Putaway',`ชีต Dock to Stock · รายสัปดาห์${wkSel?' (Week '+wkSel+')':''}`),
     allV!=null?kpiCard({l:'ON-TIME รวม (รับเข้า+จัดเก็บ)',t:`Dock to Stock · Week ${wkSel}`,
       disp:pct1(allV),v:allV,pass:allV>=90,
       delta:deltaHTML(allV,allP,true),
