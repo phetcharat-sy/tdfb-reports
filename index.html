@@ -238,6 +238,8 @@ const G_DOCK='1625574187';
 const el=id=>document.getElementById(id);
 const fmt=n=>Math.round(n).toLocaleString('en-US');
 const pct=n=>n==null?'—':n.toFixed(2)+'%';
+/* หน้า KPI GR to Putaway แสดงทศนิยม 1 ตำแหน่ง และตัด .0 ทิ้ง (100% ไม่ใช่ 100.0%) */
+const pct1=n=>n==null?'—':(Math.round(n*10)/10).toString().replace(/\.0$/,'')+'%';
 const MONTHS=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
               'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 const showD=k=>{if(!k)return '—';const[y,m,d]=k.split('-');return `${d} ${MONTHS[+m-1]} ${y}`;};
@@ -338,7 +340,7 @@ function parseDMY(s){
 
 /* dashboard เดิมโหลดทั้งชีตด้วย /export?format=csv แล้วคำนวณในเบราว์เซอร์
    ทำแบบเดียวกันเป๊ะ จะได้ตัวเลขตรงกันทุกตัว ไม่ต้องพึ่งการกรองวันที่ฝั่ง Google */
-let RAW=[], COLS=null;
+let RAW=[], COLS=null, NO_DATE=0;
 
 /* ดาวน์โหลดแบบอ่านทีละก้อน จะได้เห็นว่าข้อมูลไหลมาจริงไหม (ชีตนี้ใหญ่ระดับสิบเมกะไบต์)
    ถ้าค้างที่ 0 MB = ติดที่เครือข่าย/สิทธิ์ · ถ้าเลขวิ่ง = แค่ต้องรอ */
@@ -397,8 +399,7 @@ async function loadOTP(){
     const ref=(r[COLS.ref]||'').trim();
     if(!ref)continue;
     if(COLS.prod>=0&&isExcludedProduct(r[COLS.prod]))continue;
-    const date=parseDMY(r[COLS.del]);
-    if(!date)continue;
+    const date=parseDMY(r[COLS.del]);   /* อาจเป็น null — เก็บไว้ ไม่ตัดทิ้ง */
     RAW.push({
       date, key:ref.toUpperCase(),
       month:COLS.month>=0?(r[COLS.month]||'').trim():'',
@@ -408,8 +409,9 @@ async function loadOTP(){
       qty:COLS.qty>=0?parseQty(r[COLS.qty]):0
     });
   }
-  DATES=[...new Set(RAW.map(r=>r.date))].sort();
-  if(!RAW.length)throw new Error(`อ่านได้ ${fmt(rows.length-1)} แถว แต่แปลงวันที่ไม่สำเร็จเลย`);
+  DATES=[...new Set(RAW.map(r=>r.date).filter(Boolean))].sort();
+  NO_DATE=RAW.filter(r=>!r.date).length;
+  if(!RAW.length)throw new Error(`อ่านได้ ${fmt(rows.length-1)} แถว แต่ไม่มีแถวที่ใช้ได้`);
   return RAW.length;
 }
 
@@ -559,7 +561,7 @@ function render(){
   LAST_STATS=cur;
 
   /* ป้ายบอกช่วงข้อมูล */
-  const days=[...new Set(rows.map(r=>r.date))].sort();
+  const days=[...new Set(rows.map(r=>r.date).filter(Boolean))].sort();
   el('kPeriod').textContent = DAYSEL ? showD(DAYSEL)
     : days.length ? (days[0]===days[days.length-1]?showD(days[0])
                     :`${showD(days[0])} – ${showD(days[days.length-1])}`) : '—';
@@ -593,21 +595,20 @@ function render(){
   function diffStat(list){
     if(!list||!list.length)return null;
     const bad=list.filter(r=>r.diff).length;
-    const rawPct=bad/list.length*100;
-    /* ใช้ค่า 98.72% (ตรง) ตามที่ Pivot Table คำนวณจากค่าเฉลี่ยรายวัน
-       แทนการคำนวณจากผลรวมรวมทั้งหมด (raw: 74.3%) */
-    const displayPct=98.72;
-    const goodPct=100-displayPct;
-    return {n:list.length,bad,rawPct,pct:goodPct};
+    return {n:list.length,bad,pct:bad/list.length*100};
   }
   const diffNow = DIFF?diffStat(DIFF.filter(r=>diffMatch(r))):null;
   /* ช่วงเทียบ = วันเดียวกันเดือนก่อน (ใช้ชุดวันที่เดียวกับ KPI ด้านบน) */
-  const prevDaySet=new Set([...new Set(rows.map(r=>r.date))].map(prevMonth));
+  const prevDaySet=new Set([...new Set(rows.map(r=>r.date).filter(Boolean))].map(prevMonth));
   const diffPrev = DIFF?diffStat(DIFF.filter(r=>r.date&&prevDaySet.has(r.date))):null;
   const diffV=diffNow?diffNow.pct:null, diffP=diffPrev?diffPrev.pct:null;
   const dNow=diffNow;
 
-  const wkSel=fWeek()||(DAYSEL?String(isoWeek(DAYSEL)):(rows.length?String(rows[rows.length-1].week):''));
+  /* ไม่ได้กรอง → ใช้สัปดาห์ล่าสุดที่มีข้อมูลในชีต Dock to Stock */
+  const dockWeeks=DOCK?Object.keys(DOCK).map(Number).filter(n=>n).sort((a,b)=>a-b):[];
+  const wkSel = fWeek()
+    || (DAYSEL ? String(isoWeek(DAYSEL))
+       : (dockWeeks.length ? String(dockWeeks[dockWeeks.length-1]) : ''));
   const kNow=DOCK?DOCK[wkSel]:null, kPrev=DOCK?DOCK[String(+wkSel-1)]:null;
   const rate=(o,f)=>o&&o.n?o[f]/o.n*100:null;
   const inV=rate(kNow,'inOk'), inP=rate(kPrev,'inOk');
@@ -633,22 +634,22 @@ function render(){
     diffV!=null?kpiCard({l:'Stock Diff',t:'Target < 2% · สัดส่วนที่นับแล้ว “ไม่ตรง” กับระบบ',
       disp:pct(diffV),v:diffV,bar:diffV*10,pass:diffV<2,
       delta:deltaHTML(diffV,diffP,false),
-      base:`ตรง 98.72% · ไม่ตรง 1.28% (ข้อมูลจาก Pivot Table ค่าเฉลี่ยรายวัน) · รายการนับ ${fmt(dNow.n)}`}):
+      base:`ไม่ตรง ${fmt(dNow.bad)} จาก ${fmt(dNow.n)} รายการที่นับ · ตรง ${fmt(dNow.n-dNow.bad)}`}):
       kpiCard({l:'Stock Diff',t:'Target < 2%',wait:true,
         note:STATIC_ERR.diff?('อ่านชีตไม่ได้ — '+STATIC_ERR.diff):'ไม่มีรายการนับสต็อกในช่วงที่เลือก'}),
-    allV!=null?kpiCard({l:'Dock to Stock — ON-TIME รวม',t:`Week ${wkSel} · เฉลี่ยของรับเข้า + จัดเก็บ`,
-      disp:pct(allV),v:allV,pass:allV>=90,
+    allV!=null?kpiCard({l:'ON-TIME รวม (รับเข้า+จัดเก็บ)',t:`Dock to Stock · Week ${wkSel}`,
+      disp:pct1(allV),v:allV,pass:allV>=90,
       delta:deltaHTML(allV,allP,true),
-      base:`${pct(inV)} (รับเข้า) และ ${pct(stV)} (จัดเก็บ)`}):
+      base:`ค่าเฉลี่ยของ ${pct1(inV)} (รับเข้า) และ ${pct1(stV)} (จัดเก็บ)`}):
       kpiCard({l:'Dock to Stock — ON-TIME รวม',t:'รายสัปดาห์',wait:true,
         note:STATIC_ERR.dock?('อ่านชีตไม่ได้ — '+STATIC_ERR.dock):'ยังไม่มีข้อมูลของสัปดาห์นี้'}),
-    inV!=null?kpiCard({l:'ผ่านเกณฑ์รับเข้า',t:`Week ${wkSel} · ของมาส่ง → รับเข้าระบบ`,
-      disp:pct(inV),v:inV,pass:inV>=90,delta:deltaHTML(inV,inP,true),
+    inV!=null?kpiCard({l:'ผ่านเกณฑ์รับเข้า',t:`Dock to Stock · Week ${wkSel}`,
+      disp:pct1(inV),v:inV,pass:inV>=90,delta:deltaHTML(inV,inP,true),
       base:`${fmt(kNow.inOk)} / ${fmt(kNow.n)} ผ่านเกณฑ์รับเข้า`}):'',
-    stV!=null?kpiCard({l:'ผ่านเกณฑ์จัดเก็บ',t:`Week ${wkSel} · รับเข้าระบบ → จัดเก็บ`,
-      disp:pct(stV),v:stV,pass:stV>=90,delta:deltaHTML(stV,stP,true),
+    stV!=null?kpiCard({l:'ผ่านเกณฑ์จัดเก็บ',t:`Dock to Stock · Week ${wkSel}`,
+      disp:pct1(stV),v:stV,pass:stV>=90,delta:deltaHTML(stV,stP,true),
       base:`${fmt(kNow.stOk)} / ${fmt(kNow.n)} ผ่านเกณฑ์จัดเก็บ`}):'',
-    dayV!=null?kpiCard({l:'เวลาเฉลี่ยรวม (วัน)',t:`Week ${wkSel} · มาส่ง → จัดเก็บสำเร็จ`,
+    dayV!=null?kpiCard({l:'เวลาเฉลี่ยรวม (วัน)',t:`Dock to Stock · Week ${wkSel} · มาส่ง → จัดเก็บสำเร็จ`,
       disp:dayV.toFixed(2)+' วัน',v:dayV,bar:Math.max(0,100-dayV*12),pass:dayV<=5,
       delta:deltaHTML(dayV,dayP,false,'วัน'),
       base:`จาก ${fmt(kNow.dn)} รายการที่มีวันที่ครบ`}):''
@@ -682,7 +683,7 @@ let DAYSEL='', calYM=null, CAL_DAYS=new Set();
 /* ตัวกรอง MONTH / WEEK / DAY — ว่างทั้งหมด = ดูข้อมูลทั้งชุด */
 const fMonth=()=>el('kM').value, fWeek=()=>el('kW').value;
 function matchRow(r){
-  if(DAYSEL) return r.date===DAYSEL;
+  if(DAYSEL) return r.date===DAYSEL;   /* แถวที่วันที่อ่านไม่ออกจะไม่เข้าเมื่อกรองรายวัน */
   if(fWeek() && String(r.week)!==fWeek()) return false;
   if(fMonth() && r.month!==fMonth()) return false;
   return true;
@@ -693,7 +694,7 @@ const filteredRows=()=>RAW.filter(matchRow);
    เลื่อนทุกวันที่ในช่วงที่เลือกถอยหลัง 1 เดือน แล้วเอาข้อมูลของวันเหล่านั้นมาเทียบ
    เลือกวันเดียว → วันเดียวกันเดือนก่อน · เลือกสัปดาห์/เดือน → ช่วงเดียวกันเดือนก่อน */
 function comparisonRows(){
-  const days=[...new Set(filteredRows().map(r=>r.date))].sort();
+  const days=[...new Set(filteredRows().map(r=>r.date).filter(Boolean))].sort();
   if(!days.length)return {label:'',rows:[]};
   const prevDays=new Set(days.map(prevMonth));
   const rows=RAW.filter(r=>prevDays.has(r.date));
@@ -717,7 +718,7 @@ function fillFilters(){
     .sort((a,b)=>a-b);
   opts(el('kW'),weeks,v=>'Week '+v,'All');
   const byW=byM.filter(r=>!fWeek()||String(r.week)===fWeek());
-  CAL_DAYS=new Set(byW.map(r=>r.date));
+  CAL_DAYS=new Set(byW.map(r=>r.date).filter(Boolean));
   if(DAYSEL&&!CAL_DAYS.has(DAYSEL))DAYSEL='';
   drawCal();
 }
@@ -787,6 +788,7 @@ async function boot(){
     fillFilters();render();
     const s=LAST_STATS;
     el('kStat').innerHTML='เชื่อมกับ Google Sheet แล้ว · <b>ข้อมูลสด</b>'
+      +(NO_DATE?` · <span style="color:var(--rose)">${fmt(NO_DATE)} แถววันที่อ่านไม่ออก</span>`:'')
       +(s?` · แถวของวันนี้ ${fmt(s.lines)} บรรทัด → ${fmt(s.orders)} ออเดอร์ · ${fmt(s.items)} ชิ้น`:'');
   }catch(e){
     el('kStat').className='stat err';
