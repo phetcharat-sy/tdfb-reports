@@ -242,7 +242,7 @@ const prevMonth=k=>{const[y,m,d]=k.split('-').map(Number);
   return `${py}-${String(pm).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;};
 
 /* ---------- ดึงข้อมูล ---------- */
-let DATES=[],DIFF=null,DOCK=null;
+let DATES=[],DIFF=null,DOCK=null,LAST_STATS=null;
 
 /* ===== ใช้กติกาเดียวกับ dashboard เดิม (tdfb-dashboard-v2) ทุกข้อ =====
    1. ตัดสินค้าที่ไม่ใช่สินค้าจริงออกก่อน (Box / ค่าส่ง / คูปอง / ส่วนลด / Product Card / เอกสาร)
@@ -275,34 +275,71 @@ function combineStatus(p,w){
   return 'unknown';
 }
 
-async function dayStats(key){
-  let raw;
-  try{ raw=await gviz(S_OTP,'0',`select * where E = date '${key}'`,90000,true); }
-  catch(e){
-    const [y,m,d]=key.split('-');
-    raw=await gviz(S_OTP,'0',`select * where E = '${+d}/${+m}/${y}'`,90000,true);
-  }
-  if(!raw||raw.length<2)return null;
+/* วันที่ในชีตเป็น DD/MM/YYYY — ถ้าให้ gviz เทียบวันที่ตรงๆ จะพลาดง่าย
+   (คอลัมน์อาจเป็นข้อความ / รูปแบบไม่ตรง) จึงดึง "ทั้งสัปดาห์" มาแล้วกรองวันเอง
+   ด้วยตัวแปลงวันที่ชุดเดียวกับ dashboard เดิม แล้ว cache ไว้ต่อสัปดาห์ */
+function parseDMY(s){
+  if(!s)return null;
+  const str=String(s).trim();
+  let m=str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if(m)return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+  m=str.match(/^Date\((\d{4}),(\d{1,2}),(\d{1,2})/);
+  if(m)return `${m[1]}-${String(+m[2]+1).padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+  m=str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if(m)return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+  return null;
+}
 
-  const H=raw[0].map(c=>String(c).replace(/\s+/g,''));
+/* dashboard เดิมโหลดทั้งชีตด้วย /export?format=csv แล้วคำนวณในเบราว์เซอร์
+   ทำแบบเดียวกันเป๊ะ จะได้ตัวเลขตรงกันทุกตัว ไม่ต้องพึ่งการกรองวันที่ฝั่ง Google */
+let RAW=[], COLS=null;
+
+async function loadOTP(){
+  const url=`https://docs.google.com/spreadsheets/d/${S_OTP}/export?format=csv&gid=0&_=${Date.now()}`;
+  const r=await fetch(url);
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  const t=await r.text();
+  if(t.trim().startsWith('<'))throw new Error('ชีตยังไม่ได้แชร์เป็น “ทุกคนที่มีลิงก์”');
+  const rows=parseCSV(t);
+  if(rows.length<2)throw new Error('ชีตว่าง');
+
+  const H=rows[0].map(c=>String(c).replace(/\s+/g,''));
   const col=(...p)=>{for(const x of p){const i=H.findIndex(v=>v.includes(x));if(i>=0)return i;}return -1;};
-  const iRef=col('OrderReference'), iWh=col('WHส่งของให้PK'),
-        iPack=col('แพ็คสินค้าเสร็จ'), iProd=col('Product'), iQty=col('OrderLine');
-  if(iRef<0)return null;
+  COLS={ref:col('OrderReference'), del:col('วันที่ต้องการจัดส่ง'),
+        wh:col('WHส่งของให้PK'), pack:col('แพ็คสินค้าเสร็จ'),
+        prod:col('Product'), qty:col('OrderLine'), week:col('Week')};
+  if(COLS.ref<0||COLS.del<0)throw new Error('หาคอลัมน์ Order Reference / วันที่ต้องการจัดส่ง ไม่เจอ');
 
-  const rows=raw.slice(1)
-    .filter(r=>(r[iRef]||'').trim())
-    .filter(r=>iProd<0||!isExcludedProduct(r[iProd]));
+  RAW=[];
+  for(let i=1;i<rows.length;i++){
+    const r=rows[i];
+    const ref=(r[COLS.ref]||'').trim();
+    if(!ref)continue;
+    const prod=COLS.prod>=0?(r[COLS.prod]||''):'';
+    if(isExcludedProduct(prod))continue;          /* ตัด Box / ค่าส่ง / คูปอง ฯลฯ */
+    const date=parseDMY(r[COLS.del]);
+    if(!date)continue;
+    RAW.push({
+      date, key:ref.toUpperCase(),
+      wh:COLS.wh>=0?(r[COLS.wh]||''):'',
+      pack:COLS.pack>=0?(r[COLS.pack]||''):'',
+      qty:COLS.qty>=0?parseQty(r[COLS.qty]):0
+    });
+  }
+  DATES=[...new Set(RAW.map(r=>r.date))].sort();
+  return RAW.length;
+}
+
+/* ===== คำนวณตามกติกา dashboard เดิม =====
+   On-Time  : ระดับออเดอร์ · สถานะ = แย่สุดใน (Packing, WH) · ตัวหาร = on-time + late เท่านั้น
+   Out of Stock : ระดับชิ้น ถ่วงน้ำหนักด้วย Order Line · ดูจาก WH เท่านั้น · ว่าง = late  */
+function statsOf(rows){
   if(!rows.length)return null;
-
-  /* --- ระดับออเดอร์: เก็บสถานะที่แย่ที่สุดของแต่ละออเดอร์ --- */
   const rank={late:3,unknown:2,early:1,ontime:1};
   const worst={};
   rows.forEach(r=>{
-    const k=(r[iRef]||'').trim().toUpperCase();
-    if(!k)return;
-    const cls=combineStatus(classify(iPack>=0?r[iPack]:''), classify(iWh>=0?r[iWh]:''));
-    if(!(k in worst)||(rank[cls]||0)>(rank[worst[k]]||0))worst[k]=cls;
+    const cls=combineStatus(classify(r.pack), classify(r.wh));
+    if(!(r.key in worst)||(rank[cls]||0)>(rank[worst[r.key]]||0))worst[r.key]=cls;
   });
   const states=Object.values(worst);
   const orders=states.length;
@@ -310,20 +347,17 @@ async function dayStats(key){
   const lateOrders=states.filter(s=>s==='late').length;
   const denom=onTimeOrders+lateOrders||1;
 
-  /* --- ระดับชิ้น: ถ่วงน้ำหนักด้วย Order Line --- */
   let items=0, okQty=0;
   rows.forEach(r=>{
-    const q=iQty>=0?parseQty(r[iQty]):0;
-    items+=q;
-    const c=classify(iWh>=0?r[iWh]:'');
-    if(c==='ontime'||c==='early')okQty+=q;
+    items+=r.qty;
+    const c=classify(r.wh);
+    if(c==='ontime'||c==='early')okQty+=r.qty;
   });
 
-  return {orders,items,lines:rows.length,
-          onTimeOrders,lateOrders,denom,
-          otp:onTimeOrders/denom*100,
-          oos:items?okQty/items*100:0, okQty};
+  return {orders,items,lines:rows.length,onTimeOrders,lateOrders,denom,
+          otp:onTimeOrders/denom*100, oos:items?okQty/items*100:0, okQty};
 }
+const dayStats=key=>statsOf(RAW.filter(r=>r.date===key));
 
 async function loadStatic(){
   /* ---- Stock Diff (รายเดือน) ---- */
@@ -399,7 +433,7 @@ function kpiCard(o){
     <div class="bar"><i style="width:${w}%"></i></div></div>`;
 }
 
-async function render(key){
+function render(key){
   el('kPeriod').textContent=showD(key);
   const bits=[];
   if(el('kY').value)bits.push('ปี '+el('kY').value);
@@ -410,7 +444,8 @@ async function render(key){
   const pk=prevMonth(key);
   el('cmpNote').textContent='เทียบกับ '+showD(pk);
 
-  const [cur,prev]=await Promise.all([dayStats(key),dayStats(pk).catch(()=>null)]);
+  const cur=dayStats(key), prev=dayStats(pk);
+  LAST_STATS=cur;
 
   el('top').innerHTML=`
     <div class="big a"><div class="l">จำนวนออเดอร์</div>
@@ -535,14 +570,15 @@ async function boot(){
   el('kStat').className='stat';el('kReload').disabled=true;
   el('kStat').textContent='กำลังอ่านรายการวันที่จากชีต…';
   try{
-    const dates=await gviz(S_OTP,'0','select E, count(F) group by E order by E');
-    DATES=[...new Set(dates.map(r=>toKey(r[0])).filter(Boolean))].sort();
+    const n=await loadOTP();
     if(!DATES.length)throw new Error('อ่านคอลัมน์ “วันที่ต้องการจัดส่ง” ไม่ได้');
     fillDays();
     el('kStat').innerHTML=`อ่านวันที่ได้ ${DATES.length} วัน `
-      +`(${showD(DATES[0])} – ${showD(DATES[DATES.length-1])}) · กำลังคำนวณ…`;
-    await render(el('day').value||DATES[DATES.length-1]);
-    el('kStat').innerHTML='เชื่อมกับ Google Sheet แล้ว · <b>ข้อมูลสด</b>';
+      +`(${showD(DATES[0])} – ${showD(DATES[DATES.length-1])}) · ${fmt(n)} บรรทัด · กำลังคำนวณ…`;
+    render(el('day').value||DATES[DATES.length-1]);
+    const s=LAST_STATS;
+    el('kStat').innerHTML='เชื่อมกับ Google Sheet แล้ว · <b>ข้อมูลสด</b>'
+      +(s?` · แถวของวันนี้ ${fmt(s.lines)} บรรทัด → ${fmt(s.orders)} ออเดอร์ · ${fmt(s.items)} ชิ้น`:'');
   }catch(e){
     el('kStat').className='stat err';
     el('kStat').innerHTML='<b>ดึงข้อมูลไม่ได้</b> — '+e.message;
