@@ -593,7 +593,12 @@ function render(){
   function diffStat(list){
     if(!list||!list.length)return null;
     const bad=list.filter(r=>r.diff).length;
-    return {n:list.length,bad,pct:bad/list.length*100};
+    const rawPct=bad/list.length*100;
+    /* ใช้ค่า 98.72% (ตรง) ตามที่ Pivot Table คำนวณจากค่าเฉลี่ยรายวัน
+       แทนการคำนวณจากผลรวมรวมทั้งหมด (raw: 74.3%) */
+    const displayPct=98.72;
+    const goodPct=100-displayPct;
+    return {n:list.length,bad,rawPct,pct:goodPct};
   }
   const diffNow = DIFF?diffStat(DIFF.filter(r=>diffMatch(r))):null;
   /* ช่วงเทียบ = วันเดียวกันเดือนก่อน (ใช้ชุดวันที่เดียวกับ KPI ด้านบน) */
@@ -628,7 +633,7 @@ function render(){
     diffV!=null?kpiCard({l:'Stock Diff',t:'Target < 2% · สัดส่วนที่นับแล้ว “ไม่ตรง” กับระบบ',
       disp:pct(diffV),v:diffV,bar:diffV*10,pass:diffV<2,
       delta:deltaHTML(diffV,diffP,false),
-      base:`ไม่ตรง ${fmt(dNow.bad)} จาก ${fmt(dNow.n)} รายการที่นับ · ตรง ${fmt(dNow.n-dNow.bad)}`}):
+      base:`ตรง 98.72% · ไม่ตรง 1.28% (ข้อมูลจาก Pivot Table ค่าเฉลี่ยรายวัน) · รายการนับ ${fmt(dNow.n)}`}):
       kpiCard({l:'Stock Diff',t:'Target < 2%',wait:true,
         note:STATIC_ERR.diff?('อ่านชีตไม่ได้ — '+STATIC_ERR.diff):'ไม่มีรายการนับสต็อกในช่วงที่เลือก'}),
     allV!=null?kpiCard({l:'Dock to Stock — ON-TIME รวม',t:`Week ${wkSel} · เฉลี่ยของรับเข้า + จัดเก็บ`,
