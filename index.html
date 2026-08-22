@@ -414,6 +414,22 @@ function statsOf(rows){
 }
 const dayStats=key=>statsOf(RAW.filter(r=>r.date===key));
 
+/* หาแถวหัวตารางเองแล้วจับคอลัมน์จาก "ชื่อหัว" ไม่ใช่ตำแหน่ง
+   เพราะชีตชุดนี้มีหลายแท็บที่เรียงคอลัมน์ไม่เหมือนกัน */
+function table(rows){
+  if(!rows||!rows.length)return null;
+  let hi=-1;
+  for(let i=0;i<Math.min(8,rows.length);i++)
+    if(rows[i].some(c=>/เกณฑ์|เช็ค|week|สัปดาห์/i.test(String(c)))){hi=i;break;}
+  if(hi<0)return null;
+  const H=rows[hi].map(c=>String(c).replace(/\s+/g,''));
+  const col=(...p)=>{for(const x of p){const i=H.findIndex(v=>v.includes(x));if(i>=0)return i;}return -1;};
+  return {H,col,rows:rows.slice(hi+1)};
+}
+const dnum=s=>{const m=String(s==null?'':s).match(/-?[\d.]+/);return m?parseFloat(m[0]):NaN;};
+const dparse=s=>{const m=String(s==null?'':s).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  return m?Date.UTC(+m[3],+m[2]-1,+m[1]):NaN;};
+
 let STATIC_ERR={diff:'',dock:''};
 
 /* ชีตเล็ก: ลอง gviz ก่อน ถ้าไม่ได้ค่อยใช้ /export?format=csv (บางชีตตั้งสิทธิ์ต่างกัน) */
