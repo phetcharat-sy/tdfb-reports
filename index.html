@@ -340,16 +340,42 @@ function parseDMY(s){
    ทำแบบเดียวกันเป๊ะ จะได้ตัวเลขตรงกันทุกตัว ไม่ต้องพึ่งการกรองวันที่ฝั่ง Google */
 let RAW=[], COLS=null;
 
+/* ดาวน์โหลดแบบอ่านทีละก้อน จะได้เห็นว่าข้อมูลไหลมาจริงไหม (ชีตนี้ใหญ่ระดับสิบเมกะไบต์)
+   ถ้าค้างที่ 0 MB = ติดที่เครือข่าย/สิทธิ์ · ถ้าเลขวิ่ง = แค่ต้องรอ */
+async function fetchBig(url,onProgress,ms=180000){
+  const ac=new AbortController();
+  const timer=setTimeout(()=>ac.abort(),ms);
+  try{
+    const r=await fetch(url,{signal:ac.signal});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    if(!r.body||!r.body.getReader)return await r.text();
+    const reader=r.body.getReader(), dec=new TextDecoder('utf-8');
+    let out='', got=0, tick=0;
+    for(;;){
+      const {done,value}=await reader.read();
+      if(done)break;
+      got+=value.length;
+      out+=dec.decode(value,{stream:true});
+      if(++tick%12===0)onProgress&&onProgress(got);
+    }
+    out+=dec.decode();
+    onProgress&&onProgress(got);
+    return out;
+  }catch(e){
+    throw new Error(e.name==='AbortError'?'หมดเวลารอดาวน์โหลด (ลองกดดึงข้อมูลใหม่)':e.message);
+  }finally{clearTimeout(timer);}
+}
+
 async function loadOTP(){
   const url=`https://docs.google.com/spreadsheets/d/${S_OTP}/export?format=csv&gid=0&_=${Date.now()}`;
-  el('kStat').textContent='กำลังดาวน์โหลดข้อมูลจากชีต (ไฟล์ใหญ่ ใช้เวลาสักครู่)…';
-  const r=await fetch(url);
-  if(!r.ok)throw new Error('HTTP '+r.status);
-  const t=await r.text();
+  el('kStat').textContent='กำลังดาวน์โหลดข้อมูลจากชีต…';
+  const t=await fetchBig(url,got=>{
+    el('kStat').textContent=`กำลังดาวน์โหลดข้อมูลจากชีต… ${(got/1048576).toFixed(1)} MB`;
+  });
   if(t.trim().startsWith('<'))throw new Error('ชีตยังไม่ได้แชร์เป็น “ทุกคนที่มีลิงก์”');
 
-  /* ชีตนี้มีแสนกว่าแถว — ต้องใช้ PapaParse เท่านั้น
-     ตัวแยก CSV ที่เขียนเองไล่ทีละตัวอักษร จะช้าจนหน้าค้างเมื่อไฟล์ระดับสิบเมกะไบต์ */
+  /* ชีตนี้มีแสนกว่าแถว ต้องใช้ PapaParse เท่านั้น
+     ตัวแยก CSV ที่เขียนเองไล่ทีละตัวอักษร จะช้าจนหน้าค้าง */
   el('kStat').textContent='กำลังอ่านข้อมูล…';
   await new Promise(r=>setTimeout(r,0));
   const rows=(typeof Papa!=='undefined')
@@ -362,14 +388,15 @@ async function loadOTP(){
   COLS={ref:col('OrderReference'), del:col('วันที่ต้องการจัดส่ง'),
         wh:col('WHส่งของให้PK'), pack:col('แพ็คสินค้าเสร็จ'),
         prod:col('Product'), qty:col('OrderLine'), week:col('Week'), month:col('Month')};
-  if(COLS.ref<0||COLS.del<0)throw new Error('หาคอลัมน์ Order Reference / วันที่ต้องการจัดส่ง ไม่เจอ');
+  if(COLS.ref<0||COLS.del<0)
+    throw new Error('หาคอลัมน์ไม่เจอ — หัวตารางที่อ่านได้: '+H.slice(0,8).join(' / '));
 
   RAW=[];
   for(let i=1;i<rows.length;i++){
     const r=rows[i];
     const ref=(r[COLS.ref]||'').trim();
     if(!ref)continue;
-    if(COLS.prod>=0&&isExcludedProduct(r[COLS.prod]))continue;   /* ตัด Box / ค่าส่ง / คูปอง ฯลฯ */
+    if(COLS.prod>=0&&isExcludedProduct(r[COLS.prod]))continue;
     const date=parseDMY(r[COLS.del]);
     if(!date)continue;
     RAW.push({
@@ -382,6 +409,7 @@ async function loadOTP(){
     });
   }
   DATES=[...new Set(RAW.map(r=>r.date))].sort();
+  if(!RAW.length)throw new Error(`อ่านได้ ${fmt(rows.length-1)} แถว แต่แปลงวันที่ไม่สำเร็จเลย`);
   return RAW.length;
 }
 
