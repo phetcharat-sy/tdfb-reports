@@ -640,19 +640,9 @@ function render(){
     allV!=null?kpiCard({l:'ON-TIME รวม (รับเข้า+จัดเก็บ)',t:`Dock to Stock · Week ${wkSel}`,
       disp:pct1(allV),v:allV,pass:allV>=90,
       delta:deltaHTML(allV,allP,true),
-      base:`ค่าเฉลี่ยของ ${pct1(inV)} (รับเข้า) และ ${pct1(stV)} (จัดเก็บ)`}):
-      kpiCard({l:'Dock to Stock — ON-TIME รวม',t:'รายสัปดาห์',wait:true,
-        note:STATIC_ERR.dock?('อ่านชีตไม่ได้ — '+STATIC_ERR.dock):'ยังไม่มีข้อมูลของสัปดาห์นี้'}),
-    inV!=null?kpiCard({l:'ผ่านเกณฑ์รับเข้า',t:`Dock to Stock · Week ${wkSel}`,
-      disp:pct1(inV),v:inV,pass:inV>=90,delta:deltaHTML(inV,inP,true),
-      base:`${fmt(kNow.inOk)} / ${fmt(kNow.n)} ผ่านเกณฑ์รับเข้า`}):'',
-    stV!=null?kpiCard({l:'ผ่านเกณฑ์จัดเก็บ',t:`Dock to Stock · Week ${wkSel}`,
-      disp:pct1(stV),v:stV,pass:stV>=90,delta:deltaHTML(stV,stP,true),
-      base:`${fmt(kNow.stOk)} / ${fmt(kNow.n)} ผ่านเกณฑ์จัดเก็บ`}):'',
-    dayV!=null?kpiCard({l:'เวลาเฉลี่ยรวม (วัน)',t:`Dock to Stock · Week ${wkSel} · มาส่ง → จัดเก็บสำเร็จ`,
-      disp:dayV.toFixed(2)+' วัน',v:dayV,bar:Math.max(0,100-dayV*12),pass:dayV<=5,
-      delta:deltaHTML(dayV,dayP,false,'วัน'),
-      base:`จาก ${fmt(kNow.dn)} รายการที่มีวันที่ครบ`}):''
+      base:`ค่าเฉลี่ยของ ${pct1(inV)} (รับเข้า) และ ${pct1(stV)} (จัดเก็บ) · ${fmt(kNow.n)} ใบรับเข้า`}):
+      kpiCard({l:'ON-TIME รวม (รับเข้า+จัดเก็บ)',t:'Dock to Stock · รายสัปดาห์',wait:true,
+        note:STATIC_ERR.dock?('อ่านชีตไม่ได้ — '+STATIC_ERR.dock):'ยังไม่มีข้อมูลของสัปดาห์นี้'})
   ].join('');
 
   el('dl').innerHTML=kpiCard({l:'Human Error',t:'Target 0 เคส/เดือน',wait:true,
