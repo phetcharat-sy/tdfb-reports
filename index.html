@@ -10,7 +10,7 @@
 :root{--teal:#3E8E8C;--teal-d:#2F6F6D;--plum:#6B5CA5;--plum-d:#514682;
       --amber:#D89A2E;--rose:#B4462F;--good:#3F7A65;--bad:#B4462F;
       --page:#EEF0F3;--card:#FFF;--soft:#F7F8FA;--line:#E3E6EB;--ink:#22252C;--mute:#5F6675}*{box-sizing:border-box}[hidden]{display:none!important}body{margin:0;background:var(--page);color:var(--ink);
-  font-family:Tahoma,"Segoe UI",sans-serif;font-size:24.3px;line-height:1.6}#vKPI .wrap{max-width:none;margin:0 auto;padding:12px 10% 40px}#vKPI .toolbar{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-bottom:14px}#vKPI .btn{background:var(--teal);color:#fff;border:0;font-family:inherit;font-weight:bold;
+  font-family:Tahoma,"Segoe UI",sans-serif;font-size:24.3px;line-height:1.6}#vKPI .wrap{max-width:none;margin:0 auto;padding:26px 6% 44px}#vKPI .toolbar{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-bottom:14px}#vKPI .btn{background:var(--teal);color:#fff;border:0;font-family:inherit;font-weight:bold;
   font-size:26.9px;padding:13px 24px;border-radius:7px;cursor:pointer}#vKPI .btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line);font-weight:normal}#vKPI .btn:disabled{opacity:.5;cursor:default}#vKPI select{background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:7px;
   padding:13px 16px;font-family:inherit;font-size:26.9px}#vKPI .btn:focus-visible, #vKPI select:focus-visible{outline:2px solid var(--plum);outline-offset:2px}#vKPI .stat{color:var(--mute);font-size:25px;margin-left:auto}#vKPI .stat b{color:var(--teal-d)}#vKPI .stat.err b{color:var(--rose)}#vKPI .tabs{display:flex;gap:6px;background:#E4E7EC;padding:5px;border-radius:11px;width:fit-content;margin-bottom:14px}#vKPI .tabs a{text-decoration:none;font-size:25.6px;padding:10px 26px;border-radius:8px;color:var(--mute)}#vKPI .tabs a.on{background:var(--teal);color:#fff;font-weight:bold}#vKPI #kShot{background:var(--card);border-radius:14px;padding:34px 46px 40px;
   box-shadow:0 1px 3px rgba(20,24,40,.07),0 8px 24px rgba(20,24,40,.05)}#vKPI header{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;
@@ -76,8 +76,8 @@
 :root{--teal:#3E8E8C;--teal-d:#2F6F6D;--plum:#6B5CA5;--plum-d:#514682;
       --amber:#D89A2E;--rose:#B4462F;--page:#EEF0F3;--card:#FFF;--soft:#F7F8FA;
       --line:#E3E6EB;--ink:#22252C;--mute:#5F6675}*{box-sizing:border-box}[hidden]{display:none!important}body{margin:0;background:var(--page);color:var(--ink);
-  font-family:Tahoma,"Segoe UI",sans-serif;font-size:24.3px;line-height:1.6}#vRPT .wrap{max-width:none;margin:0 auto;padding:12px 10% 20px;
-  height:calc(100vh - 78px);display:flex;flex-direction:column;overflow:hidden}#vRPT .teams{display:flex;gap:6px;align-items:center;margin-bottom:14px;flex:none;
+  font-family:Tahoma,"Segoe UI",sans-serif;font-size:24.3px;line-height:1.6}#vRPT .wrap{max-width:none;margin:0 auto;padding:20px 5% 20px;
+  height:100vh;display:flex;flex-direction:column;overflow:hidden}#vRPT .teams{display:flex;gap:6px;align-items:center;margin-bottom:14px;flex:none;
   background:#E4E7EC;padding:5px;border-radius:11px;width:fit-content}#vRPT .teams button{background:none;border:0;font-family:inherit;font-size:20px;
   padding:10px 26px;border-radius:8px;color:var(--mute);cursor:pointer}#vRPT .teams button[aria-selected="true"]{background:var(--teal);color:#fff;font-weight:bold}#vRPT .teams button:hover:not([aria-selected="true"]){background:#F2F4F7;color:var(--ink)}#vRPT .teams button:focus-visible, #vRPT .btn:focus-visible, #vRPT select:focus-visible{outline:2px solid var(--plum);outline-offset:2px}#vRPT .toolbar{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-bottom:12px;flex:none}#vRPT .btn{background:var(--teal);color:#fff;border:0;font-family:inherit;font-weight:bold;
   font-size:21px;padding:13px 24px;border-radius:7px;cursor:pointer}#vRPT .btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line);font-weight:normal}#vRPT .btn:disabled{opacity:.5;cursor:default}#vRPT select{background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:7px;
@@ -101,28 +101,61 @@
 body.present .teams, body.present #vRPT .toolbar{display:none}body.present #vRPT .wrap{padding:14px 26px 16px;max-width:none;height:100vh}body.present #vRPT #shot{padding:26px 30px}body.present #vRPT .kpi .v{font-size:76px}body.present #vRPT table{font-size:26px}body.present #vRPT h1{font-size:56px}#vRPT .exit{position:fixed;top:12px;right:16px;z-index:99;display:none}body.present #vRPT .exit{display:block}#vRPT /* โหมดถ่ายรูป */
 body.cap .wrap{height:auto;overflow:visible;padding:0}#vRPT #shot.cap-slide{width:1600px;height:900px;flex:none;overflow:hidden;border-radius:0;padding:34px 52px}#vRPT #shot.cap-full{height:auto;flex:none;overflow:visible}#vRPT #shot.cap-full .panels{flex:none}#vRPT #shot.cap-full .scroll{overflow:visible;max-height:none}#vRPT #shot.cap-full .panel{min-height:0}#vRPT @media(max-width:1600px){#shot{padding-left:32px;padding-right:32px}}#vRPT @media(max-width:1400px){.panels{grid-template-columns:1fr 1fr!important}.kpis{grid-template-columns:repeat(3,1fr)!important}}#vRPT @media(max-width:1000px){.wrap{padding-left:4%;padding-right:4%}#shot{padding-left:18px;padding-right:18px}}#vRPT @media(max-width:900px){.panels{grid-template-columns:1fr!important}.kpis{grid-template-columns:1fr 1fr!important}h1{font-size:36.4px}}
 
-/* ---------- แท็บหลัก ---------- */
-.nav{display:flex;gap:6px;background:#E4E7EC;padding:5px;border-radius:11px;
-  width:fit-content;margin:0 auto 14px;max-width:calc(100% - 20px)}
-.nav button{background:none;border:0;font-family:Tahoma,sans-serif;font-size:21px;
-  padding:11px 30px;border-radius:8px;color:#5F6675;cursor:pointer}
-.nav button[aria-selected="true"]{background:#3E8E8C;color:#fff;font-weight:bold}
-.nav button:hover:not([aria-selected="true"]){background:#F2F4F7;color:#22252C}
-.nav button:focus-visible{outline:2px solid #6B5CA5;outline-offset:2px}
-.navbar{padding:16px 10% 0}
-body.present .navbar{display:none}
-@media(max-width:1000px){.navbar{padding:12px 4% 0}.nav button{padding:10px 18px;font-size:18px}}
+/* ---------- แถบเมนูด้านข้าง ---------- */
+.shell{display:flex;min-height:100vh}
+.side{width:272px;flex:none;background:#1E2530;color:#E7EAF0;
+  display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow:auto}
+.side .brand{padding:26px 24px 18px;border-bottom:1px solid rgba(255,255,255,.09);line-height:1.25}
+.side .brand b{display:block;font-size:26px;letter-spacing:.5px}
+.side .brand span{font-size:15px;color:#9AA3B2;letter-spacing:.14em;text-transform:uppercase}
+.sidenav{padding:14px 12px;flex:1}
+.sidenav .grp{font-size:14px;letter-spacing:.14em;text-transform:uppercase;color:#7C8698;
+  padding:18px 12px 7px;font-family:'IBM Plex Mono',monospace,Tahoma}
+.sidenav button{display:block;width:100%;text-align:left;background:none;border:0;
+  font-family:Tahoma,sans-serif;font-size:18px;color:#C6CCD7;padding:12px 14px;
+  border-radius:9px;cursor:pointer;line-height:1.35}
+.sidenav button:hover{background:rgba(255,255,255,.07);color:#fff}
+.sidenav button.on{background:var(--teal);color:#fff;font-weight:bold}
+.sidenav button:focus-visible{outline:2px solid var(--plum);outline-offset:-2px}
+.side-foot{padding:16px 24px 22px;font-size:13.5px;color:#7C8698;
+  border-top:1px solid rgba(255,255,255,.09)}
+.main{flex:1;min-width:0}
+.side-toggle{display:none;position:fixed;top:12px;left:12px;z-index:80;
+  background:#1E2530;color:#fff;border:0;border-radius:9px;width:44px;height:44px;
+  font-size:21px;cursor:pointer}
+body.present .side,body.present .side-toggle{display:none}
+/* แท็บทีมเดิมในหน้ารายงาน ย้ายไปอยู่แถบข้างแล้ว */
+#vRPT .teams{display:none}
+@media(max-width:1000px){
+  .side{position:fixed;left:0;top:0;z-index:70;transform:translateX(-100%);transition:transform .2s}
+  body.side-open .side{transform:none}
+  .side-toggle{display:block}
+  .main{padding-top:56px}
+}
 </style>
 </head>
 <body>
 
-<div class="navbar">
-  <nav class="nav" role="tablist" aria-label="เลือกหน้า">
-    <button role="tab" data-view="kpi" aria-selected="true">ภาพรวม KPI</button>
-    <button role="tab" data-view="report" aria-selected="false">รายงานรายทีม</button>
-  </nav>
-</div>
+<button class="side-toggle" id="sideToggle" aria-label="เปิด/ปิดเมนู">☰</button>
+<div class="shell">
+  <aside class="side" id="side">
+    <div class="brand"><b>TDFB</b><span>Operations</span></div>
+    <nav class="sidenav">
+      <div class="grp">ภาพรวม</div>
+      <button data-view="kpi" class="on">KPI ทุกแผนก</button>
 
+      <div class="grp">Warehouse</div>
+      <button data-view="report" data-team="warehouse">แจ้งปัญหาประจำวัน</button>
+
+      <div class="grp">Delivery</div>
+      <button data-view="report" data-team="delivery">MO &amp; งานประจำวัน</button>
+
+      <div class="grp">Admin</div>
+      <button data-view="report" data-team="admin">แจ้งปัญหาประจำวัน</button>
+    </nav>
+    <div class="side-foot">ข้อมูลสดจาก Google Sheets</div>
+  </aside>
+  <main class="main">
 <div id="vKPI">
 <div class="wrap">
 
@@ -233,6 +266,9 @@ body.present .navbar{display:none}
 </div>
 
 </div>
+</div>
+
+  </main>
 </div>
 
 <script>
@@ -1120,21 +1156,37 @@ window.RPT_INIT=(t)=>{ if(started){ if(t&&t!==TEAM) team(t); return; } started=t
 })();
 </script>
 <script>
-/* ---------- สลับหน้า (ลิงก์เดียว ใช้ hash) ---------- */
+/* ---------- สลับหน้าจากแถบข้าง (ลิงก์เดียว ใช้ hash) ---------- */
 (function(){
   const K=document.getElementById('vKPI'), R=document.getElementById('vRPT');
-  function go(v,team){
-    document.querySelectorAll('.nav button').forEach(b=>
-      b.setAttribute('aria-selected', b.dataset.view===v));
-    K.hidden = v!=='kpi';
-    R.hidden = v!=='report';
-    if(v==='report'){ window.RPT_INIT && window.RPT_INIT(team); }
-    else history.replaceState(null,'','#kpi');
+  const btns=[...document.querySelectorAll('.sidenav button')];
+
+  function go(view,team){
+    btns.forEach(b=>b.classList.toggle('on',
+      b.dataset.view===view && (view!=='report' || b.dataset.team===team)));
+    K.hidden = view!=='kpi';
+    R.hidden = view!=='report';
+    document.body.classList.remove('side-open');
+    if(view==='report'){
+      window.RPT_INIT && window.RPT_INIT(team);
+      history.replaceState(null,'','#report-'+team);
+    }else{
+      history.replaceState(null,'','#kpi');
+    }
   }
-  document.querySelectorAll('.nav button').forEach(b=>
-    b.addEventListener('click',()=>go(b.dataset.view)));
-  const h=(location.hash||'#kpi').slice(1);
-  go(h.startsWith('report')?'report':'kpi', h.startsWith('report-')?h.slice(7):null);
+
+  btns.forEach(b=>b.addEventListener('click',()=>go(b.dataset.view,b.dataset.team)));
+
+  const t=document.getElementById('sideToggle');
+  if(t)t.addEventListener('click',e=>{e.stopPropagation();document.body.classList.toggle('side-open');});
+  document.addEventListener('click',e=>{
+    if(document.body.classList.contains('side-open')&&!e.target.closest('.side'))
+      document.body.classList.remove('side-open');
+  });
+
+  const hash=(location.hash||'#kpi').slice(1);
+  if(hash.startsWith('report'))go('report',hash.slice(7)||'delivery');
+  else go('kpi');
 })();
 </script>
 </body>
