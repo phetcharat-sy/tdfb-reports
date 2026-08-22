@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>TDFB Operations Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 :root{--teal:#3E8E8C;--teal-d:#2F6F6D;--plum:#6B5CA5;--plum-d:#514682;
@@ -341,11 +342,19 @@ let RAW=[], COLS=null;
 
 async function loadOTP(){
   const url=`https://docs.google.com/spreadsheets/d/${S_OTP}/export?format=csv&gid=0&_=${Date.now()}`;
+  el('kStat').textContent='กำลังดาวน์โหลดข้อมูลจากชีต (ไฟล์ใหญ่ ใช้เวลาสักครู่)…';
   const r=await fetch(url);
   if(!r.ok)throw new Error('HTTP '+r.status);
   const t=await r.text();
   if(t.trim().startsWith('<'))throw new Error('ชีตยังไม่ได้แชร์เป็น “ทุกคนที่มีลิงก์”');
-  const rows=parseCSV(t);
+
+  /* ชีตนี้มีแสนกว่าแถว — ต้องใช้ PapaParse เท่านั้น
+     ตัวแยก CSV ที่เขียนเองไล่ทีละตัวอักษร จะช้าจนหน้าค้างเมื่อไฟล์ระดับสิบเมกะไบต์ */
+  el('kStat').textContent='กำลังอ่านข้อมูล…';
+  await new Promise(r=>setTimeout(r,0));
+  const rows=(typeof Papa!=='undefined')
+    ? Papa.parse(t,{skipEmptyLines:true}).data
+    : parseCSV(t);
   if(rows.length<2)throw new Error('ชีตว่าง');
 
   const H=rows[0].map(c=>String(c).replace(/\s+/g,''));
@@ -360,14 +369,13 @@ async function loadOTP(){
     const r=rows[i];
     const ref=(r[COLS.ref]||'').trim();
     if(!ref)continue;
-    const prod=COLS.prod>=0?(r[COLS.prod]||''):'';
-    if(isExcludedProduct(prod))continue;          /* ตัด Box / ค่าส่ง / คูปอง ฯลฯ */
+    if(COLS.prod>=0&&isExcludedProduct(r[COLS.prod]))continue;   /* ตัด Box / ค่าส่ง / คูปอง ฯลฯ */
     const date=parseDMY(r[COLS.del]);
     if(!date)continue;
     RAW.push({
       date, key:ref.toUpperCase(),
       month:COLS.month>=0?(r[COLS.month]||'').trim():'',
-      week:COLS.week>=0?(String(r[COLS.week]||'').trim()):'',
+      week:COLS.week>=0?String(r[COLS.week]||'').trim():'',
       wh:COLS.wh>=0?(r[COLS.wh]||''):'',
       pack:COLS.pack>=0?(r[COLS.pack]||''):'',
       qty:COLS.qty>=0?parseQty(r[COLS.qty]):0
