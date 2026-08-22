@@ -14,7 +14,37 @@
   padding:13px 16px;font-family:inherit;font-size:26.9px}#vKPI .btn:focus-visible, #vKPI select:focus-visible{outline:2px solid var(--plum);outline-offset:2px}#vKPI .stat{color:var(--mute);font-size:25px;margin-left:auto}#vKPI .stat b{color:var(--teal-d)}#vKPI .stat.err b{color:var(--rose)}#vKPI .tabs{display:flex;gap:6px;background:#E4E7EC;padding:5px;border-radius:11px;width:fit-content;margin-bottom:14px}#vKPI .tabs a{text-decoration:none;font-size:25.6px;padding:10px 26px;border-radius:8px;color:var(--mute)}#vKPI .tabs a.on{background:var(--teal);color:#fff;font-weight:bold}#vKPI #kShot{background:var(--card);border-radius:14px;padding:34px 46px 40px;
   box-shadow:0 1px 3px rgba(20,24,40,.07),0 8px 24px rgba(20,24,40,.05)}#vKPI header{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;
   flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:16px;margin-bottom:22px}#vKPI h1{margin:0;font-size:63.2px;letter-spacing:-.2px;line-height:1.25;
-  border-left:7px solid var(--teal);padding-left:14px}#vKPI .sub{color:var(--mute);font-size:29.4px;margin:8px 0 0 21px}#vKPI .period{text-align:right;color:var(--mute);font-size:25px}#vKPI .period b{display:block;color:var(--ink);font-size:39.9px;font-weight:normal}#vKPI .kchip{display:inline-block;background:#6B5CA5;color:#fff;
+  border-left:7px solid var(--teal);padding-left:14px}#vKPI .sub{color:var(--mute);font-size:29.4px;margin:8px 0 0 21px}#vKPI .period{text-align:right;color:var(--mute);font-size:25px}#vKPI .period b{display:block;color:var(--ink);font-size:39.9px;font-weight:normal}
+#vKPI .kf{display:flex;flex-direction:column;gap:4px}
+#vKPI .kf>label{font-size:16px;letter-spacing:.08em;color:var(--mute);
+  font-family:'IBM Plex Mono',monospace,Tahoma}
+#vKPI .kcal{position:relative}
+#vKPI #kDayBtn[data-on="1"]{background:var(--teal);color:#fff;border-color:var(--teal);font-weight:bold}
+#vKPI .kcal-p{position:absolute;top:calc(100% + 6px);left:0;z-index:60;width:300px;background:#fff;
+  border:1px solid var(--line);border-radius:12px;padding:12px;box-shadow:0 14px 36px rgba(20,24,40,.18)}
+#vKPI .kcal-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;
+  font-size:19px;font-weight:bold}
+#vKPI .kcal-h .nav{background:#F2F4F7;border:1px solid var(--line);border-radius:8px;width:34px;height:34px;
+  font-size:19px;line-height:1;color:var(--ink);cursor:pointer;font-family:inherit}
+#vKPI .kcal-h .nav:disabled{opacity:.3;cursor:default}
+#vKPI .kcal-dow{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px}
+#vKPI .kcal-dow span{text-align:center;font-size:13px;color:var(--mute);
+  font-family:'IBM Plex Mono',monospace,Tahoma}
+#vKPI .kcal-g{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+#vKPI .kcal-g button{aspect-ratio:1;border:0;background:none;border-radius:8px;cursor:pointer;
+  font-family:inherit;font-size:15px;color:#B6BBC5;position:relative;padding:0}
+#vKPI .kcal-g button.has{color:var(--ink);background:#EDF3F3;font-weight:bold}
+#vKPI .kcal-g button.has:hover{background:#D9E7E6}
+#vKPI .kcal-g button.sel{background:var(--teal);color:#fff}
+#vKPI .kcal-g button:disabled{cursor:default}
+#vKPI .kcal-g .pad{visibility:hidden}
+#vKPI .kcal-f{display:flex;justify-content:space-between;align-items:center;margin-top:10px;
+  padding-top:9px;border-top:1px solid var(--line);font-size:14px;color:var(--mute)}
+#vKPI .kcal-f .dot{width:6px;height:6px;border-radius:50%;background:var(--teal);
+  display:inline-block;margin-right:6px}
+#vKPI .kcal-f .lnk{background:none;border:0;color:var(--teal);font-family:inherit;font-size:14px;
+  cursor:pointer;text-decoration:underline;padding:0}
+#vKPI .kchip{display:inline-block;background:#6B5CA5;color:#fff;
   padding:3px 15px;border-radius:20px;font-size:19px;margin-top:8px}
 #vKPI h2.sec{font-size:34.6px;margin:30px 0 12px;display:flex;align-items:center;gap:12px}#vKPI h2.sec span{flex:1;height:1px;background:var(--line)}#vKPI h2.sec em{font-style:normal;font-size:24.3px;color:var(--mute);font-weight:normal}#vKPI .top{display:grid;grid-template-columns:1fr 1fr;gap:16px}#vKPI .big{border-radius:12px;padding:32px 36px;color:#fff}#vKPI .big.a{background:var(--teal)}#vKPI .big.b{background:var(--plum)}#vKPI .big .l{font-size:29.4px;opacity:.95}#vKPI .big .v{font-size:94px;font-weight:bold;line-height:1.05;letter-spacing:-1px;margin-top:4px}#vKPI .big .n{font-size:24.3px;opacity:.9;margin-top:4px}/* KPI เรียงบรรทัดละใบ · จัดเนื้อหาแนวนอนไม่ให้การ์ดสูงเกินไป */
 #vKPI .kpis{display:grid;grid-template-columns:1fr;gap:14px}
@@ -88,11 +118,26 @@ body.present .navbar{display:none}
 <div class="wrap">
 
 <div class="toolbar">
-  <select id="kY" autocomplete="off"><option value="">ทุกปี</option></select>
-  <select id="kM" autocomplete="off"><option value="">ทุกเดือน</option></select>
-  <select id="kW" autocomplete="off"><option value="">ทุกสัปดาห์</option></select>
-  <select id="day" autocomplete="off"><option value="">กำลังโหลด…</option></select>
-  <button class="btn ghost" id="kClear">ล้างตัวกรอง</button>
+  <div class="kf"><label>MONTH</label>
+    <select id="kM" autocomplete="off"><option value="">All</option></select></div>
+  <div class="kf"><label>WEEK</label>
+    <select id="kW" autocomplete="off"><option value="">All</option></select></div>
+  <div class="kf"><label>DAY</label>
+    <div class="kcal">
+      <button class="btn ghost" id="kDayBtn" aria-haspopup="dialog" aria-expanded="false">All</button>
+      <div class="kcal-p" id="kCal" role="dialog" aria-label="เลือกวัน" hidden>
+        <div class="kcal-h">
+          <button type="button" class="nav" id="kPrev" aria-label="เดือนก่อนหน้า">‹</button>
+          <div id="kCalTitle"></div>
+          <button type="button" class="nav" id="kNext" aria-label="เดือนถัดไป">›</button>
+        </div>
+        <div class="kcal-dow"><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span><span>Su</span></div>
+        <div class="kcal-g" id="kCalGrid"></div>
+        <div class="kcal-f"><span><i class="dot"></i>has data</span>
+          <button type="button" class="lnk" id="kCalAll">Show all days</button></div>
+      </div>
+    </div></div>
+  <button class="btn ghost" id="kClear">Clear filters</button>
   <button class="btn ghost" id="kReload">ดึงข้อมูลใหม่</button>
   <button class="btn" id="kSave">บันทึกเป็นรูป</button>
   <div class="stat" id="kStat">กำลังดึงข้อมูล…</div>
@@ -307,7 +352,7 @@ async function loadOTP(){
   const col=(...p)=>{for(const x of p){const i=H.findIndex(v=>v.includes(x));if(i>=0)return i;}return -1;};
   COLS={ref:col('OrderReference'), del:col('วันที่ต้องการจัดส่ง'),
         wh:col('WHส่งของให้PK'), pack:col('แพ็คสินค้าเสร็จ'),
-        prod:col('Product'), qty:col('OrderLine'), week:col('Week')};
+        prod:col('Product'), qty:col('OrderLine'), week:col('Week'), month:col('Month')};
   if(COLS.ref<0||COLS.del<0)throw new Error('หาคอลัมน์ Order Reference / วันที่ต้องการจัดส่ง ไม่เจอ');
 
   RAW=[];
@@ -321,6 +366,8 @@ async function loadOTP(){
     if(!date)continue;
     RAW.push({
       date, key:ref.toUpperCase(),
+      month:COLS.month>=0?(r[COLS.month]||'').trim():'',
+      week:COLS.week>=0?(String(r[COLS.week]||'').trim()):'',
       wh:COLS.wh>=0?(r[COLS.wh]||''):'',
       pack:COLS.pack>=0?(r[COLS.pack]||''):'',
       qty:COLS.qty>=0?parseQty(r[COLS.qty]):0
@@ -433,86 +480,91 @@ function kpiCard(o){
     <div class="bar"><i style="width:${w}%"></i></div></div>`;
 }
 
-function render(key){
-  el('kPeriod').textContent=showD(key);
+function render(){
+  const rows=filteredRows();
+  const cmp=comparisonRows();
+  const cur=statsOf(rows), prev=statsOf(cmp.rows);
+  LAST_STATS=cur;
+
+  /* ป้ายบอกช่วงข้อมูล */
+  const days=[...new Set(rows.map(r=>r.date))].sort();
+  el('kPeriod').textContent = DAYSEL ? showD(DAYSEL)
+    : days.length ? (days[0]===days[days.length-1]?showD(days[0])
+                    :`${showD(days[0])} – ${showD(days[days.length-1])}`) : '—';
+  el('cmpNote').textContent = cmp.rows.length ? 'เทียบกับ '+cmp.label : 'ไม่มีช่วงเทียบ';
+
   const bits=[];
-  if(el('kY').value)bits.push('ปี '+el('kY').value);
-  if(el('kM').value)bits.push(MONTHS[+el('kM').value-1]);
-  if(el('kW').value)bits.push('สัปดาห์ '+el('kW').value);
+  if(fMonth())bits.push(MONTH_EN[MONTH_ORDER.indexOf(fMonth())]);
+  if(fWeek())bits.push('Week '+fWeek());
+  if(DAYSEL)bits.push(showD(DAYSEL));
   el('kChip').style.display=bits.length?'inline-block':'none';
   el('kChip').textContent=bits.join(' · ');
-  const pk=prevMonth(key);
-  el('cmpNote').textContent='เทียบกับ '+showD(pk);
-
-  const cur=dayStats(key), prev=dayStats(pk);
-  LAST_STATS=cur;
 
   el('top').innerHTML=`
     <div class="big a"><div class="l">จำนวนออเดอร์</div>
       <div class="v">${cur?fmt(cur.orders):'—'}</div>
-      <div class="n">${cur&&prev?`เดือนก่อน ${fmt(prev.orders)} · ${cur.orders>=prev.orders?'▲':'▼'} ${fmt(Math.abs(cur.orders-prev.orders))} (${((cur.orders-prev.orders)/prev.orders*100).toFixed(1)}%)`:'ไม่มีข้อมูลเทียบ'}</div></div>
+      <div class="n">${cur&&prev?`ช่วงก่อน ${fmt(prev.orders)} · ${cur.orders>=prev.orders?'▲':'▼'} ${fmt(Math.abs(cur.orders-prev.orders))} (${((cur.orders-prev.orders)/(prev.orders||1)*100).toFixed(1)}%)`:'ไม่มีข้อมูลเทียบ'}</div></div>
     <div class="big b"><div class="l">จำนวนสินค้า (ชิ้น)</div>
       <div class="v">${cur?fmt(cur.items):'—'}</div>
-      <div class="n">${cur&&prev?`เดือนก่อน ${fmt(prev.items)} · ${cur.items>=prev.items?'▲':'▼'} ${fmt(Math.abs(cur.items-prev.items))} (${((cur.items-prev.items)/prev.items*100).toFixed(1)}%)`:'ไม่มีข้อมูลเทียบ'}</div></div>`;
+      <div class="n">${cur&&prev?`ช่วงก่อน ${fmt(prev.items)} · ${cur.items>=prev.items?'▲':'▼'} ${fmt(Math.abs(cur.items-prev.items))} (${((cur.items-prev.items)/(prev.items||1)*100).toFixed(1)}%)`:'ไม่มีข้อมูลเทียบ'}</div></div>`;
 
-  /* Stock Diff / Dock to Stock เก็บเป็นรายเดือน จึงเทียบเดือนต่อเดือน */
-  const [y,m]=key.split('-');
-  const mKey=`${m}-${y}`, pmKey=`${String(+m===1?12:+m-1).padStart(2,'0')}-${+m===1?+y-1:y}`;
-  const thMonth=MONTHS[+m-1], thPrev=MONTHS[(+m+10)%12];
+  /* Stock Diff รายเดือน · Dock to Stock รายสัปดาห์ — อิงตัวกรองที่เลือกอยู่ */
+  const mTh=fMonth()|| (days.length?MONTH_ORDER[+days[days.length-1].slice(5,7)-1]:'');
+  const yy=days.length?days[days.length-1].slice(0,4):String(new Date().getFullYear());
+  const mi=MONTH_ORDER.indexOf(mTh);
+  const mKey=`${String(mi+1).padStart(2,'0')}-${yy}`;
+  const pmKey=`${String(mi===0?12:mi).padStart(2,'0')}-${mi===0?+yy-1:yy}`;
   const dNow=DIFF?DIFF[mKey]:null, dPrev=DIFF?DIFF[pmKey]:null;
   const diffV=dNow?dNow.bad/dNow.n*100:null, diffP=dPrev?dPrev.bad/dPrev.n*100:null;
 
-  /* Dock to Stock เก็บเป็นรายสัปดาห์ — ใช้สัปดาห์ของวันที่ที่เลือก (หรือสัปดาห์ที่กรองไว้) */
-  const wkSel=el('kW').value||String(isoWeek(key));
+  const wkSel=fWeek()||(DAYSEL?String(isoWeek(DAYSEL)):(rows.length?String(rows[rows.length-1].week):''));
   const kNow=DOCK?DOCK[wkSel]:null, kPrev=DOCK?DOCK[String(+wkSel-1)]:null;
   const rate=(o,f)=>o&&o.n?o[f]/o.n*100:null;
-  const inV=rate(kNow,'inOk'),  inP=rate(kPrev,'inOk');
-  const stV=rate(kNow,'stOk'),  stP=rate(kPrev,'stOk');
+  const inV=rate(kNow,'inOk'), inP=rate(kPrev,'inOk');
+  const stV=rate(kNow,'stOk'), stP=rate(kPrev,'stOk');
   const allV=(inV!=null&&stV!=null)?(inV+stV)/2:null;
   const allP=(inP!=null&&stP!=null)?(inP+stP)/2:null;
   const dayV=kNow&&kNow.dn?kNow.days/kNow.dn:null, dayP=kPrev&&kPrev.dn?kPrev.days/kPrev.dn:null;
 
-  el('whNote').textContent=`On-Time / Out of Stock = รายวัน · Stock Diff = รายเดือน (${thMonth} ${y}) `
-    +`· Dock to Stock = รายสัปดาห์ (W${wkSel})`;
+  el('whNote').textContent=`On-Time / Out of Stock ตามตัวกรอง · Stock Diff รายเดือน (${MONTH_EN[mi]||'—'} ${yy})`
+    +(wkSel?` · Dock to Stock สัปดาห์ ${wkSel}`:'');
 
   el('wh').innerHTML=[
-    cur?kpiCard({l:'On-Time Performance',t:'เป้าหมาย ≥ 98% · ระดับออเดอร์ · แย่สุดของ WH+Packing',
+    cur?kpiCard({l:'On-Time Performance',t:'Target ≥ 98% · ระดับออเดอร์ · แย่สุดของ WH + Packing',
       disp:pct(cur.otp),v:cur.otp,pass:cur.otp>=98,
       delta:deltaHTML(cur.otp,prev?prev.otp:null,true),
-      base:`${fmt(cur.onTimeOrders)} จาก ${fmt(cur.denom)} ออเดอร์ที่ระบุสถานะได้ (ทั้งหมด ${fmt(cur.orders)})`}):
-      kpiCard({l:'On-Time Performance',t:'เป้าหมาย ≥ 98%',wait:true,note:'ไม่มีข้อมูลของวันนี้'}),
-    cur?kpiCard({l:'Out of Stock',t:'เป้าหมาย ≥ 99% · ถ่วงน้ำหนักด้วยจำนวนชิ้น',
+      base:`${fmt(cur.onTimeOrders)} จาก ${fmt(cur.denom)} ออเดอร์ที่ระบุสถานะได้ · ทั้งหมด ${fmt(cur.orders)}`}):
+      kpiCard({l:'On-Time Performance',t:'Target ≥ 98%',wait:true,note:'ไม่มีข้อมูลในช่วงที่เลือก'}),
+    cur?kpiCard({l:'Out of Stock',t:'Target ≥ 99% · ถ่วงน้ำหนักด้วยจำนวนชิ้น',
       disp:pct(cur.oos),v:cur.oos,pass:cur.oos>=99,
       delta:deltaHTML(cur.oos,prev?prev.oos:null,true),
       base:`${fmt(cur.okQty)} จาก ${fmt(cur.items)} ชิ้น`}):
-      kpiCard({l:'Out of Stock',t:'เป้าหมาย ≥ 99%',wait:true,note:'ไม่มีข้อมูลของวันนี้'}),
-    diffV!=null?kpiCard({l:'Stock Diff',t:'เป้าหมาย < 2% · ยอดนับไม่ตรงระบบ',
+      kpiCard({l:'Out of Stock',t:'Target ≥ 99%',wait:true,note:'ไม่มีข้อมูลในช่วงที่เลือก'}),
+    diffV!=null?kpiCard({l:'Stock Diff',t:'Target < 2% · ยอดนับไม่ตรงระบบ',
       disp:pct(diffV),v:diffV,bar:diffV*10,pass:diffV<2,
       delta:deltaHTML(diffV,diffP,false),
       base:`ไม่ตรง ${fmt(dNow.bad)} จาก ${fmt(dNow.n)} รายการที่นับ`}):
-      kpiCard({l:'Stock Diff',t:'เป้าหมาย < 2%',wait:true,note:'ยังไม่มีข้อมูลของเดือนนี้'}),
-    allV!=null?kpiCard({l:'Dock to Stock — ON-TIME รวม',t:`สัปดาห์ ${wkSel} · ค่าเฉลี่ยของรับเข้า+จัดเก็บ`,
+      kpiCard({l:'Stock Diff',t:'Target < 2%',wait:true,note:'ยังไม่มีข้อมูลของเดือนนี้'}),
+    allV!=null?kpiCard({l:'Dock to Stock — ON-TIME รวม',t:`Week ${wkSel} · เฉลี่ยของรับเข้า + จัดเก็บ`,
       disp:pct(allV),v:allV,pass:allV>=90,
       delta:deltaHTML(allV,allP,true),
       base:`${pct(inV)} (รับเข้า) และ ${pct(stV)} (จัดเก็บ)`}):
-      kpiCard({l:'Dock to Stock — ON-TIME รวม',t:`สัปดาห์ ${wkSel}`,wait:true,note:'ยังไม่มีข้อมูลของสัปดาห์นี้'}),
-    inV!=null?kpiCard({l:'ผ่านเกณฑ์รับเข้า',t:`สัปดาห์ ${wkSel} · ของมาส่ง → รับเข้าระบบ`,
-      disp:pct(inV),v:inV,pass:inV>=90,
-      delta:deltaHTML(inV,inP,true),
+      kpiCard({l:'Dock to Stock — ON-TIME รวม',t:'รายสัปดาห์',wait:true,note:'ยังไม่มีข้อมูลของสัปดาห์นี้'}),
+    inV!=null?kpiCard({l:'ผ่านเกณฑ์รับเข้า',t:`Week ${wkSel} · ของมาส่ง → รับเข้าระบบ`,
+      disp:pct(inV),v:inV,pass:inV>=90,delta:deltaHTML(inV,inP,true),
       base:`${fmt(kNow.inOk)} / ${fmt(kNow.n)} ผ่านเกณฑ์รับเข้า`}):'',
-    stV!=null?kpiCard({l:'ผ่านเกณฑ์จัดเก็บ',t:`สัปดาห์ ${wkSel} · รับเข้าระบบ → จัดเก็บ`,
-      disp:pct(stV),v:stV,pass:stV>=90,
-      delta:deltaHTML(stV,stP,true),
+    stV!=null?kpiCard({l:'ผ่านเกณฑ์จัดเก็บ',t:`Week ${wkSel} · รับเข้าระบบ → จัดเก็บ`,
+      disp:pct(stV),v:stV,pass:stV>=90,delta:deltaHTML(stV,stP,true),
       base:`${fmt(kNow.stOk)} / ${fmt(kNow.n)} ผ่านเกณฑ์จัดเก็บ`}):'',
-    dayV!=null?kpiCard({l:'เวลาเฉลี่ยรวม (วัน)',t:`สัปดาห์ ${wkSel} · มาส่ง → จัดเก็บสำเร็จ`,
+    dayV!=null?kpiCard({l:'เวลาเฉลี่ยรวม (วัน)',t:`Week ${wkSel} · มาส่ง → จัดเก็บสำเร็จ`,
       disp:dayV.toFixed(2)+' วัน',v:dayV,bar:Math.max(0,100-dayV*12),pass:dayV<=5,
       delta:deltaHTML(dayV,dayP,false,'วัน'),
       base:`จาก ${fmt(kNow.dn)} รายการที่มีวันที่ครบ`}):''
   ].join('');
 
-  el('dl').innerHTML=kpiCard({l:'Human Error',t:'เป้าหมาย 0 เคส/เดือน',wait:true,
+  el('dl').innerHTML=kpiCard({l:'Human Error',t:'Target 0 เคส/เดือน',wait:true,
     note:'ยังไม่ได้ระบุชีตต้นทาง — เตรียมช่องไว้แล้ว'});
-  el('ad').innerHTML=kpiCard({l:'Admin On-Time',t:'เป้าหมาย ≥ 85%',wait:true,
+  el('ad').innerHTML=kpiCard({l:'Admin On-Time',t:'Target ≥ 85%',wait:true,
     note:'ยังไม่ได้ระบุชีตต้นทาง — เตรียมช่องไว้แล้ว'});
 
   el('src').textContent='ที่มา: KPI On-Time/Out of Stock · Stock Diff · Dock to Stock (Google Sheets)';
@@ -521,7 +573,6 @@ function render(key){
     +`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')} น.`;
 }
 
-/* ตัวกรองไล่ระดับ: ปี > เดือน > สัปดาห์ > วัน (สัปดาห์คำนวณแบบ ISO จากวันที่) */
 function isoWeek(k){
   const [y,m,d]=k.split('-').map(Number);
   const t=new Date(Date.UTC(y,m-1,d));
@@ -529,28 +580,36 @@ function isoWeek(k){
   const s=new Date(Date.UTC(t.getUTCFullYear(),0,1));
   return Math.ceil(((t-s)/86400000+1)/7);
 }
-function fillDays(){
-  const y=el('kY').value,m=el('kM').value,w=el('kW').value;
-  const uniq=(a)=>[...new Set(a)].sort();
 
-  opts(el('kY'),uniq(DATES.map(d=>d.slice(0,4))),v=>'ปี '+v,'ทุกปี');
-  const byY=DATES.filter(d=>!el('kY').value||d.slice(0,4)===el('kY').value);
+const MONTH_ORDER=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
+                   'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+const MONTH_EN=['January','February','March','April','May','June',
+                'July','August','September','October','November','December'];
+let DAYSEL='', calYM=null, CAL_DAYS=new Set();
 
-  opts(el('kM'),uniq(byY.map(d=>d.slice(5,7))),v=>MONTHS[+v-1],'ทุกเดือน');
-  const byM=byY.filter(d=>!el('kM').value||d.slice(5,7)===el('kM').value);
-
-  opts(el('kW'),uniq(byM.map(d=>String(isoWeek(d)))).sort((a,b)=>a-b),
-       v=>'สัปดาห์ '+v,'ทุกสัปดาห์');
-  const byW=byM.filter(d=>!el('kW').value||String(isoWeek(d))===el('kW').value);
-
-  const cur=el('day').value;
-  const list=byW.slice().reverse();
-  el('day').innerHTML=list.map(d=>`<option value="${d}">${showD(d)}</option>`).join('')
-    ||'<option value="">ไม่มีวันที่ตรงเงื่อนไข</option>';
-  el('day').value=list.includes(cur)?cur:(list[0]||'');
-  el('day').disabled=!list.length;
-  return el('day').value;
+/* ตัวกรอง MONTH / WEEK / DAY — ว่างทั้งหมด = ดูข้อมูลทั้งชุด */
+const fMonth=()=>el('kM').value, fWeek=()=>el('kW').value;
+function matchRow(r){
+  if(DAYSEL) return r.date===DAYSEL;
+  if(fWeek() && String(r.week)!==fWeek()) return false;
+  if(fMonth() && r.month!==fMonth()) return false;
+  return true;
 }
+const filteredRows=()=>RAW.filter(matchRow);
+
+/* ช่วงเทียบ = "ช่วงเดียวกันของเดือนก่อน" เสมอ
+   เลื่อนทุกวันที่ในช่วงที่เลือกถอยหลัง 1 เดือน แล้วเอาข้อมูลของวันเหล่านั้นมาเทียบ
+   เลือกวันเดียว → วันเดียวกันเดือนก่อน · เลือกสัปดาห์/เดือน → ช่วงเดียวกันเดือนก่อน */
+function comparisonRows(){
+  const days=[...new Set(filteredRows().map(r=>r.date))].sort();
+  if(!days.length)return {label:'',rows:[]};
+  const prevDays=new Set(days.map(prevMonth));
+  const rows=RAW.filter(r=>prevDays.has(r.date));
+  const pd=[...prevDays].sort();
+  const label=pd.length===1?showD(pd[0]):`${showD(pd[0])} – ${showD(pd[pd.length-1])}`;
+  return {label,rows};
+}
+
 function opts(sel,list,label,all){
   const cur=sel.value;
   sel.innerHTML=`<option value="">${all}</option>`
@@ -558,12 +617,71 @@ function opts(sel,list,label,all){
   sel.value=list.includes(cur)?cur:'';
   sel.disabled=!list.length;
 }
-['kY','kM','kW'].forEach(id=>el(id).addEventListener('change',()=>{
-  const d=fillDays(); if(d) render(d);
+function fillFilters(){
+  const months=MONTH_ORDER.filter(m=>RAW.some(r=>r.month===m));
+  opts(el('kM'),months,v=>MONTH_EN[MONTH_ORDER.indexOf(v)]||v,'All');
+  const byM=RAW.filter(r=>!fMonth()||r.month===fMonth());
+  const weeks=[...new Set(byM.map(r=>String(r.week)).filter(w=>w&&w!=='undefined'))]
+    .sort((a,b)=>a-b);
+  opts(el('kW'),weeks,v=>'Week '+v,'All');
+  const byW=byM.filter(r=>!fWeek()||String(r.week)===fWeek());
+  CAL_DAYS=new Set(byW.map(r=>r.date));
+  if(DAYSEL&&!CAL_DAYS.has(DAYSEL))DAYSEL='';
+  drawCal();
+}
+
+/* ---------- ปฏิทิน ---------- */
+const ymOf=k=>k.slice(0,7);
+const calMonths=()=>[...new Set([...CAL_DAYS].map(ymOf))].sort();
+function drawCal(){
+  const ms=calMonths();
+  const btn=el('kDayBtn');
+  btn.textContent=DAYSEL?showD(DAYSEL):'All';
+  btn.dataset.on=DAYSEL?'1':'0';
+  if(!ms.length){
+    el('kCalGrid').innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--mute);padding:18px 0;font-size:14px">no data</div>';
+    el('kCalTitle').textContent='—';
+    el('kPrev').disabled=el('kNext').disabled=true;return;
+  }
+  if(!calYM||!ms.includes(calYM))calYM=DAYSEL?ymOf(DAYSEL):ms[ms.length-1];
+  const i=ms.indexOf(calYM);
+  el('kPrev').disabled=i<=0; el('kNext').disabled=i>=ms.length-1;
+  const [y,m]=calYM.split('-').map(Number);
+  el('kCalTitle').textContent=`${MONTH_EN[m-1]} ${y}`;
+  const pad=(new Date(y,m-1,1).getDay()+6)%7, days=new Date(y,m,0).getDate();
+  let out='';
+  for(let p=0;p<pad;p++)out+='<button class="pad" disabled tabindex="-1"></button>';
+  for(let d=1;d<=days;d++){
+    const k=`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const has=CAL_DAYS.has(k), sel=DAYSEL===k;
+    out+=`<button type="button" data-k="${k}" class="${has?'has':''}${sel?' sel':''}" ${has?'':'disabled'}>${d}</button>`;
+  }
+  el('kCalGrid').innerHTML=out;
+}
+function openCal(o){
+  el('kCal').hidden=!o;
+  el('kDayBtn').setAttribute('aria-expanded',o?'true':'false');
+  if(o)drawCal();
+}
+el('kDayBtn').addEventListener('click',e=>{e.stopPropagation();openCal(el('kCal').hidden);});
+el('kCal').addEventListener('click',e=>{
+  e.stopPropagation();
+  const b=e.target.closest('button[data-k]');if(!b)return;
+  DAYSEL=DAYSEL===b.dataset.k?'':b.dataset.k;
+  openCal(false);fillFilters();render();
+});
+el('kPrev').addEventListener('click',()=>{const ms=calMonths();calYM=ms[Math.max(0,ms.indexOf(calYM)-1)];drawCal();});
+el('kNext').addEventListener('click',()=>{const ms=calMonths();calYM=ms[Math.min(ms.length-1,ms.indexOf(calYM)+1)];drawCal();});
+el('kCalAll').addEventListener('click',()=>{DAYSEL='';openCal(false);fillFilters();render();});
+document.addEventListener('click',()=>openCal(false));
+document.addEventListener('keydown',e=>{if(e.key==='Escape')openCal(false);});
+
+['kM','kW'].forEach(id=>el(id).addEventListener('change',()=>{
+  if(id==='kM')el('kW').value='';
+  DAYSEL='';calYM=null;fillFilters();render();
 }));
 el('kClear').addEventListener('click',()=>{
-  ['kY','kM','kW'].forEach(id=>el(id).value='');
-  const d=fillDays(); if(d) render(d);
+  el('kM').value='';el('kW').value='';DAYSEL='';calYM=null;fillFilters();render();
 });
 
 async function boot(){
@@ -572,10 +690,9 @@ async function boot(){
   try{
     const n=await loadOTP();
     if(!DATES.length)throw new Error('อ่านคอลัมน์ “วันที่ต้องการจัดส่ง” ไม่ได้');
-    fillDays();
     el('kStat').innerHTML=`อ่านวันที่ได้ ${DATES.length} วัน `
       +`(${showD(DATES[0])} – ${showD(DATES[DATES.length-1])}) · ${fmt(n)} บรรทัด · กำลังคำนวณ…`;
-    render(el('day').value||DATES[DATES.length-1]);
+    fillFilters();render();
     const s=LAST_STATS;
     el('kStat').innerHTML='เชื่อมกับ Google Sheet แล้ว · <b>ข้อมูลสด</b>'
       +(s?` · แถวของวันนี้ ${fmt(s.lines)} บรรทัด → ${fmt(s.orders)} ออเดอร์ · ${fmt(s.items)} ชิ้น`:'');
@@ -588,17 +705,18 @@ async function boot(){
   el('kReload').disabled=false;
 
   /* Stock Diff / Dock to Stock โหลดต่อเบื้องหลัง แล้วค่อยวาดซ้ำ */
-  loadStatic().then(()=>{ if(el('day').value) render(el('day').value); })
+  loadStatic().then(()=>render())
               .catch(e=>console.warn('static',e));
 }
-el('day').addEventListener('change',e=>render(e.target.value));
 el('kReload').addEventListener('click',boot);
 el('kSave').addEventListener('click',async()=>{
   const b=el('kSave');b.disabled=true;b.textContent='กำลังบันทึก…';
   try{
     const c=await html2canvas(el('kShot'),{scale:2,backgroundColor:'#FFFFFF',useCORS:true});
     const a=document.createElement('a');
-    a.download=`kpi-overview-${el('day').value||'latest'}.png`;
+    const tag=[fMonth()&&MONTH_EN[MONTH_ORDER.indexOf(fMonth())],
+               fWeek()&&('W'+fWeek()), DAYSEL].filter(Boolean).join('-')||'all';
+    a.download=`kpi-overview-${tag}.png`;
     a.href=c.toDataURL('image/png');a.click();
   }catch(e){alert('บันทึกรูปไม่สำเร็จ: '+e.message);}
   b.disabled=false;b.textContent='บันทึกเป็นรูป';
