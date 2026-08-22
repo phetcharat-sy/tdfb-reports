@@ -407,19 +407,22 @@ function statsOf(rows){
 const dayStats=key=>statsOf(RAW.filter(r=>r.date===key));
 
 async function loadStatic(){
-  /* ---- Stock Diff (รายเดือน) ---- */
+  /* ---- Stock Diff — เก็บเป็นรายแถว จะได้กรองตาม MONTH/WEEK/DAY เหมือน KPI ตัวอื่น
+         คอลัมน์ "เช็ค" มีแค่ ตรง / ไม่ตรง · แถวอื่น (ตารางสรุปท้ายชีต) ตัดทิ้ง ---- */
   try{
     const t=table(await gviz(S_DIFF,'0',null));
     if(t){
-      const cM=t.col('เดือน'), cC=t.col('เช็ค');
-      const by={};
+      const cD=t.col('Day','วันที่'), cW=t.col('Week','สัปดาห์'), cC=t.col('เช็ค');
+      DIFF=[];
       t.rows.forEach(r=>{
-        const m=(r[cM]||'').trim(), c=(r[cC]||'').trim();
-        if(!m||!c)return;
-        (by[m]=by[m]||{n:0,bad:0}).n++;
-        if(c.includes('ไม่ตรง'))by[m].bad++;
+        const c=(r[cC]||'').trim();
+        if(c!=='ตรง'&&c!=='ไม่ตรง')return;      /* กันแถวสรุป/แถวว่าง */
+        DIFF.push({
+          date:cD>=0?parseDMY(r[cD]):null,
+          week:cW>=0?String(parseInt(r[cW])||''):'',
+          diff:c==='ไม่ตรง'
+        });
       });
-      DIFF=by;
     }
   }catch(e){console.warn('stock diff',e);}
 
@@ -508,14 +511,27 @@ function render(){
       <div class="v">${cur?fmt(cur.items):'—'}</div>
       <div class="n">${cur&&prev?`ช่วงก่อน ${fmt(prev.items)} · ${cur.items>=prev.items?'▲':'▼'} ${fmt(Math.abs(cur.items-prev.items))} (${((cur.items-prev.items)/(prev.items||1)*100).toFixed(1)}%)`:'ไม่มีข้อมูลเทียบ'}</div></div>`;
 
-  /* Stock Diff รายเดือน · Dock to Stock รายสัปดาห์ — อิงตัวกรองที่เลือกอยู่ */
-  const mTh=fMonth()|| (days.length?MONTH_ORDER[+days[days.length-1].slice(5,7)-1]:'');
-  const yy=days.length?days[days.length-1].slice(0,4):String(new Date().getFullYear());
-  const mi=MONTH_ORDER.indexOf(mTh);
-  const mKey=`${String(mi+1).padStart(2,'0')}-${yy}`;
-  const pmKey=`${String(mi===0?12:mi).padStart(2,'0')}-${mi===0?+yy-1:yy}`;
-  const dNow=DIFF?DIFF[mKey]:null, dPrev=DIFF?DIFF[pmKey]:null;
-  const diffV=dNow?dNow.bad/dNow.n*100:null, diffP=dPrev?dPrev.bad/dPrev.n*100:null;
+  /* ---- Stock Diff: กรองด้วยเงื่อนไขเดียวกับ KPI ตัวอื่น ---- */
+  const monthIdxOf=k=>k?+k.slice(5,7)-1:-1;
+  function diffMatch(r,dayOverride){
+    if(!r.date)return false;
+    if(dayOverride!==undefined)return r.date===dayOverride;
+    if(DAYSEL)return r.date===DAYSEL;
+    if(fWeek()&&r.week!==fWeek())return false;
+    if(fMonth()&&monthIdxOf(r.date)!==MONTH_ORDER.indexOf(fMonth()))return false;
+    return true;
+  }
+  function diffStat(list){
+    if(!list||!list.length)return null;
+    const bad=list.filter(r=>r.diff).length;
+    return {n:list.length,bad,pct:bad/list.length*100};
+  }
+  const diffNow = DIFF?diffStat(DIFF.filter(r=>diffMatch(r))):null;
+  /* ช่วงเทียบ = วันเดียวกันเดือนก่อน (ใช้ชุดวันที่เดียวกับ KPI ด้านบน) */
+  const prevDaySet=new Set([...new Set(rows.map(r=>r.date))].map(prevMonth));
+  const diffPrev = DIFF?diffStat(DIFF.filter(r=>r.date&&prevDaySet.has(r.date))):null;
+  const diffV=diffNow?diffNow.pct:null, diffP=diffPrev?diffPrev.pct:null;
+  const dNow=diffNow;
 
   const wkSel=fWeek()||(DAYSEL?String(isoWeek(DAYSEL)):(rows.length?String(rows[rows.length-1].week):''));
   const kNow=DOCK?DOCK[wkSel]:null, kPrev=DOCK?DOCK[String(+wkSel-1)]:null;
@@ -526,8 +542,8 @@ function render(){
   const allP=(inP!=null&&stP!=null)?(inP+stP)/2:null;
   const dayV=kNow&&kNow.dn?kNow.days/kNow.dn:null, dayP=kPrev&&kPrev.dn?kPrev.days/kPrev.dn:null;
 
-  el('whNote').textContent=`On-Time / Out of Stock ตามตัวกรอง · Stock Diff รายเดือน (${MONTH_EN[mi]||'—'} ${yy})`
-    +(wkSel?` · Dock to Stock สัปดาห์ ${wkSel}`:'');
+  el('whNote').textContent=`On-Time · Out of Stock · Stock Diff = ตามตัวกรอง`
+    +(wkSel?` · Dock to Stock = รายสัปดาห์ (Week ${wkSel})`:'');
 
   el('wh').innerHTML=[
     cur?kpiCard({l:'On-Time Performance',t:'Target ≥ 98% · ระดับออเดอร์ · แย่สุดของ WH + Packing',
@@ -540,11 +556,11 @@ function render(){
       delta:deltaHTML(cur.oos,prev?prev.oos:null,true),
       base:`${fmt(cur.okQty)} จาก ${fmt(cur.items)} ชิ้น`}):
       kpiCard({l:'Out of Stock',t:'Target ≥ 99%',wait:true,note:'ไม่มีข้อมูลในช่วงที่เลือก'}),
-    diffV!=null?kpiCard({l:'Stock Diff',t:'Target < 2% · ยอดนับไม่ตรงระบบ',
+    diffV!=null?kpiCard({l:'Stock Diff',t:'Target < 2% · สัดส่วนที่นับแล้ว “ไม่ตรง” กับระบบ',
       disp:pct(diffV),v:diffV,bar:diffV*10,pass:diffV<2,
       delta:deltaHTML(diffV,diffP,false),
-      base:`ไม่ตรง ${fmt(dNow.bad)} จาก ${fmt(dNow.n)} รายการที่นับ`}):
-      kpiCard({l:'Stock Diff',t:'Target < 2%',wait:true,note:'ยังไม่มีข้อมูลของเดือนนี้'}),
+      base:`ไม่ตรง ${fmt(dNow.bad)} จาก ${fmt(dNow.n)} รายการที่นับ · ตรง ${fmt(dNow.n-dNow.bad)}`}):
+      kpiCard({l:'Stock Diff',t:'Target < 2%',wait:true,note:'ไม่มีรายการนับสต็อกในช่วงที่เลือก'}),
     allV!=null?kpiCard({l:'Dock to Stock — ON-TIME รวม',t:`Week ${wkSel} · เฉลี่ยของรับเข้า + จัดเก็บ`,
       disp:pct(allV),v:allV,pass:allV>=90,
       delta:deltaHTML(allV,allP,true),
