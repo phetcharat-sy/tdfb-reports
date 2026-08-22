@@ -414,55 +414,72 @@ function statsOf(rows){
 }
 const dayStats=key=>statsOf(RAW.filter(r=>r.date===key));
 
-async function loadStatic(){
-  /* ---- Stock Diff — เก็บเป็นรายแถว จะได้กรองตาม MONTH/WEEK/DAY เหมือน KPI ตัวอื่น
-         คอลัมน์ "เช็ค" มีแค่ ตรง / ไม่ตรง · แถวอื่น (ตารางสรุปท้ายชีต) ตัดทิ้ง ---- */
-  try{
-    const t=table(await gviz(S_DIFF,'0',null));
-    if(t){
-      const cD=t.col('Day','วันที่'), cW=t.col('Week','สัปดาห์'), cC=t.col('เช็ค');
-      DIFF=[];
-      t.rows.forEach(r=>{
-        const c=(r[cC]||'').trim();
-        if(c!=='ตรง'&&c!=='ไม่ตรง')return;      /* กันแถวสรุป/แถวว่าง */
-        DIFF.push({
-          date:cD>=0?parseDMY(r[cD]):null,
-          week:cW>=0?String(parseInt(r[cW])||''):'',
-          diff:c==='ไม่ตรง'
-        });
-      });
-    }
-  }catch(e){console.warn('stock diff',e);}
+let STATIC_ERR={diff:'',dock:''};
 
-  /* ---- Dock to Stock (รายสัปดาห์ · 2 เกณฑ์: รับเข้า / จัดเก็บ) ---- */
+/* ชีตเล็ก: ลอง gviz ก่อน ถ้าไม่ได้ค่อยใช้ /export?format=csv (บางชีตตั้งสิทธิ์ต่างกัน) */
+async function smallSheet(id,gid){
   try{
-    const t=table(await gviz(S_DOCK,G_DOCK,null));
-    if(t){
-      const cW=t.col('Week','week','สัปดาห์'),
-            cIn=t.col('เกณฑ์รับเข้า'), cSt=t.col('เกณฑ์จัดเก็บ'),
-            cDur=t.col('ระยะเวลาจัดเก็บ'),
-            cSend=t.col('วันที่ของมาส่ง'), cStore=t.col('วันที่จัดเก็บ');
-      const pass=v=>/ผ่านเกณฑ์/.test(v)&&!/ไม่ผ่าน/.test(v);
-      const by={};
-      t.rows.forEach(r=>{
-        const w=String(parseInt(r[cW])||'');
-        if(!w)return;
-        const vi=(r[cIn]||'').trim(), vs=(r[cSt]||'').trim();
-        if(!vi&&!vs)return;
-        const o=by[w]=by[w]||{n:0,inOk:0,stOk:0,days:0,dn:0};
-        o.n++;
-        if(pass(vi))o.inOk++;
-        if(pass(vs))o.stOk++;
-        let d=cDur>=0?dnum(r[cDur]):NaN;
-        if(isNaN(d)&&cSend>=0&&cStore>=0){
-          const a=dparse(r[cSend]),b=dparse(r[cStore]);
-          if(!isNaN(a)&&!isNaN(b))d=(b-a)/86400000;
-        }
-        if(!isNaN(d)){o.days+=d;o.dn++;}
-      });
-      DOCK=by;
-    }
-  }catch(e){console.warn('dock',e);}
+    const rows=await gviz(id,gid,null,45000,true);
+    if(rows&&rows.length>1)return rows;
+  }catch(e){ /* ลองทางที่สอง */ }
+  const r=await fetch(`https://docs.google.com/spreadsheets/d/${id}/export?format=csv&gid=${gid}&_=${Date.now()}`);
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  const t=await r.text();
+  if(t.trim().startsWith('<'))throw new Error('ชีตยังไม่ได้แชร์เป็น “ทุกคนที่มีลิงก์”');
+  return (typeof Papa!=='undefined')?Papa.parse(t,{skipEmptyLines:true}).data:parseCSV(t);
+}
+
+async function loadStatic(){
+  STATIC_ERR={diff:'',dock:''};
+
+  /* ---- Stock Diff — คอลัมน์ "เช็ค": ตรง = ไม่ดิฟ · ไม่ตรง = ดิฟ ---- */
+  try{
+    const t=table(await smallSheet(S_DIFF,'0'));
+    if(!t)throw new Error('หาหัวตารางไม่เจอ');
+    const cD=t.col('Day','วันที่'), cW=t.col('Week','สัปดาห์'), cC=t.col('เช็ค');
+    if(cC<0)throw new Error('หาคอลัมน์ “เช็ค” ไม่เจอ');
+    const list=[];
+    t.rows.forEach(r=>{
+      const c=(r[cC]||'').trim();
+      if(c!=='ตรง'&&c!=='ไม่ตรง')return;          /* กันแถวสรุป/แถวว่างท้ายชีต */
+      list.push({date:cD>=0?parseDMY(r[cD]):null,
+                 week:cW>=0?String(parseInt(r[cW])||''):'',
+                 diff:c==='ไม่ตรง'});
+    });
+    if(!list.length)throw new Error('ไม่พบแถวที่มีค่า ตรง/ไม่ตรง');
+    DIFF=list;
+  }catch(e){ DIFF=null; STATIC_ERR.diff=e.message; console.warn('stock diff',e); }
+
+  /* ---- Dock to Stock — 2 เกณฑ์: รับเข้า / จัดเก็บ ---- */
+  try{
+    const t=table(await smallSheet(S_DOCK,G_DOCK));
+    if(!t)throw new Error('หาหัวตารางไม่เจอ');
+    const cW=t.col('Week','week','สัปดาห์'),
+          cIn=t.col('เกณฑ์รับเข้า'), cSt=t.col('เกณฑ์จัดเก็บ'),
+          cDur=t.col('ระยะเวลาจัดเก็บ'),
+          cSend=t.col('วันที่ของมาส่ง'), cStore=t.col('วันที่จัดเก็บ');
+    if(cIn<0&&cSt<0)throw new Error('หาคอลัมน์เกณฑ์รับเข้า/จัดเก็บ ไม่เจอ');
+    const pass=v=>/ผ่านเกณฑ์/.test(v)&&!/ไม่ผ่าน/.test(v);
+    const by={};
+    t.rows.forEach(r=>{
+      const w=String(parseInt(r[cW])||'');
+      if(!w)return;
+      const vi=(r[cIn]||'').trim(), vs=(r[cSt]||'').trim();
+      if(!vi&&!vs)return;
+      const o=by[w]=by[w]||{n:0,inOk:0,stOk:0,days:0,dn:0};
+      o.n++;
+      if(pass(vi))o.inOk++;
+      if(pass(vs))o.stOk++;
+      let d=cDur>=0?dnum(r[cDur]):NaN;
+      if(isNaN(d)&&cSend>=0&&cStore>=0){
+        const a=dparse(r[cSend]),b=dparse(r[cStore]);
+        if(!isNaN(a)&&!isNaN(b))d=(b-a)/86400000;
+      }
+      if(!isNaN(d)){o.days+=d;o.dn++;}
+    });
+    if(!Object.keys(by).length)throw new Error('ไม่พบแถวที่มีเกณฑ์');
+    DOCK=by;
+  }catch(e){ DOCK=null; STATIC_ERR.dock=e.message; console.warn('dock',e); }
 }
 
 /* ---------- แสดงผล ---------- */
@@ -568,12 +585,14 @@ function render(){
       disp:pct(diffV),v:diffV,bar:diffV*10,pass:diffV<2,
       delta:deltaHTML(diffV,diffP,false),
       base:`ไม่ตรง ${fmt(dNow.bad)} จาก ${fmt(dNow.n)} รายการที่นับ · ตรง ${fmt(dNow.n-dNow.bad)}`}):
-      kpiCard({l:'Stock Diff',t:'Target < 2%',wait:true,note:'ไม่มีรายการนับสต็อกในช่วงที่เลือก'}),
+      kpiCard({l:'Stock Diff',t:'Target < 2%',wait:true,
+        note:STATIC_ERR.diff?('อ่านชีตไม่ได้ — '+STATIC_ERR.diff):'ไม่มีรายการนับสต็อกในช่วงที่เลือก'}),
     allV!=null?kpiCard({l:'Dock to Stock — ON-TIME รวม',t:`Week ${wkSel} · เฉลี่ยของรับเข้า + จัดเก็บ`,
       disp:pct(allV),v:allV,pass:allV>=90,
       delta:deltaHTML(allV,allP,true),
       base:`${pct(inV)} (รับเข้า) และ ${pct(stV)} (จัดเก็บ)`}):
-      kpiCard({l:'Dock to Stock — ON-TIME รวม',t:'รายสัปดาห์',wait:true,note:'ยังไม่มีข้อมูลของสัปดาห์นี้'}),
+      kpiCard({l:'Dock to Stock — ON-TIME รวม',t:'รายสัปดาห์',wait:true,
+        note:STATIC_ERR.dock?('อ่านชีตไม่ได้ — '+STATIC_ERR.dock):'ยังไม่มีข้อมูลของสัปดาห์นี้'}),
     inV!=null?kpiCard({l:'ผ่านเกณฑ์รับเข้า',t:`Week ${wkSel} · ของมาส่ง → รับเข้าระบบ`,
       disp:pct(inV),v:inV,pass:inV>=90,delta:deltaHTML(inV,inP,true),
       base:`${fmt(kNow.inOk)} / ${fmt(kNow.n)} ผ่านเกณฑ์รับเข้า`}):'',
