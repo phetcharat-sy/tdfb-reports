@@ -67,21 +67,33 @@
   cursor:pointer;text-decoration:underline;padding:0}
 
 /* ---------- หน้าย่อย Warehouse: การ์ดสถิติ / แผงกราฟ / ตาราง ---------- */
-#vKPI .ring{display:flex;align-items:center;justify-content:center;gap:56px;flex-wrap:wrap;
-  background:linear-gradient(160deg,#FFFFFF 0%,#F4F7F7 100%);
-  border:1px solid var(--line);border-radius:22px;padding:44px 40px;margin-bottom:22px;
-  box-shadow:0 1px 2px rgba(20,24,40,.05),0 12px 34px rgba(20,24,40,.06)}
-#vKPI .ring svg{width:400px;height:400px;transform:rotate(-90deg);flex:none;
-  filter:drop-shadow(0 8px 22px rgba(62,142,140,.20))}
-#vKPI .ring .tr{fill:none;stroke:#E6E9ED;stroke-width:19}
-#vKPI .ring .fl{fill:none;stroke:var(--good);stroke-width:19;stroke-linecap:round;
+#vKPI .ring{display:flex;align-items:center;justify-content:center;gap:70px;flex-wrap:wrap;
+  background:linear-gradient(150deg,#2F6F6D 0%,#245B59 55%,#1E4E4D 100%);
+  border:0;border-radius:28px;padding:56px 48px;margin-bottom:26px;color:#fff;
+  box-shadow:0 4px 12px rgba(20,24,40,.14),0 22px 56px rgba(31,84,82,.30);
+  position:relative;overflow:hidden}
+#vKPI .ring::after{content:"";position:absolute;right:-120px;top:-140px;
+  width:420px;height:420px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,255,255,.10),transparent 70%)}
+#vKPI .ring.miss{background:linear-gradient(150deg,#9C4230 0%,#8A3727 55%,#6E2E22 100%);
+  box-shadow:0 4px 12px rgba(20,24,40,.14),0 22px 56px rgba(140,55,39,.32)}
+#vKPI .ring svg{width:430px;height:430px;transform:rotate(-90deg);flex:none}
+#vKPI .ring .tr{fill:none;stroke:rgba(255,255,255,.20);stroke-width:17}
+#vKPI .ring .fl{fill:none;stroke:#8FE0C4;stroke-width:17;stroke-linecap:round;
   transition:stroke-dashoffset 1s cubic-bezier(.16,.8,.24,1)}
-#vKPI .ring .fl.miss{stroke:var(--bad)}
+#vKPI .ring .fl.miss{stroke:#FFC4B4}
 #vKPI .ringwrap{position:relative;flex:none}
 #vKPI .ringwrap b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-  font-size:109.4px;letter-spacing:-2px;color:var(--good);font-weight:bold}
+  font-size:130px;letter-spacing:-4px;color:#fff;font-weight:bold;line-height:1}
+#vKPI .ringwrap b i{font-style:normal;font-size:.42em;margin-left:6px;
+  align-self:flex-start;margin-top:.5em;opacity:.85}
 #vKPI .ringwrap b.miss{color:var(--bad)}
-#vKPI .ring .cap{font-size:34.2px;color:var(--mute);line-height:1.8;max-width:520px}
+#vKPI .ring .cap{font-size:34px;color:rgba(255,255,255,.92);line-height:1.75;max-width:560px;
+  position:relative;z-index:1}
+#vKPI .ring .cap b{color:#fff}
+#vKPI .ring .cap .tag{display:inline-block;margin-bottom:14px;padding:7px 22px;border-radius:30px;
+  font-size:25px;font-weight:bold;background:rgba(255,255,255,.20);color:#fff;
+  border:1px solid rgba(255,255,255,.32)}
 #vKPI .ring .cap b{color:var(--ink)}
 
 #vKPI .sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-bottom:16px}
@@ -161,7 +173,9 @@
   box-shadow:0 1px 2px rgba(20,24,40,.04),0 8px 22px rgba(20,24,40,.05);
   transition:box-shadow .16s ease,transform .16s ease;
   display:flex;flex-direction:column;gap:4px;position:relative;overflow:hidden}#vKPI .kpi:hover{transform:translateY(-2px);box-shadow:0 3px 8px rgba(20,24,40,.07),0 16px 34px rgba(20,24,40,.09)}
-#vKPI .kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:7px;background:var(--mute)}#vKPI .kpi.pass::before{background:var(--good)}#vKPI .kpi.fail::before{background:var(--bad)}#vKPI .kpi.wait::before{background:#C9CDD6}#vKPI .kpi .l{font-size:35.3px;font-weight:bold}#vKPI .kpi .t{font-size:27.4px;color:var(--mute)}#vKPI .row{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-top:2px}#vKPI .kpi .v{font-size:91.2px;font-weight:bold;letter-spacing:-1px;line-height:1.1}#vKPI .kpi.wait .v{font-size:40.8px;color:var(--mute)}#vKPI .badge{font-size:27.4px;padding:2px 12px;border-radius:20px;white-space:nowrap}#vKPI .badge.pass{background:#E3F0EA;color:var(--good)}#vKPI .badge.fail{background:#F7E4DF;color:var(--bad)}#vKPI .badge.wait{background:#EEF0F3;color:var(--mute)}#vKPI .delta{font-size:29.6px;white-space:nowrap}#vKPI .delta.up{color:var(--good)}#vKPI .delta.down{color:var(--bad)}#vKPI .delta.flat{color:var(--mute)}#vKPI .kpi .base{font-size:26.2px;color:var(--mute)}#vKPI .bar{height:7px;background:#E4E7EC;border-radius:4px;overflow:hidden;margin-top:8px}#vKPI .bar i{display:block;height:100%;border-radius:4px;background:var(--good)}#vKPI .kpi.fail .bar i{background:var(--bad)}#vKPI .foot{margin-top:26px;padding-top:14px;border-top:1px solid var(--line);
+#vKPI .kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:7px;background:var(--mute)}#vKPI .kpi.pass::before{background:var(--good)}#vKPI .kpi.fail::before{background:var(--bad)}#vKPI .kpi.wait::before{background:#C9CDD6}#vKPI .kpi .l{font-size:35.3px;font-weight:bold}#vKPI .kpi .t{font-size:27.4px;color:var(--mute)}#vKPI .row{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-top:2px}#vKPI .kpi .v{font-size:91.2px;font-weight:bold;letter-spacing:-1px;line-height:1.1}#vKPI .kpi.wait .v{font-size:40.8px;color:var(--mute)}#vKPI .badge{font-size:27.4px;padding:2px 12px;border-radius:20px;white-space:nowrap}#vKPI .badge.pass{background:#E3F0EA;color:var(--good)}#vKPI .badge.fail{background:#F7E4DF;color:var(--bad)}#vKPI .badge.wait{background:#EEF0F3;color:var(--mute)}#vKPI .delta{font-size:27px;white-space:nowrap;display:inline-flex;flex-direction:column;
+  line-height:1.25;font-weight:bold}
+#vKPI .delta em{font-style:normal;font-size:19px;font-weight:normal;color:var(--mute);margin-top:3px}#vKPI .delta.up{color:var(--good)}#vKPI .delta.down{color:var(--bad)}#vKPI .delta.flat{color:var(--mute)}#vKPI .kpi .base{font-size:26.2px;color:var(--mute)}#vKPI .bar{height:7px;background:#E4E7EC;border-radius:4px;overflow:hidden;margin-top:8px}#vKPI .bar i{display:block;height:100%;border-radius:4px;background:var(--good)}#vKPI .kpi.fail .bar i{background:var(--bad)}#vKPI .foot{margin-top:26px;padding-top:14px;border-top:1px solid var(--line);
   color:var(--mute);font-size:24.9px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}#vKPI @media(max-width:1000px){.wrap{padding-left:4%;padding-right:4%}#kShot{padding:22px 18px 28px}
   .top{grid-template-columns:1fr}h1{font-size:49.6px}}
 
@@ -242,7 +256,7 @@ body.present #vKPI .scard .sv{font-size:82.1px}
 body.present #vKPI .scard .sl{font-size:30.8px}
 body.present #vKPI table.dt{font-size:31.9px}
 body.present #vKPI table.dt th{font-size:27.4px}
-body.present #vKPI .ring svg{width:500px;height:500px}
+body.present #vKPI .ring svg{width:540px;height:540px}
 body.present #vKPI .ringwrap b{font-size:136.8px}
 body.present #vKPI .ring .cap{font-size:41px;max-width:640px}
 body.present #vKPI .cbox{height:600px}
@@ -643,25 +657,38 @@ const dparse=s=>{const m=String(s==null?'':s).match(/^(\d{1,2})\/(\d{1,2})\/(\d{
 
 let STATIC_ERR={diff:'',dock:''};
 
-/* ชีตเล็ก: ลอง gviz ก่อน ถ้าไม่ได้ค่อยใช้ /export?format=csv (บางชีตตั้งสิทธิ์ต่างกัน) */
-async function smallSheet(id,gid){
+/* ชีตเล็ก: ลอง gviz ก่อน ถ้าไม่ได้ค่อยใช้ /export?format=csv
+   ทั้งสองทางต้องมี timeout ไม่งั้นถ้าค้างจะรอไม่รู้จบ (เคยเป็นแบบนั้นมาแล้ว) */
+async function smallSheet(id,gid,onState){
+  let err1='';
   try{
-    const rows=await gviz(id,gid,null,45000,true);
+    onState&&onState('กำลังโหลด (gviz)…');
+    const rows=await gviz(id,gid,null,40000,true);
     if(rows&&rows.length>1)return rows;
-  }catch(e){ /* ลองทางที่สอง */ }
-  const r=await fetch(`https://docs.google.com/spreadsheets/d/${id}/export?format=csv&gid=${gid}&_=${Date.now()}`);
-  if(!r.ok)throw new Error('HTTP '+r.status);
-  const t=await r.text();
+    err1='ได้ข้อมูลว่าง';
+  }catch(e){ err1=e.message; }
+
+  onState&&onState('กำลังโหลด (csv)…');
+  const url=`https://docs.google.com/spreadsheets/d/${id}/export?format=csv&gid=${gid}&_=${Date.now()}`;
+  let t;
+  try{ t=await fetchBig(url,60000); }
+  catch(e){ throw new Error(`${e.message} · gviz: ${err1}`); }
   if(t.trim().startsWith('<'))throw new Error('ชีตยังไม่ได้แชร์เป็น “ทุกคนที่มีลิงก์”');
-  return (typeof Papa!=='undefined')?Papa.parse(t,{skipEmptyLines:true}).data:parseCSV(t);
+  const rows=(typeof Papa!=='undefined')?Papa.parse(t,{skipEmptyLines:true}).data:parseCSV(t);
+  if(!rows||rows.length<2)throw new Error('ชีตว่าง');
+  return rows;
 }
 
 async function loadStatic(){
   STATIC_ERR={diff:'',dock:''};
+  SHEET_STATE.diff='กำลังโหลด…'; SHEET_STATE.dock='กำลังโหลด…';
+  await Promise.all([loadDiff(),loadDock()]);
+}
 
+async function loadDiff(){
   /* ---- Stock Diff — คอลัมน์ "เช็ค": ตรง = ไม่ดิฟ · ไม่ตรง = ดิฟ ---- */
   try{
-    const t=table(await smallSheet(S_DIFF,'0'));
+    const t=table(await smallSheet(S_DIFF,'0',s=>SHEET_STATE.diff=s));
     if(!t)throw new Error('หาหัวตารางไม่เจอ');
     const cD=t.col('Day','วันที่'), cW=t.col('Week','สัปดาห์'),
           cC=t.col('เช็ค'), cK=t.col('เกณฑ์');
@@ -678,11 +705,14 @@ async function loadStatic(){
     DIFF_HAS_CRIT = list.some(r=>r.crit>0);
     if(!list.length)throw new Error('ไม่พบแถวที่มีค่า ตรง/ไม่ตรง');
     DIFF=list;
+    SHEET_STATE.diff=`${fmt(list.length)} รายการนับสต็อก`+(DIFF_HAS_CRIT?' · ถ่วงน้ำหนักด้วยเกณฑ์':'');
   }catch(e){ DIFF=null; STATIC_ERR.diff=e.message; SHEET_STATE.diff='ผิดพลาด — '+e.message; }
+}
 
+async function loadDock(){
   /* ---- Dock to Stock — 2 เกณฑ์: รับเข้า / จัดเก็บ ---- */
   try{
-    const t=table(await smallSheet(S_DOCK,G_DOCK));
+    const t=table(await smallSheet(S_DOCK,G_DOCK,s=>SHEET_STATE.dock=s));
     if(!t)throw new Error('หาหัวตารางไม่เจอ');
     const cW=t.col('Week','week','สัปดาห์'),
           cIn=t.col('เกณฑ์รับเข้า'), cSt=t.col('เกณฑ์จัดเก็บ'),
@@ -709,20 +739,30 @@ async function loadStatic(){
     });
     if(!Object.keys(by).length)throw new Error('ไม่พบแถวที่มีเกณฑ์');
     DOCK=by;
+    SHEET_STATE.dock=`${Object.keys(by).length} สัปดาห์`;
   }catch(e){ DOCK=null; STATIC_ERR.dock=e.message; SHEET_STATE.dock='ผิดพลาด — '+e.message; }
 }
 
 /* ---------- แสดงผล ---------- */
+/* บอกให้ครบว่า "ช่วงนี้เทียบกับช่วงเดียวกันเดือนก่อน" เปลี่ยนไปเท่าไหร่ และคิดเป็นกี่ %
+   หน่วย % จะบอกเป็น "จุด" (point) เพราะการลบกันของ % ไม่ใช่ % แต่เป็นจุด */
+const prevTxt=(v,u)=>u==='%'?pct(v):u==='วัน'?v.toFixed(2)+' วัน':fmt(v);
 function deltaHTML(cur,prev,goodUp=true,unit='%'){
   if(cur==null||prev==null)return '<span class="delta flat">— ไม่มีข้อมูลเทียบ</span>';
   const d=cur-prev;
-  if(Math.abs(d)<0.005)return '<span class="delta flat">เท่าเดิม</span>';
+  const rel=prev!==0?(d/prev*100):null;
+  if(Math.abs(d)<0.005)
+    return `<span class="delta flat">เท่าเดิม <em>ช่วงก่อน ${prevTxt(prev,unit)}</em></span>`;
   const good=goodUp?d>0:d<0;
   const arrow=d>0?'▲':'▼';
-  const v=unit==='%'?Math.abs(d).toFixed(2)+' จุด':(unit==='วัน'?Math.abs(d).toFixed(2)+' วัน':fmt(Math.abs(d)));
-  const rel=prev!==0?` (${(d/prev*100>0?'+':'')}${(d/prev*100).toFixed(1)}%)`:'';
-  return `<span class="delta ${good?'up':'down'}">${arrow} ${v}${unit==='%'?'':rel}</span>`;
+  const amt=unit==='%'?Math.abs(d).toFixed(2)+' จุด'
+          :unit==='วัน'?Math.abs(d).toFixed(2)+' วัน'
+          :fmt(Math.abs(d));
+  const relTxt=rel!=null?` (${rel>0?'+':'−'}${Math.abs(rel).toFixed(1)}%)`:'';
+  return `<span class="delta ${good?'up':'down'}">${arrow} ${amt}${relTxt}`
+        +`<em>ช่วงก่อน ${prevTxt(prev,unit)}</em></span>`;
 }
+
 function kpiCard(o){
   if(o.wait)return `<div class="kpi wait"><div class="l">${o.l}</div><div class="t">${o.t}</div>
     <div class="row"><div class="v">รอข้อมูล</div><span class="badge wait">ยังไม่ได้เชื่อมชีต</span></div>
@@ -841,20 +881,46 @@ const linePt={id:'linePt',
     x.restore();
   }};
 if(window.Chart&&!Chart.registry.plugins.get('barPct'))Chart.register(barPct);
+/* เขียน % ลงบนชิ้นพายโดยตรง เฉพาะชิ้นที่ใหญ่พอ ชิ้นเล็กให้ไปอ่านจาก legend ข้างๆ */
+const pieLbl={id:'pieLbl',
+  afterDatasetsDraw(ch,a,op){
+    if(!op||!op.display)return;
+    const min=op.minPercent==null?5:op.minPercent;
+    const ds=ch.data.datasets[0]; if(!ds)return;
+    const m=ch.getDatasetMeta(0), x=ch.ctx;
+    x.save();
+    x.font='bold '+cf(30)+'px Tahoma'; x.textAlign='center'; x.textBaseline='middle';
+    m.data.forEach((arc,i)=>{
+      const v=Number(ds.data[i]);
+      if(!Number.isFinite(v)||v<min||arc.hidden)return;
+      const ang=(arc.startAngle+arc.endAngle)/2;
+      const r=arc.innerRadius+(arc.outerRadius-arc.innerRadius)*0.62;
+      const px=arc.x+Math.cos(ang)*r, py=arc.y+Math.sin(ang)*r;
+      const t=(Number.isInteger(v)?v:v.toFixed(1))+'%';
+      x.lineJoin='round'; x.lineWidth=6; x.strokeStyle='rgba(34,37,44,.35)';
+      x.strokeText(t,px,py);
+      x.fillStyle='#fff'; x.fillText(t,px,py);
+    });
+    x.restore();
+  }};
 if(window.Chart&&!Chart.registry.plugins.get('linePt'))Chart.register(linePt);
+if(window.Chart&&!Chart.registry.plugins.get('pieLbl'))Chart.register(pieLbl);
 
 function ringHTML(pct_,target,caption){
   const CIRC=565.48, miss=pct_<target;
   const off=CIRC*(1-Math.min(pct_,100)/100);
-  return `<div class="ring">
+  return `<div class="ring${miss?' miss':''}">
     <div class="ringwrap">
       <svg viewBox="0 0 220 220"><circle class="tr" cx="110" cy="110" r="90"></circle>
       <circle class="fl${miss?' miss':''}" cx="110" cy="110" r="90"
         stroke-dasharray="${CIRC}" stroke-dashoffset="${off}"></circle></svg>
-      <b class="${miss?'miss':''}">${pct_.toFixed(2)}%</b>
+      <b class="${miss?'miss':''}">${pct_.toFixed(2)}<i>%</i></b>
     </div>
-    <div class="cap">${caption}</div></div>`;
+    <div class="cap">
+      <span class="tag ${miss?'miss':''}">${miss?'ต่ำกว่าเกณฑ์':'ผ่านเกณฑ์'}</span>
+      ${caption}</div></div>`;
 }
+
 const card=(l,v,cls)=>`<div class="scard"><div class="sl">${l}</div>
   <div class="sv ${cls||''}">${typeof v==='number'?fmt(v):v}</div></div>`;
 
@@ -991,8 +1057,10 @@ function drawOnTime(){
   destroy('chan');
   CH.chan=new Chart(document.getElementById('c_chan'),{type:'pie',
     data:{labels:ce.map(e=>e[0]),datasets:[{data:pcts,backgroundColor:cols}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
-      tooltip:{callbacks:{label:c=>c.label+': '+c.formattedValue+'% ('+fmt(ce[c.dataIndex][1])+' orders)'}}}}});
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:10},
+      plugins:{legend:{display:false},pieLbl:{display:true,minPercent:5},
+        tooltip:{titleFont:{size:cf(22)},bodyFont:{size:cf(21)},padding:12,
+          callbacks:{label:c=>c.label+': '+c.formattedValue+'% ('+fmt(ce[c.dataIndex][1])+' orders)'}}}}});
 }
 
 /* ================= Out of Stock ================= */
@@ -1068,7 +1136,7 @@ const isNeed=r=>r.need.includes('ต้องเติม')&&!r.need.includes('�
 async function loadRepl(){
   if(REPL)return;
   try{
-    const raw=await smallSheet(S_REPL,'0');
+    const raw=await smallSheet(S_REPL,'0',s=>SHEET_STATE.repl=s);
     const t=table(raw,/Product|สินค้า|คะแนนขายดี|WH300|QUOTA/i);
     if(!t)throw new Error('หาหัวตารางไม่เจอ · แถวแรกที่อ่านได้: '
       +((raw&&raw[0])?raw[0].slice(0,6).join(' / '):'ว่าง'));
@@ -1299,11 +1367,13 @@ function render(){
       kpiCard({l:'Stock Diff',t:'Target < 2%',wait:true,
         note:STATIC_ERR.diff?('อ่านชีตไม่ได้ — '+STATIC_ERR.diff):'ไม่มีรายการนับสต็อกในช่วงที่เลือก'}),
 
-    sub(3,'GR to Putaway',`ชีต Dock to Stock · รายสัปดาห์${wkSel?' (Week '+wkSel+')':''}`),
-    allV!=null?kpiCard({l:'ON-TIME รวม (รับเข้า+จัดเก็บ)',t:`Dock to Stock · Week ${wkSel}`,
-      disp:pct1(allV),v:allV,pass:allV>=90,
+    sub(3,'GR to Putaway',`ชีต Dock to Stock · รายสัปดาห์${wkSel?' (Week '+wkSel+')':''} · เป้า ไม่ผ่านเกณฑ์ < 10%`),
+    allV!=null?kpiCard({l:'ON-TIME รวม (รับเข้า+จัดเก็บ)',
+      t:`Target ไม่ผ่านเกณฑ์ < 10% · Dock to Stock · Week ${wkSel}`,
+      disp:pct1(allV),v:allV,pass:(100-allV)<10,
       delta:deltaHTML(allV,allP,true),
-      base:`ค่าเฉลี่ยของ ${pct1(inV)} (รับเข้า) และ ${pct1(stV)} (จัดเก็บ) · ${fmt(kNow.n)} ใบรับเข้า`}):
+      base:`ไม่ผ่านเกณฑ์ ${pct1(100-allV)} (เป้า < 10%)`
+        +` · ค่าเฉลี่ยของ ${pct1(inV)} (รับเข้า) และ ${pct1(stV)} (จัดเก็บ) · ${fmt(kNow.n)} ใบรับเข้า`}):
       kpiCard({l:'ON-TIME รวม (รับเข้า+จัดเก็บ)',t:'Dock to Stock · รายสัปดาห์',wait:true,
         note:STATIC_ERR.dock?('อ่านชีตไม่ได้ — '+STATIC_ERR.dock):'ยังไม่มีข้อมูลของสัปดาห์นี้'})
   ].join('');
@@ -1437,8 +1507,8 @@ async function boot(){
   el('kStat').className='stat';el('kReload').disabled=true;
   el('kStat').textContent='กำลังเชื่อมต่อชีต…';
   /* Stock Diff / Dock to Stock เป็นชีตเล็ก โหลดคู่ขนานไปเลย ไม่ต้องรอชีตใหญ่ */
-  const staticJob=loadStatic().then(()=>{ if(RAW.length)render(); })
-                              .catch(e=>console.warn('static',e));
+  const tick=setInterval(()=>{ if(el('src'))render(); },2500);   /* ให้บรรทัดสถานะขยับตามจริง */
+  const staticJob=loadStatic().finally(()=>clearInterval(tick));
   try{
     const n=await loadOTP();
     if(!DATES.length)throw new Error('อ่านคอลัมน์ “วันที่ต้องการจัดส่ง” ไม่ได้');
