@@ -203,23 +203,49 @@
 /* ================= อ่านง่ายบนจอใหญ่ =================
    ขยายตัวหนังสือขึ้นราว 15–18% จากของเดิม · ปรับเฉพาะขนาด ไม่แตะ layout
    ตัวไหนที่ใหญ่อยู่แล้ว (ตัวเลข KPI ยักษ์ๆ) ขยายน้อยกว่า จะได้ไม่เทอะทะ */
-#vKPI{font-size:32px}
+#vKPI{font-size:34px}
 #vKPI .btn,#vKPI select{font-size:33px}
 #vKPI .stat{font-size:31px}
-#vKPI .kf>label{font-size:22px}
-#vKPI h2.sec{font-size:45px}
-#vKPI h2.sec em{font-size:32px}
-#vKPI .subsec{font-size:34px}
-#vKPI .subsec em{font-size:27px}
-#vKPI .scard .sl{font-size:30px}
-#vKPI .scard .sv{font-size:70px}
-#vKPI .ring .cap{font-size:36px;max-width:900px}
-#vKPI .chint{font-size:27px;line-height:1.5}
-#vKPI .empty2{font-size:31px}
-#vKPI .chip,#vKPI .kchip{font-size:26px}
-#vKPI table.dt{font-size:32px}
-#vKPI table.dt th{font-size:28px}
-#vKPI .foot{font-size:27px}
+#vKPI .kf>label{font-size:23px}
+#vKPI h1{font-size:82px}
+#vKPI .sub{font-size:36px}
+#vKPI .period{font-size:31px}
+#vKPI .period b{font-size:50px}
+#vKPI h2.sec{font-size:47px}
+#vKPI h2.sec em{font-size:33px}
+#vKPI .subsec{font-size:35px}
+#vKPI .subsec em{font-size:28px}
+#vKPI .scard{padding:24px 20px}
+#vKPI .scard .sl{font-size:32px}
+#vKPI .scard .sv{font-size:74px}
+#vKPI .chint{font-size:29px;line-height:1.5}
+#vKPI .empty2{font-size:33px}
+#vKPI .chip,#vKPI .kchip{font-size:27px}
+#vKPI table.dt{font-size:34px}
+#vKPI table.dt th{font-size:30px}
+#vKPI .foot{font-size:29px}
+#vKPI .kpi .l{font-size:38px}
+#vKPI .kpi .t{font-size:30px}
+#vKPI .kpi .base{font-size:29px}
+#vKPI .badge{font-size:29px}
+.sidenav button{font-size:33px}
+
+/* วงแหวนแบบแนวนอน — เดิมเรียงบนลงล่างเลยกินพื้นที่เกือบเต็มจอ
+   ย้ายคำอธิบายมาอยู่ข้างๆ วงแหวน ข้อความจะได้อยู่บรรทัดเดียวไม่ตัดคำ */
+#vKPI .ring{flex-direction:row;justify-content:flex-start;align-items:center;
+  gap:52px;padding:38px 52px;text-align:left}
+#vKPI .ring svg{width:330px;height:330px}
+#vKPI .ring .tr,#vKPI .ring .fl{stroke-width:19}
+#vKPI .ringwrap b{font-size:72px;letter-spacing:-2px}
+#vKPI .ring .cap{max-width:none;flex:1;min-width:0;font-size:35px;line-height:1.5;
+  align-items:flex-start;text-align:left;gap:8px}
+#vKPI .ring .cap .tag{margin-bottom:2px;font-size:27px}
+#vKPI .ring .cap>span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+#vKPI .ring .cap>span.tag{white-space:nowrap}
+@media(max-width:1200px){
+  #vKPI .ring{flex-direction:column;text-align:center;gap:26px}
+  #vKPI .ring .cap{align-items:center;text-align:center}
+}
 
 /* หัวตารางลอยค้างตอนเลื่อน "หน้าเว็บ" — ต้องไม่มี ancestor ที่ overflow:auto
    ไม่งั้น sticky จะยึดกับกล่องนั้นแทนจอ แล้วหัวตารางจะหลุดหายไปตอนเลื่อนหน้า */
@@ -229,8 +255,8 @@
 #vKPI table.dt{overflow:visible}          /* overflow:hidden จะทำให้ sticky ไม่ทำงาน */
 
 /* ตารางรายการที่นับไม่ตรง — ล็อกความกว้างคอลัมน์ ไม่ให้ตัวเลขไปกองชิดขวา */
-#vKPI table.dt.big-rows{font-size:33px;table-layout:fixed}
-#vKPI table.dt.big-rows th{font-size:29px}
+#vKPI table.dt.big-rows{font-size:34px;table-layout:fixed}
+#vKPI table.dt.big-rows th{font-size:30px}
 #vKPI table.dt.big-rows .c-date{width:13%}
 #vKPI table.dt.big-rows .c-prod{width:34%}
 #vKPI table.dt.big-rows .c-n{width:9%}
@@ -238,10 +264,10 @@
 #vKPI table.dt.big-rows .c-why{width:24%}
 #vKPI table.dt.big-rows .c-prod{overflow-wrap:anywhere}
 #vKPI table.dt.big-rows td{padding:18px 14px}
-#vKPI .pname{font-size:33px}
-#vKPI .pmeta{font-size:26px}
-#vKPI .why{font-size:26px;line-height:1.45;white-space:normal}
-#vKPI .qty{font-size:31px;padding:3px 14px}
+#vKPI .pname{font-size:35px}
+#vKPI .pmeta{font-size:27px}
+#vKPI .why{font-size:27px;line-height:1.45;white-space:normal}
+#vKPI .qty{font-size:32px;padding:3px 14px}
 /* คอลัมน์สัปดาห์ต้องอยู่บรรทัดเดียว ไม่ตัดเป็น "Week" / "1" */
 #vKPI .c-week{white-space:nowrap}
 
