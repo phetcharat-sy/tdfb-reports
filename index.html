@@ -247,6 +247,18 @@
 #vKPI .fbar button.on.amber{background:#B98526;border-color:#B98526}
 #vKPI .fbar .cnt{opacity:.75;font-weight:normal}
 
+/* ตารางรายละเอียด Dock to Stock — คอลัมน์เยอะ เลื่อนแนวนอนได้ */
+#vKPI table.dt.dock-dt{font-size:30px}
+#vKPI table.dt.dock-dt th{font-size:27px;white-space:nowrap}
+#vKPI table.dt.dock-dt td{padding:16px 14px;vertical-align:middle}
+#vKPI table.dt.dock-dt tbody tr:nth-child(even) td{background:#FAFBFC}
+#vKPI table.dt.dock-dt .pname{font-size:30px;line-height:1.3}
+#vKPI table.dt.dock-dt .pmeta{font-size:24px}
+#vKPI table.dt.dock-dt .why{font-size:24px}
+#vKPI .mono{font-family:'IBM Plex Mono',monospace,Tahoma;font-size:26px;
+  color:var(--mute);white-space:nowrap}
+#vKPI .tscroll[style*="overflow-x"]{overflow:auto}
+
 /* ตัวเลือก WEEK — รายการยาว 50+ สัปดาห์ ถ้าใช้ select ปกติจะกางเต็มจอ
    เปลี่ยนเป็นกล่องเตี้ยๆ ที่เลื่อนเอาแทน */
 #vKPI .wsel{position:relative}
@@ -635,7 +647,7 @@ const prevMonth=k=>{const[y,m,d]=k.split('-').map(Number);
   return `${py}-${String(pm).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;};
 
 /* ---------- ดึงข้อมูล ---------- */
-let DATES=[],DIFF=null,DOCK=null,DOCK_ROWS=null,LAST_STATS=null,DIFF_HAS_CRIT=false;
+let DATES=[],DIFF=null,DOCK=null,DOCK_ROWS=null,DOCK_H=null,LAST_STATS=null,DIFF_HAS_CRIT=false;
 
 /* ===== ใช้กติกาเดียวกับ dashboard เดิม (tdfb-dashboard-v2) ทุกข้อ =====
    1. ตัดสินค้าที่ไม่ใช่สินค้าจริงออกก่อน (Box / ค่าส่ง / คูปอง / ส่วนลด / Product Card / เอกสาร)
@@ -877,8 +889,14 @@ async function loadDock(){
           cIn=t.col('เกณฑ์รับเข้า'), cSt=t.col('เกณฑ์จัดเก็บ'),
           cDur=t.col('ระยะเวลาจัดเก็บ'),
           cSend=t.col('วันที่ของมาส่ง'), cStore=t.col('วันที่จัดเก็บ');
-    const cName=t.col('Product','สินค้า','ชื่อสินค้า'), cPo=t.col('PO','เลขที่','Reference'),
-          cType=t.col('ประเภท','Type','กลุ่ม','หมวด'), cQty=t.col('จำนวน','Qty');
+    const cName=t.col('Product','สินค้า','ชื่อสินค้า'), cPo=t.col('PO','Reference','เลขที่'),
+          cType=t.col('ประเภท','Type','กลุ่ม','หมวด'), cQty=t.col('จำนวน','Qty'),
+          cLot=t.col('LOT/SERIAL','LOT','SERIAL','ล็อต'),
+          cTo=t.col('ปลายทาง','TO','Location','ที่จัดเก็บ'),
+          cRecv=t.col('รับเข้าระบบ','วันที่รับเข้า'),
+          cInD=t.col('รับเข้า(วัน)','ระยะเวลารับเข้า'),
+          cStD=t.col('จัดเก็บ(วัน)','ระยะเวลาจัดเก็บ'),
+          cQA=t.col('QA');
     if(cIn<0&&cSt<0)throw new Error('หาคอลัมน์เกณฑ์รับเข้า/จัดเก็บ ไม่เจอ');
     const pass=v=>/ผ่านเกณฑ์/.test(v)&&!/ไม่ผ่าน/.test(v);
     const by={}; const raw=[];
@@ -898,13 +916,16 @@ async function loadDock(){
       }
       if(!isNaN(d)){o.days+=d;o.dn++;}
       const gg=k=>k>=0?String(r[k]||'').trim():'';
+      const nn=k=>{const v=k>=0?dnum(r[k]):NaN;return isNaN(v)?null:v;};
       raw.push({week:w, inTxt:vi, stTxt:vs, inOk:pass(vi), stOk:pass(vs),
                 days:isNaN(d)?null:d, name:gg(cName), po:gg(cPo),
                 type:gg(cType), qty:cQty>=0?parseQty(r[cQty]):null,
+                lot:gg(cLot), to:gg(cTo), recv:gg(cRecv),
+                inD:nn(cInD), stD:nn(cStD), qa:nn(cQA),
                 send:gg(cSend), store:gg(cStore)});
     });
     if(!Object.keys(by).length)throw new Error('ไม่พบแถวที่มีเกณฑ์');
-    DOCK=by; DOCK_ROWS=raw;
+    DOCK=by; DOCK_ROWS=raw; DOCK_H=t.H;
     SHEET_STATE.dock=`${Object.keys(by).length} สัปดาห์`;
   }catch(e){ DOCK=null; STATIC_ERR.dock=e.message; SHEET_STATE.dock='ผิดพลาด — '+e.message; }
 }
@@ -1152,8 +1173,31 @@ function chip(raw){
 
 /* ================= On-Time Performance ================= */
 function secOnTime(){
-  const lines=filteredRows();
-  if(!lines.length)return '<div class="empty2">ไม่มีข้อมูลในช่วงที่เลือก</div>';
+  const all0=filteredRows();
+  if(!all0.length)return '<div class="empty2">ไม่มีข้อมูลในช่วงที่เลือก</div>';
+
+  /* ตัวกรองย่อยของหน้านี้ — มีผลกับทั้งหน้า (วงแหวน การ์ด กราฟ และตาราง)
+     แบบเดียวกับหน้า Dock To Stock Time */
+  const fPack=sf('ot_pack','all'), fPlat=sf('ot_plat',''), fChan=sf('ot_chan','');
+  const chanList=[...new Set(all0.map(r=>(r.sender||'').trim()).filter(Boolean))].sort();
+  const bars=chipBar('ot_pack','Packing On-Time',
+        [['all','ทั้งหมด'],['yes','Yes · ตรงเวลา'],['no','No · ล่าช้า','rose']],fPack)
+    +chipBar('ot_plat','Platform',
+        [['','ทั้งหมด'],['plat','Platform'],['walk','Walk-in','amber']],fPlat)
+    +(chanList.length>1?chipBar('ot_chan','Sales Channel',
+        [['','ทั้งหมด'],...chanList.map(c=>[c,c])],fChan):'');
+
+  const lines=all0.filter(r=>{
+    if(fPlat==='plat'&&!isPlatform(r.source))return false;
+    if(fPlat==='walk'&&isPlatform(r.source))return false;
+    if(fChan&&(r.sender||'').trim()!==fChan)return false;
+    if(fPack!=='all'){const c=classify(r.wh);
+      if(fPack==='yes'&&c==='late')return false;
+      if(fPack==='no'&&c!=='late')return false;}
+    return true;
+  });
+  if(!lines.length)return bars+'<div class="empty2">ไม่มีข้อมูลที่ตรงกับตัวกรองนี้</div>';
+
   const ord=toOrderLevel(lines);
   const total=uniqOrders(lines);
   const onT=ord.filter(r=>r._worst==='ontime'||r._worst==='early').length;
@@ -1169,18 +1213,11 @@ function secOnTime(){
 
   ONTIME_CTX={ord,lines,onT,late,plat,walk};
 
-  /* ตัวกรองย่อยของหน้านี้ — มีผลเฉพาะตาราง Order Detail ด้านล่าง
-     การ์ดและกราฟด้านบนยังเป็นภาพรวมทั้งหมดเหมือนเดิม */
-  const fPack=sf('ot_pack','ex'), fPlat=sf('ot_plat',''), fChan=sf('ot_chan','');
-  const chanList=[...new Set(lines.map(r=>(r.sender||'').trim()).filter(Boolean))].sort();
-  const dl=lines.filter(r=>{
-    if(fPlat==='plat'&&!isPlatform(r.source))return false;
-    if(fPlat==='walk'&&isPlatform(r.source))return false;
-    if(fChan&&(r.sender||'').trim()!==fChan)return false;
-    return true;
-  });
+  const nFilt=(fPack!=='all'||fPlat||fChan);
 
-  return ringHTML(p,98,`<span>แพ็คเสร็จตามวันที่ต้องการ</span><span>เป้าหมาย <b>≥ 98%</b></span>`)
+  return bars
+   +(nFilt?`<div class="chint">กำลังกรอง — แสดง ${fmt(total)} ออเดอร์ จากทั้งหมด ${fmt(uniqOrders(all0))} ออเดอร์ในช่วงนี้</div>`:'')
+   +ringHTML(p,98,`<span>แพ็คเสร็จตามวันที่ต้องการ</span><span>เป้าหมาย <b>≥ 98%</b></span>`)
    +`<div class="sgrid">${card('Orders',total)}${card('Packed On Time',onT,'teal')}
        ${card('แพ็คล่าช้า',late,'rose')}${card('ยังไม่ได้จัดส่ง',pend,'mute')}</div>
      <div class="sgrid">${card('Customers',cust)}${card('Platform',plat,'amber')}
@@ -1203,16 +1240,8 @@ function secOnTime(){
        <div class="cbox" style="flex:1;min-width:340px;height:420px"><canvas id="c_chan"></canvas></div>
        <div class="chleg" id="chanLeg"></div></div></div>
 
-     <h2 class="sec">Order Detail <em>คลิกที่กราฟด้านบน หรือเลือกชิปด้านล่างเพื่อกรอง</em><span></span></h2>
-     ${chipBar('ot_pack','Packing On-Time',
-        [['ex','ไม่ใช่ส่งในวัน'],['yes','Yes · ตรงเวลา'],['no','No · ล่าช้า','rose'],['all','ทั้งหมด']],fPack)}
-     ${chipBar('ot_plat','Platform',
-        [['','ทั้งหมด'],['plat','Platform'],['walk','Walk-in','amber']],fPlat)}
-     ${chanList.length>1?chipBar('ot_chan','Sales Channel',
-        [['','ทั้งหมด'],...chanList.map(c=>[c,c])],fChan):''}
-     <div style="font-size:26px;color:var(--mute);margin:-8px 0 12px">
-       แสดง ${fmt(uniqOrders(dl))} ออเดอร์ จากทั้งหมด ${fmt(total)}</div>
-     ${detailTable(dl,fPack)}`;
+     <h2 class="sec">Order Detail <em>ทุกรายการตามตัวกรองด้านบน · คลิกกราฟเพื่อกรองได้</em><span></span></h2>
+     ${detailTable(lines,'all')}`;
 }
 let ONTIME_CTX=null;
 
@@ -1291,8 +1320,16 @@ function drawOnTime(){
 /* ================= Out of Stock ================= */
 let OOS_CTX=null;
 function secOOS(){
-  const rows=filteredRows();
-  if(!rows.length)return '<div class="empty2">ไม่มีข้อมูลในช่วงที่เลือก</div>';
+  const all0=filteredRows();
+  if(!all0.length)return '<div class="empty2">ไม่มีข้อมูลในช่วงที่เลือก</div>';
+
+  /* ตัวกรองย่อย — มีผลทั้งหน้า เหมือนหน้า Dock To Stock Time */
+  const fSt=sf('oos_st','all');
+  const bars=chipBar('oos_st','สถานะการส่งของ',
+    [['all','ทั้งหมด'],['ontime','On time'],['early','Early','amber'],['late','Late','rose']],fSt);
+  const rows=fSt==='all'?all0:all0.filter(r=>classify(r.wh)===fSt);
+  if(!rows.length)return bars+'<div class="empty2">ไม่มีข้อมูลที่ตรงกับตัวกรองนี้</div>';
+
   let tq=0,on=0,ea=0,la=0;
   rows.forEach(r=>{const q=r.qty;tq+=q;
     const c=classify(r.wh);
@@ -1300,9 +1337,11 @@ function secOOS(){
   const ord=uniqOrders(rows);
   const p=Math.round(((on+ea)/(tq||1))*10000)/100;
   OOS_CTX={rows,on,ea,la};
-  const fSt=sf('oos_st','ex');
 
-  return ringHTML(p,99,`<span>WH ส่งของให้ Packing ตามกำหนด</span><span>เป้าหมาย <b>≥ 99%</b></span>`)
+  const totQ=all0.reduce((s,r)=>s+r.qty,0);
+  return bars
+   +(fSt!=='all'?`<div class="chint">กำลังกรอง — แสดง ${fmt(tq)} ชิ้น จากทั้งหมด ${fmt(totQ)} ชิ้นในช่วงนี้</div>`:'')
+   +ringHTML(p,99,`<span>WH ส่งของให้ Packing ตามกำหนด</span><span>เป้าหมาย <b>≥ 99%</b></span>`)
    +`<div class="sgrid">${card('จำนวนสินค้า (ชิ้น)',tq)}${card('On-Time Dispatch',on,'teal')}
       ${card('จัดส่งก่อนกำหนด',ea,'amber')}${card('จัดส่งล่าช้า',la,'rose')}${card('Orders',ord)}</div>
 
@@ -1316,11 +1355,8 @@ function secOOS(){
          <div class="cpanel"><div class="cbox"><canvas id="c_oos"></canvas></div></div></div>
      </div>
 
-     <h2 class="sec">Order Detail <em>คลิกกราฟ Out-of-Stock Rate หรือเลือกชิปเพื่อกรอง</em><span></span></h2>
-     ${chipBar('oos_st','สถานะการส่งของ',
-        [['ex','ไม่ใช่ส่งในวัน'],['ontime','On time'],['early','Early','amber'],
-         ['late','Late','rose'],['all','ทั้งหมด']],fSt)}
-     ${detailTable(rows,fSt)}`;
+     <h2 class="sec">Order Detail <em>ทุกรายการตามตัวกรองด้านบน · คลิกกราฟเพื่อกรองได้</em><span></span></h2>
+     ${detailTable(rows,'all')}`;
 }
 
 function drawOOS(){
@@ -1370,7 +1406,7 @@ function secDiff(){
 
   /* ใช้ตัวกรอง MONTH/WEEK/DAY ชุดเดียวกับหน้าอื่น */
   const midx=k=>k?+k.slice(5,7)-1:-1;
-  const rows=DIFF.filter(r=>{
+  const all0=DIFF.filter(r=>{
     if(!r.date)return false;
     if(fYear()&&r.date.slice(0,4)!==fYear())return false;
     if(DAYSEL)return r.date===DAYSEL;
@@ -1378,7 +1414,14 @@ function secDiff(){
     if(fMonth()&&midx(r.date)!==MONTH_ORDER.indexOf(fMonth()))return false;
     return true;
   });
-  if(!rows.length)return '<div class="empty2">ไม่มีรายการนับสต็อกในช่วงที่เลือก</div>';
+  if(!all0.length)return '<div class="empty2">ไม่มีรายการนับสต็อกในช่วงที่เลือก</div>';
+
+  /* ตัวกรองย่อย — มีผลทั้งหน้า เหมือนหน้า Dock To Stock Time */
+  const fDf=sf('df_st','all');
+  const bars=chipBar('df_st','ผลการนับ',
+    [['all','ทั้งหมด'],['ok','ตรง'],['bad','ไม่ตรง','rose']],fDf);
+  const rows=fDf==='all'?all0:fDf==='ok'?all0.filter(r=>!r.diff):all0.filter(r=>r.diff);
+  if(!rows.length)return bars+'<div class="empty2">ไม่มีรายการที่ตรงกับตัวกรองนี้</div>';
 
   const bad=rows.filter(r=>r.diff);
   const tot=rows.reduce((s,r)=>s+r.crit,0)||rows.length;
@@ -1408,11 +1451,9 @@ function secDiff(){
   const allD=rows.map(r=>r.date).filter(Boolean).sort();
   const span=allD.length?`${showD(allD[0])} – ${showD(allD[allD.length-1])}`:'—';
 
-  /* ตัวกรองย่อย: ดูเฉพาะที่นับไม่ตรง / ที่นับตรง / ทั้งหมด */
-  const fDf=sf('df_st','bad');
-  const dRows=fDf==='all'?rows:fDf==='ok'?rows.filter(r=>!r.diff):bad;
-
-  return ringHTML(100-p,98,
+  return bars
+   +(fDf!=='all'?`<div class="chint">กำลังกรอง — แสดง ${fmt(rows.length)} รายการ จากทั้งหมด ${fmt(all0.length)} รายการที่นับในช่วงนี้</div>`:'')
+   +ringHTML(100-p,98,
       `<span>ความแม่นยำสต็อก (นับแล้วตรงกับระบบ)</span>`
      +`<span>เป้าหมาย Stock Diff <b>&lt; 2%</b> · ตอนนี้ <b>${pct(p)}</b></span>`
      +`<span style="opacity:.8">นับจากรายการวันที่ ${span}</span>`)
@@ -1438,15 +1479,13 @@ function secDiff(){
         <td class="num ${v<2?'good':'bad'}">${pct(v)}</td></tr>`;}).join('')
    +`</tbody></table></div>
 
-     <h2 class="sec">รายการนับสต็อก <em>${fmt(dRows.length)} รายการ · เรียงตามวันที่ เก่า → ใหม่</em><span></span></h2>
-     ${chipBar('df_st','ผลการนับ',
-        [['bad','ไม่ตรง','rose'],['ok','ตรง'],['all','ทั้งหมด']],fDf)}`
-   +(dRows.length?`<div class="tscroll"><table class="dt big-rows"><thead><tr>
+     <h2 class="sec">รายการนับสต็อก <em>${fmt(rows.length)} รายการ · เรียงตามวันที่ เก่า → ใหม่</em><span></span></h2>`
+   +(rows.length?`<div class="tscroll"><table class="dt big-rows"><thead><tr>
        <th class="c-date">วันที่</th><th class="c-prod">สินค้า · Lot · Location</th>
        <th class="num c-n">Odoo</th><th class="num c-n">นับได้</th>
        <th class="num c-gap">ผลต่าง</th>
        <th class="c-why">สาเหตุ</th></tr></thead><tbody>`
-      +[...dRows].sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))
+      +[...rows].sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))
                             ||Math.abs(dgap(a))-Math.abs(dgap(b))).map(r=>{
         const g=dgap(r);
         return `<tr>
@@ -1562,21 +1601,41 @@ function secDock(){
         <td class="num ${v>=90?'good':'bad'}">${pct1(v)}</td></tr>`;}).join('')
    +`</tbody></table></div>
 
-     <h2 class="sec">รายการที่ไม่ผ่านเกณฑ์ <em>${fmt(bad.length)} รายการ · ${esc(vName)} · เรียงตามสัปดาห์ น้อย → มาก</em><span></span></h2>`
-   +(bad.length?`<div class="tscroll"><table class="dt big-rows"><thead><tr>
-       <th class="c-date">สัปดาห์</th><th class="c-prod">สินค้า · อ้างอิง</th>
-       <th class="c-n">ของมาส่ง</th><th class="c-n">จัดเก็บ</th>
-       <th class="num c-gap">ใช้เวลา (วัน)</th><th class="c-why">เกณฑ์ที่ไม่ผ่าน</th>
+     <h2 class="sec">รายละเอียดรายการ <em>${fmt(bad.length)} รายการ · ${esc(vName)} · เรียงตามสัปดาห์ น้อย → มาก</em><span></span></h2>
+     ${(bad.length&&!bad.some(r=>r.lot||r.to||r.recv))?
+       `<div class="chint" style="color:var(--bad)">อ่านคอลัมน์ LOT / ปลายทาง / รับเข้าระบบ จากชีตไม่เจอ ·
+        หัวตารางที่อ่านได้: ${esc((DOCK_H||[]).filter(Boolean).join(' · '))}</div>`:''}`
+   +(bad.length?`<div class="tscroll" style="overflow-x:auto"><table class="dt dock-dt" style="min-width:2100px"><thead><tr>
+       <th style="width:110px">Week</th>
+       <th style="width:250px">LOT / SERIAL</th>
+       <th style="width:380px">Product</th>
+       <th style="width:160px">ประเภท</th>
+       <th style="width:280px">ปลายทาง (TO)</th>
+       <th style="width:160px">วันที่มาส่ง</th>
+       <th style="width:160px">รับเข้าระบบ</th>
+       <th style="width:160px">จัดเก็บ</th>
+       <th class="num" style="width:150px">รับเข้า (วัน)</th>
+       <th class="num" style="width:150px">จัดเก็บ (วัน)</th>
+       <th class="num" style="width:170px">QA ใช้ตรวจ (วัน)</th>
+       <th style="width:260px">เกณฑ์ที่ไม่ผ่าน</th>
      </tr></thead><tbody>`
-      +bad.map(r=>`<tr>
-        <td class="c-week"><b>Week ${r.week}</b></td>
-        <td class="c-prod"><span class="pname">${esc(r.name||'—')}</span>
-          <span class="pmeta">${esc(r.po||'—')}${r.type?' · '+esc(r.type):''}</span></td>
+      +bad.map(r=>{
+        const num=v=>v==null?'—':(Math.round(v*100)/100).toFixed(2);
+        return `<tr>
+        <td class="c-week"><b>W${esc(r.week)}</b></td>
+        <td class="mono">${esc(r.lot||'—')}</td>
+        <td><span class="pname">${esc(r.name||'—')}</span>
+          ${r.po?`<span class="pmeta">${esc(r.po)}</span>`:''}</td>
+        <td>${r.type?`<span class="why has">${esc(r.type)}</span>`:'—'}</td>
+        <td class="mono">${esc(r.to||'—')}</td>
         <td style="white-space:nowrap">${esc(r.send||'—')}</td>
+        <td style="white-space:nowrap">${esc(r.recv||'—')}</td>
         <td style="white-space:nowrap">${esc(r.store||'—')}</td>
-        <td class="num">${r.days==null?'—':`<span class="qty up">${r.days.toFixed(1)}</span>`}</td>
+        <td class="num ${r.inOk?'':'bad'}">${num(r.inD)}</td>
+        <td class="num ${r.stOk?'':'bad'}">${num(r.stD)}</td>
+        <td class="num">${r.qa==null?'—':fmt(r.qa)}</td>
         <td>${!r.inOk?'<span class="why has">รับเข้าเกินเกณฑ์</span> ':''}
-            ${!r.stOk?'<span class="why has">จัดเก็บเกินเกณฑ์</span>':''}</td></tr>`).join('')
+            ${!r.stOk?'<span class="why has">จัดเก็บเกินเกณฑ์</span>':''}</td></tr>`;}).join('')
       +'</tbody></table></div>'
      :'<div class="empty2">ผ่านเกณฑ์ทุกรายการในช่วงนี้</div>');
 }
@@ -1723,7 +1782,7 @@ function drawRepl(){
 el('detail').addEventListener('click',e=>{
   const b=e.target.closest('[data-sf]'); if(!b)return;
   const k=b.dataset.sf, v=b.dataset.v;
-  SUBF[k]=(SUBF[k]===v&&v!==''&&k!=='ot_pack'&&k!=='oos_st'&&k!=='df_st'&&k!=='dk_v')?'':v;
+  SUBF[k]=v;
   render();
 });
 
