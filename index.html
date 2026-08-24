@@ -332,6 +332,8 @@ body.present #vKPI .tscroll{max-height:none}
 <div class="wrap">
 
 <div class="toolbar">
+  <div class="kf"><label>YEAR</label>
+    <select id="kY" autocomplete="off"><option value="">All</option></select></div>
   <div class="kf"><label>MONTH</label>
     <select id="kM" autocomplete="off"><option value="">All</option></select></div>
   <div class="kf"><label>WEEK</label>
@@ -1191,6 +1193,7 @@ function secDiff(){
   const midx=k=>k?+k.slice(5,7)-1:-1;
   const rows=DIFF.filter(r=>{
     if(!r.date)return false;
+    if(fYear()&&r.date.slice(0,4)!==fYear())return false;
     if(DAYSEL)return r.date===DAYSEL;
     if(fWeek()&&r.week!==fWeek())return false;
     if(fMonth()&&midx(r.date)!==MONTH_ORDER.indexOf(fMonth()))return false;
@@ -1207,16 +1210,21 @@ function secDiff(){
   /* สรุปรายสัปดาห์
      % ต้องคิดแบบเดียวกับหน้า KPI ทุกแผนก คือถ่วงน้ำหนักด้วยคอลัมน์ "เกณฑ์"
      (SUM เกณฑ์ของไม่ตรง ÷ SUM เกณฑ์ทั้งหมด) ไม่ใช่การนับจำนวนแถว
-     ถ้าชีตไม่มีคอลัมน์เกณฑ์ ค่อยถอยไปนับแถวแทน */
+     ถ้าชีตไม่มีคอลัมน์เกณฑ์ ค่อยถอยไปนับแถวแทน
+     คีย์ต้องมีปีด้วย ไม่งั้น Week 30 ของปี 2025 กับ 2026 จะถูกรวมเป็นแท่งเดียวกัน */
   const byW={};
-  rows.forEach(r=>{const w=r.week||'—';
-    const o=byW[w]=byW[w]||{n:0,bad:0,gap:0,cTot:0,cBad:0,d0:'',d1:''};
+  rows.forEach(r=>{
+    const y=(r.date||'').slice(0,4)||'—', w=r.week||'—', k=y+'|'+w;
+    const o=byW[k]=byW[k]||{y,w,n:0,bad:0,gap:0,cTot:0,cBad:0,d0:'',d1:''};
     o.n++; o.cTot+=r.crit;
     if(r.diff){o.bad++;o.cBad+=r.crit;o.gap+=Math.abs(r.gap);}
     if(r.date){ if(!o.d0||r.date<o.d0)o.d0=r.date; if(!o.d1||r.date>o.d1)o.d1=r.date; }});
   const wpct=o=>(DIFF_HAS_CRIT&&o.cTot>0)?o.cBad/o.cTot*100:(o.n?o.bad/o.n*100:0);
-  const wk=Object.keys(byW).sort((a,b)=>(parseInt(a)||0)-(parseInt(b)||0));
-  DIFF_CTX={bad,byW,wk,wpct};
+  const wk=Object.keys(byW).sort((a,b)=>{
+    const A=byW[a],B=byW[b];
+    return A.y===B.y ? (parseInt(A.w)||0)-(parseInt(B.w)||0) : A.y.localeCompare(B.y);});
+  const multiYear=new Set(wk.map(k=>byW[k].y)).size>1;
+  DIFF_CTX={bad,byW,wk,wpct,multiYear};
 
   return ringHTML(100-p,98,
       `<span>ความแม่นยำสต็อก (นับแล้วตรงกับระบบ)</span>`
@@ -1235,22 +1243,22 @@ function secDiff(){
        <th style="width:150px">สัปดาห์</th><th style="width:250px">ช่วงวันที่</th>
        <th class="num">นับทั้งหมด</th><th class="num">ไม่ตรง</th>
        <th class="num">ผลต่าง (ชิ้น)</th><th class="num">Stock Diff</th></tr></thead><tbody>`
-   +wk.map(w=>{const o=byW[w],v=wpct(o);
-      return `<tr><td><b>Week ${w}</b></td>
+   +wk.map(k=>{const o=byW[k],v=wpct(o);
+      return `<tr><td><b>Week ${o.w}</b>${multiYear?` <span style="color:var(--mute);font-weight:normal">${o.y}</span>`:''}</td>
         <td style="white-space:nowrap;color:var(--mute)">${weekRange(o.d0,o.d1)||'—'}</td>
         <td class="num">${fmt(o.n)}</td>
         <td class="num">${fmt(o.bad)}</td><td class="num">${fmt(o.gap)}</td>
         <td class="num ${v<2?'good':'bad'}">${pct(v)}</td></tr>`;}).join('')
    +`</tbody></table></div>
 
-     <h2 class="sec">รายการที่นับไม่ตรง <em>${fmt(bad.length)} รายการ · เรียงตามผลต่างมากสุด</em><span></span></h2>`
+     <h2 class="sec">รายการที่นับไม่ตรง <em>${fmt(bad.length)} รายการ · เรียงตามวันที่ล่าสุด</em><span></span></h2>`
    +(bad.length?`<div class="tscroll" style="max-height:700px"><table class="dt big-rows"><thead><tr>
        <th style="width:190px">วันที่</th><th>สินค้า · Lot · Location</th>
        <th class="num" style="width:130px">Odoo</th><th class="num" style="width:130px">นับได้</th>
        <th class="num" style="width:160px">ผลต่าง</th>
        <th style="width:230px">สาเหตุ</th></tr></thead><tbody>`
-      +[...bad].sort((a,b)=>Math.abs(dgap(b))-Math.abs(dgap(a))
-                            ||String(b.date||'').localeCompare(String(a.date||''))).map(r=>{
+      +[...bad].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))
+                            ||Math.abs(dgap(b))-Math.abs(dgap(a))).map(r=>{
         const g=dgap(r);
         return `<tr>
         <td style="white-space:nowrap">${showD(r.date)}</td>
@@ -1268,10 +1276,13 @@ function secDiff(){
 function drawDiff(){
   if(!DIFF_CTX)return;
   const el2=document.getElementById('c_diffwk'); if(!el2)return;
-  const byW=DIFF_CTX.byW||{}, wk=DIFF_CTX.wk||[], wpct=DIFF_CTX.wpct;
+  const byW=DIFF_CTX.byW||{}, wk=DIFF_CTX.wk||[], wpct=DIFF_CTX.wpct,
+        multiYear=DIFF_CTX.multiYear;
   if(!wk.length)return;
   /* ใช้ % ชุดเดียวกับตารางด้านล่างและหน้า KPI (ถ่วงน้ำหนักด้วยเกณฑ์) */
-  const vals=wk.map(w=>wpct(byW[w]||{n:0,bad:0,cTot:0,cBad:0}));
+  const vals=wk.map(k=>wpct(byW[k]));
+  const labels=wk.map(k=>{const o=byW[k];
+    return multiYear?['W'+o.w,"'"+o.y.slice(2)]:'W'+o.w;});
   destroy('diffwk');
   const o=baseOpts(false); o.layout={padding:{top:30}};
   o.scales.y.ticks.callback=v=>v+'%';
@@ -1279,7 +1290,7 @@ function drawDiff(){
   o.plugins.tooltip.callbacks={
     title:c=>{const d=byW[wk[c[0].dataIndex]]||{};
       const rg=weekRange(d.d0,d.d1);
-      return 'Week '+wk[c[0].dataIndex]+(rg?'  ·  '+rg:'');},
+      return 'Week '+d.w+(rg?'  ·  '+rg:'');},
     label:c=>{
       const d=byW[wk[c.dataIndex]]||{n:0,bad:0};
       return `Stock Diff ${(+c.raw).toFixed(2)}%  (ไม่ตรง ${fmt(d.bad)} / นับ ${fmt(d.n)} รายการ)`;}};
@@ -1287,7 +1298,7 @@ function drawDiff(){
   o.scales.x.ticks.font={size:cf(26)};
   o.scales.y.ticks.font={size:cf(26)};
   CH.diffwk=new Chart(el2,{type:'bar',
-    data:{labels:wk.map(w=>'W'+w),datasets:[{data:vals,
+    data:{labels,datasets:[{data:vals,
       backgroundColor:vals.map(v=>v<2?C.teal:C.rose),borderRadius:6,
       maxBarThickness:70,minBarLength:2}]},options:o});
 }
@@ -1441,6 +1452,7 @@ function render(){
   el('cmpNote').textContent = cmp.rows.length ? 'เทียบกับ '+cmp.label : 'ไม่มีช่วงเทียบ';
 
   const bits=[];
+  if(fYear())bits.push(fYear());
   if(fMonth())bits.push(MONTH_EN[MONTH_ORDER.indexOf(fMonth())]);
   if(fWeek())bits.push('Week '+fWeek());
   if(DAYSEL)bits.push(showD(DAYSEL));
@@ -1459,6 +1471,7 @@ function render(){
   const monthIdxOf=k=>k?+k.slice(5,7)-1:-1;
   function diffMatch(r,dayOverride){
     if(!r.date)return false;
+    if(fYear()&&r.date.slice(0,4)!==fYear())return false;
     if(dayOverride!==undefined)return r.date===dayOverride;
     if(DAYSEL)return r.date===DAYSEL;
     if(fWeek()&&r.week!==fWeek())return false;
@@ -1573,9 +1586,12 @@ const MONTH_EN=['January','February','March','April','May','June',
                 'July','August','September','October','November','December'];
 let DAYSEL='', calYM=null, CAL_DAYS=new Set();
 
-/* ตัวกรอง MONTH / WEEK / DAY — ว่างทั้งหมด = ดูข้อมูลทั้งชุด */
+/* ตัวกรอง YEAR / MONTH / WEEK / DAY — ว่างทั้งหมด = ดูข้อมูลทั้งชุด */
 const fMonth=()=>el('kM').value, fWeek=()=>el('kW').value;
+const fYear=()=>{const e=el('kY');return e?e.value:'';};
+const yrOf=r=>String(r&&r.date||'').slice(0,4);
 function matchRow(r){
+  if(fYear() && yrOf(r)!==fYear()) return false;
   if(DAYSEL) return r.date===DAYSEL;   /* แถวที่วันที่อ่านไม่ออกจะไม่เข้าเมื่อกรองรายวัน */
   if(fWeek() && String(r.week)!==fWeek()) return false;
   if(fMonth() && r.month!==fMonth()) return false;
@@ -1604,9 +1620,14 @@ function opts(sel,list,label,all){
   sel.disabled=!list.length;
 }
 function fillFilters(){
-  const months=MONTH_ORDER.filter(m=>RAW.some(r=>r.month===m));
+  /* ปีมาจากทั้งชีต On-Time และชีตนับสต็อก (ชีตนับสต็อกมีข้อมูลย้อนหลังหลายปี) */
+  const years=[...new Set([...RAW,...(DIFF||[])].map(yrOf).filter(y=>y&&y.length===4))]
+    .sort((a,b)=>b.localeCompare(a));
+  opts(el('kY'),years,v=>v,'All');
+  const byY=RAW.filter(r=>!fYear()||yrOf(r)===fYear());
+  const months=MONTH_ORDER.filter(m=>byY.some(r=>r.month===m));
   opts(el('kM'),months,v=>MONTH_EN[MONTH_ORDER.indexOf(v)]||v,'All');
-  const byM=RAW.filter(r=>!fMonth()||r.month===fMonth());
+  const byM=byY.filter(r=>!fMonth()||r.month===fMonth());
   const weeks=[...new Set(byM.map(r=>String(r.week)).filter(w=>w&&w!=='undefined'))]
     .sort((a,b)=>a-b);
   opts(el('kW'),weeks,v=>'Week '+v,'All');
@@ -1662,12 +1683,13 @@ el('kCalAll').addEventListener('click',()=>{DAYSEL='';openCal(false);fillFilters
 document.addEventListener('click',()=>openCal(false));
 document.addEventListener('keydown',e=>{if(e.key==='Escape')openCal(false);});
 
-['kM','kW'].forEach(id=>el(id).addEventListener('change',()=>{
+['kY','kM','kW'].forEach(id=>el(id).addEventListener('change',()=>{
+  if(id==='kY'){el('kM').value='';el('kW').value='';}
   if(id==='kM')el('kW').value='';
   DAYSEL='';calYM=null;fillFilters();render();
 }));
 el('kClear').addEventListener('click',()=>{
-  el('kM').value='';el('kW').value='';DAYSEL='';calYM=null;fillFilters();render();
+  el('kY').value='';el('kM').value='';el('kW').value='';DAYSEL='';calYM=null;fillFilters();render();
 });
 
 async function boot(){
@@ -1702,7 +1724,7 @@ el('kSave').addEventListener('click',async()=>{
   try{
     const c=await html2canvas(el('kShot'),{scale:2,backgroundColor:'#FFFFFF',useCORS:true});
     const a=document.createElement('a');
-    const tag=[fMonth()&&MONTH_EN[MONTH_ORDER.indexOf(fMonth())],
+    const tag=[fYear(), fMonth()&&MONTH_EN[MONTH_ORDER.indexOf(fMonth())],
                fWeek()&&('W'+fWeek()), DAYSEL].filter(Boolean).join('-')||'all';
     a.download=`kpi-overview-${tag}.png`;
     a.href=c.toDataURL('image/png');a.click();
