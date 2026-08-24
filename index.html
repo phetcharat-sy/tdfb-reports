@@ -566,11 +566,12 @@ const dayStats=key=>statsOf(RAW.filter(r=>r.date===key));
 
 /* หาแถวหัวตารางเองแล้วจับคอลัมน์จาก "ชื่อหัว" ไม่ใช่ตำแหน่ง
    เพราะชีตชุดนี้มีหลายแท็บที่เรียงคอลัมน์ไม่เหมือนกัน */
-function table(rows){
+function table(rows,re){
   if(!rows||!rows.length)return null;
+  const pat=re||/เกณฑ์|เช็ค|week|สัปดาห์/i;
   let hi=-1;
   for(let i=0;i<Math.min(8,rows.length);i++)
-    if(rows[i].some(c=>/เกณฑ์|เช็ค|week|สัปดาห์/i.test(String(c)))){hi=i;break;}
+    if(rows[i].some(c=>pat.test(String(c)))){hi=i;break;}
   if(hi<0)return null;
   const H=rows[hi].map(c=>String(c).replace(/\s+/g,''));
   const col=(...p)=>{for(const x of p){const i=H.findIndex(v=>v.includes(x));if(i>=0)return i;}return -1;};
@@ -975,8 +976,10 @@ const isNeed=r=>r.need.includes('ต้องเติม')&&!r.need.includes('�
 async function loadRepl(){
   if(REPL)return;
   try{
-    const t=table(await smallSheet(S_REPL,'0'));
-    if(!t)throw new Error('หาหัวตารางไม่เจอ');
+    const raw=await smallSheet(S_REPL,'0');
+    const t=table(raw,/Product|สินค้า|คะแนนขายดี|WH300|QUOTA/i);
+    if(!t)throw new Error('หาหัวตารางไม่เจอ · แถวแรกที่อ่านได้: '
+      +((raw&&raw[0])?raw[0].slice(0,6).join(' / '):'ว่าง'));
     const c={no:t.col('No'),p:t.col('Product'),s:t.col('คะแนนขายดี'),n:t.col('รายการเติมสินค้า'),
              w:t.col('WH300'),q:t.col('QUOTA'),pd:t.col('PlanPD'),f:t.col('FAC16'),
              o:t.col('OWH'),qa:t.col('Quarantine'),y:t.col('จำนวนที่ต้องเติม'),r:t.col('Remark')};
@@ -987,7 +990,8 @@ async function loadRepl(){
       fac16:g(r,c.f), owh:g(r,c.o), quarantine:g(r,c.qa),
       qty:parseQty(g(r,c.y)), remark:g(r,c.r)
     })).filter(r=>r.product&&!isExcludedProduct(r.product));
-    if(!REPL.length)throw new Error('ไม่พบรายการสินค้า');
+    if(c.p<0)throw new Error('หาคอลัมน์ Product ไม่เจอ · หัวตาราง: '+t.H.slice(0,8).join(' / '));
+    if(!REPL.length)throw new Error('ไม่พบรายการสินค้า · หัวตาราง: '+t.H.slice(0,8).join(' / '));
   }catch(e){ REPL=null; REPL_ERR=e.message; }
 }
 
