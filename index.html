@@ -221,10 +221,12 @@
 #vKPI table.dt th{font-size:28px}
 #vKPI .foot{font-size:27px}
 
-/* หัวตารางลอยค้างทุกตารางที่มี scroll — เลื่อนแล้วยังรู้ว่าคอลัมน์ไหนคืออะไร */
-#vKPI .tscroll{position:relative}
-#vKPI .tscroll table.dt th{position:sticky;top:0;z-index:3;background:#F0F2F5;
+/* หัวตารางลอยค้างตอนเลื่อน "หน้าเว็บ" — ต้องไม่มี ancestor ที่ overflow:auto
+   ไม่งั้น sticky จะยึดกับกล่องนั้นแทนจอ แล้วหัวตารางจะหลุดหายไปตอนเลื่อนหน้า */
+#vKPI .tscroll{max-height:none!important;overflow:visible}
+#vKPI table.dt thead th{position:sticky;top:0;z-index:5;background:#F0F2F5;
   box-shadow:inset 0 -2px 0 var(--line)}
+#vKPI table.dt{overflow:visible}          /* overflow:hidden จะทำให้ sticky ไม่ทำงาน */
 
 /* ตารางรายการที่นับไม่ตรง — ล็อกความกว้างคอลัมน์ ไม่ให้ตัวเลขไปกองชิดขวา */
 #vKPI table.dt.big-rows{font-size:33px;table-layout:fixed}
@@ -240,6 +242,8 @@
 #vKPI .pmeta{font-size:26px}
 #vKPI .why{font-size:26px;line-height:1.45;white-space:normal}
 #vKPI .qty{font-size:31px;padding:3px 14px}
+/* คอลัมน์สัปดาห์ต้องอยู่บรรทัดเดียว ไม่ตัดเป็น "Week" / "1" */
+#vKPI .c-week{white-space:nowrap}
 
 :root{--teal:#3E8E8C;--teal-d:#2F6F6D;--plum:#6B5CA5;--plum-d:#514682;
       --amber:#D89A2E;--rose:#B4462F;--page:#EEF0F3;--card:#FFF;--soft:#F7F8FA;
@@ -357,6 +361,7 @@ body.present #vKPI .tscroll{max-height:none}
       <button data-view="kpi" data-sec="ontime">KPI On-Time Performance</button>
       <button data-view="kpi" data-sec="oos">KPI Out Of Stock</button>
       <button data-view="kpi" data-sec="diff">Stock Diff</button>
+      <button data-view="kpi" data-sec="dock">Dock To Stock Time</button>
       <button data-view="kpi" data-sec="repl">Replenishment</button>
       <button data-view="report" data-team="warehouse">รายงานประจำวัน</button>
 
@@ -565,7 +570,7 @@ const prevMonth=k=>{const[y,m,d]=k.split('-').map(Number);
   return `${py}-${String(pm).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;};
 
 /* ---------- ดึงข้อมูล ---------- */
-let DATES=[],DIFF=null,DOCK=null,LAST_STATS=null,DIFF_HAS_CRIT=false;
+let DATES=[],DIFF=null,DOCK=null,DOCK_ROWS=null,LAST_STATS=null,DIFF_HAS_CRIT=false;
 
 /* ===== ใช้กติกาเดียวกับ dashboard เดิม (tdfb-dashboard-v2) ทุกข้อ =====
    1. ตัดสินค้าที่ไม่ใช่สินค้าจริงออกก่อน (Box / ค่าส่ง / คูปอง / ส่วนลด / Product Card / เอกสาร)
@@ -807,9 +812,11 @@ async function loadDock(){
           cIn=t.col('เกณฑ์รับเข้า'), cSt=t.col('เกณฑ์จัดเก็บ'),
           cDur=t.col('ระยะเวลาจัดเก็บ'),
           cSend=t.col('วันที่ของมาส่ง'), cStore=t.col('วันที่จัดเก็บ');
+    const cName=t.col('Product','สินค้า','ชื่อสินค้า'), cPo=t.col('PO','เลขที่','Reference'),
+          cType=t.col('ประเภท','Type','กลุ่ม','หมวด'), cQty=t.col('จำนวน','Qty');
     if(cIn<0&&cSt<0)throw new Error('หาคอลัมน์เกณฑ์รับเข้า/จัดเก็บ ไม่เจอ');
     const pass=v=>/ผ่านเกณฑ์/.test(v)&&!/ไม่ผ่าน/.test(v);
-    const by={};
+    const by={}; const raw=[];
     t.rows.forEach(r=>{
       const w=String(parseInt(r[cW])||'');
       if(!w)return;
@@ -825,9 +832,14 @@ async function loadDock(){
         if(!isNaN(a)&&!isNaN(b))d=(b-a)/86400000;
       }
       if(!isNaN(d)){o.days+=d;o.dn++;}
+      const gg=k=>k>=0?String(r[k]||'').trim():'';
+      raw.push({week:w, inTxt:vi, stTxt:vs, inOk:pass(vi), stOk:pass(vs),
+                days:isNaN(d)?null:d, name:gg(cName), po:gg(cPo),
+                type:gg(cType), qty:cQty>=0?parseQty(r[cQty]):null,
+                send:gg(cSend), store:gg(cStore)});
     });
     if(!Object.keys(by).length)throw new Error('ไม่พบแถวที่มีเกณฑ์');
-    DOCK=by;
+    DOCK=by; DOCK_ROWS=raw;
     SHEET_STATE.dock=`${Object.keys(by).length} สัปดาห์`;
   }catch(e){ DOCK=null; STATIC_ERR.dock=e.message; SHEET_STATE.dock='ผิดพลาด — '+e.message; }
 }
@@ -1285,11 +1297,11 @@ function secDiff(){
          <canvas id="c_diffwk"></canvas></div></div>
      </div>
      <div class="tscroll" style="max-height:420px"><table class="dt"><thead><tr>
-       <th style="width:150px">สัปดาห์</th><th style="width:250px">ช่วงวันที่</th>
+       <th class="c-week">สัปดาห์</th><th style="width:250px">ช่วงวันที่</th>
        <th class="num">นับทั้งหมด</th><th class="num">ไม่ตรง</th>
        <th class="num">ผลต่าง (ชิ้น)</th><th class="num">Stock Diff</th></tr></thead><tbody>`
    +wk.map(k=>{const o=byW[k],v=wpct(o);
-      return `<tr><td><b>Week ${o.w}</b>${multiYear?` <span style="color:var(--mute);font-weight:normal">${o.y}</span>`:''}</td>
+      return `<tr><td class="c-week"><b>Week ${o.w}</b>${multiYear?` <span style="color:var(--mute);font-weight:normal">${o.y}</span>`:''}</td>
         <td style="white-space:nowrap;color:var(--mute)">${weekRange(o.d0,o.d1)||'—'}</td>
         <td class="num">${fmt(o.n)}</td>
         <td class="num">${fmt(o.bad)}</td><td class="num">${fmt(o.gap)}</td>
@@ -1345,6 +1357,106 @@ function drawDiff(){
   CH.diffwk=new Chart(el2,{type:'bar',
     data:{labels,datasets:[{data:vals,
       backgroundColor:vals.map(v=>v<2?C.teal:C.rose),borderRadius:6,
+      maxBarThickness:70,minBarLength:2}]},options:o});
+}
+
+/* ================= Dock to Stock Time (GR → Putaway) ================= */
+let DOCK_CTX=null;
+function secDock(){
+  if(!DOCK)return `<div class="empty2">${STATIC_ERR.dock?'อ่านชีตไม่ได้ — '+STATIC_ERR.dock:'กำลังโหลดข้อมูล…'}</div>`;
+
+  /* ตัวกรอง WEEK ใช้ร่วมกับหน้าอื่น · ชีตนี้ไม่มีวันที่รายแถวจึงกรองได้แค่ระดับสัปดาห์ */
+  const rows=(DOCK_ROWS||[]).filter(r=>!fWeek()||r.week===fWeek());
+  if(!rows.length)return '<div class="empty2">ไม่มีข้อมูล Dock to Stock ในสัปดาห์ที่เลือก</div>';
+
+  const n=rows.length;
+  const inOk=rows.filter(r=>r.inOk).length, stOk=rows.filter(r=>r.stOk).length;
+  const inP=n?inOk/n*100:0, stP=n?stOk/n*100:0, allP=(inP+stP)/2;
+  const dd=rows.filter(r=>r.days!=null).map(r=>r.days);
+  const avg=dd.length?dd.reduce((a,b)=>a+b,0)/dd.length:null;
+  const worst=dd.length?Math.max(...dd):null;
+
+  /* สรุปรายสัปดาห์ */
+  const byW={};
+  rows.forEach(r=>{const o=byW[r.week]=byW[r.week]||{w:r.week,n:0,inOk:0,stOk:0,days:0,dn:0};
+    o.n++; if(r.inOk)o.inOk++; if(r.stOk)o.stOk++;
+    if(r.days!=null){o.days+=r.days;o.dn++;}});
+  const wk=Object.keys(byW).sort((a,b)=>(parseInt(a)||0)-(parseInt(b)||0));
+  const wOn=o=>o.n?(o.inOk/o.n*100+o.stOk/o.n*100)/2:0;
+  DOCK_CTX={byW,wk,wOn};
+
+  const bad=rows.filter(r=>!r.inOk||!r.stOk)
+    .sort((a,b)=>(b.days??-1)-(a.days??-1));
+
+  return ringHTML(allP,90,
+      `<span>ON-TIME รวม (รับเข้า + จัดเก็บ)</span>`
+     +`<span>เป้าหมาย ไม่ผ่านเกณฑ์ <b>&lt; 10%</b> · ตอนนี้ <b>${pct1(100-allP)}</b></span>`
+     +`<span style="opacity:.8">${fmt(n)} รายการ · ${wk.length} สัปดาห์${fWeek()?` · Week ${fWeek()}`:''}</span>`)
+   +`<div class="sgrid">${card('รับเข้าตรงเวลา',pct1(inP),inP>=90?'teal':'rose')}
+      ${card('จัดเก็บตรงเวลา',pct1(stP),stP>=90?'teal':'rose')}
+      ${card('ระยะเวลาเฉลี่ย (วัน)',avg==null?'—':avg.toFixed(1),'amber')}
+      ${card('นานสุด (วัน)',worst==null?'—':worst.toFixed(1),'rose')}</div>
+
+     <h2 class="sec">ON-TIME รายสัปดาห์<span></span></h2>
+     <div class="cpanel">
+       <div class="chint">เป้าหมาย ON-TIME ≥ 90% (ไม่ผ่านเกณฑ์ &lt; 10%) · แท่งเขียว = ผ่าน · แท่งแดง = ต่ำกว่าเป้า${wk.length>14?' · เลื่อนซ้าย-ขวาเพื่อดูทุกสัปดาห์':''}</div>
+       <div class="cscroll"><div class="cbox" style="height:560px;min-width:${Math.max(900,wk.length*122)}px">
+         <canvas id="c_dockwk"></canvas></div></div>
+     </div>
+     <div class="tscroll"><table class="dt"><thead><tr>
+       <th class="c-week">สัปดาห์</th><th class="num">รายการ</th>
+       <th class="num">รับเข้าตรงเวลา</th><th class="num">จัดเก็บตรงเวลา</th>
+       <th class="num">ระยะเวลาเฉลี่ย (วัน)</th><th class="num">ON-TIME รวม</th>
+     </tr></thead><tbody>`
+   +wk.map(w=>{const o=byW[w],v=wOn(o);
+      return `<tr><td class="c-week"><b>Week ${o.w}</b></td>
+        <td class="num">${fmt(o.n)}</td>
+        <td class="num">${pct1(o.n?o.inOk/o.n*100:0)}</td>
+        <td class="num">${pct1(o.n?o.stOk/o.n*100:0)}</td>
+        <td class="num">${o.dn?(o.days/o.dn).toFixed(1):'—'}</td>
+        <td class="num ${v>=90?'good':'bad'}">${pct1(v)}</td></tr>`;}).join('')
+   +`</tbody></table></div>
+
+     <h2 class="sec">รายการที่ไม่ผ่านเกณฑ์ <em>${fmt(bad.length)} รายการ · เรียงตามระยะเวลานานสุด</em><span></span></h2>`
+   +(bad.length?`<div class="tscroll"><table class="dt big-rows"><thead><tr>
+       <th class="c-date">สัปดาห์</th><th class="c-prod">สินค้า · อ้างอิง</th>
+       <th class="c-n">ของมาส่ง</th><th class="c-n">จัดเก็บ</th>
+       <th class="num c-gap">ใช้เวลา (วัน)</th><th class="c-why">เกณฑ์ที่ไม่ผ่าน</th>
+     </tr></thead><tbody>`
+      +bad.map(r=>`<tr>
+        <td class="c-week"><b>Week ${r.week}</b></td>
+        <td class="c-prod"><span class="pname">${esc(r.name||'—')}</span>
+          <span class="pmeta">${esc(r.po||'—')}${r.type?' · '+esc(r.type):''}</span></td>
+        <td style="white-space:nowrap">${esc(r.send||'—')}</td>
+        <td style="white-space:nowrap">${esc(r.store||'—')}</td>
+        <td class="num">${r.days==null?'—':`<span class="qty up">${r.days.toFixed(1)}</span>`}</td>
+        <td>${!r.inOk?'<span class="why has">รับเข้าเกินเกณฑ์</span> ':''}
+            ${!r.stOk?'<span class="why has">จัดเก็บเกินเกณฑ์</span>':''}</td></tr>`).join('')
+      +'</tbody></table></div>'
+     :'<div class="empty2">ผ่านเกณฑ์ทุกรายการในช่วงนี้</div>');
+}
+
+function drawDock(){
+  if(!DOCK_CTX)return;
+  const el2=document.getElementById('c_dockwk'); if(!el2)return;
+  const {byW,wk,wOn}=DOCK_CTX; if(!wk.length)return;
+  const vals=wk.map(w=>wOn(byW[w]));
+  destroy('dockwk');
+  const o=baseOpts(false); o.layout={padding:{top:30}};
+  o.scales.y.ticks.callback=v=>v+'%';
+  o.scales.y.max=100;
+  o.scales.y.suggestedMin=Math.max(0,Math.floor(Math.min(...vals)/10)*10-5);
+  o.plugins.tooltip.callbacks={
+    title:c=>'Week '+wk[c[0].dataIndex],
+    label:c=>{const d=byW[wk[c.dataIndex]];
+      return `ON-TIME ${(+c.raw).toFixed(1)}%  ·  ${fmt(d.n)} รายการ`
+        +(d.dn?`  ·  เฉลี่ย ${(d.days/d.dn).toFixed(1)} วัน`:'');}};
+  o.plugins.barPct={display:true,digits:1,target:90};
+  o.scales.x.ticks.font={size:cf(26)};
+  o.scales.y.ticks.font={size:cf(26)};
+  CH.dockwk=new Chart(el2,{type:'bar',
+    data:{labels:wk.map(w=>'W'+w),datasets:[{data:vals,
+      backgroundColor:vals.map(v=>v>=90?C.teal:C.rose),borderRadius:6,
       maxBarThickness:70,minBarLength:2}]},options:o});
 }
 
@@ -1470,17 +1582,18 @@ function render(){
                ontime:['KPI On-Time Performance','Warehouse · แพ็คสินค้าเสร็จตามวันที่ต้องการ'],
                oos:['KPI Out Of Stock','Warehouse · WH ส่งของให้ Packing ตามกำหนด'],
                diff:['Stock Diff','Warehouse · ความแม่นยำสต็อก · รายการที่นับไม่ตรง'],
+               dock:['Dock To Stock Time','Warehouse · GR → Putaway · รับเข้าและจัดเก็บตามเกณฑ์'],
                repl:['Replenishment','Warehouse · รายการที่ต้องเติมสต็อก']};
   const tt=TITLE[SEC]||TITLE.overview;
   el('kTitle').textContent=tt[0];
   el('kSub').textContent=tt[1];
   if(!isOv){
     el('detail').innerHTML = SEC==='ontime'?secOnTime() : SEC==='oos'?secOOS()
-                           : SEC==='diff'?secDiff() : secRepl();
+                           : SEC==='diff'?secDiff() : SEC==='dock'?secDock() : secRepl();
     /* กราฟต้องวาดหลัง canvas เข้า DOM แล้ว */
     requestAnimationFrame(()=>{
       try{ if(SEC==='ontime')drawOnTime(); else if(SEC==='oos')drawOOS();
-           else if(SEC==='diff')drawDiff(); else drawRepl(); }
+           else if(SEC==='diff')drawDiff(); else if(SEC==='dock')drawDock(); else drawRepl(); }
       catch(e){ console.warn('chart',e); }
     });
   }
