@@ -860,7 +860,8 @@ const barPct={id:'barPct',
       m.data.forEach((bar,i)=>{
         const v=ds.data[i]; if(v==null||Number.isNaN(+v))return;
         const t=op.raw?Number(v).toLocaleString('en-US')
-                      :(Number.isInteger(+v)?v:(+v).toFixed(1))+'%';
+                      :(op.digits!=null?(+v).toFixed(op.digits)
+                        :(Number.isInteger(+v)?v:(+v).toFixed(1)))+'%';
         x.fillText(t,bar.x,Math.max(18,bar.y-10));
       });
     });
@@ -1164,7 +1165,6 @@ function secDiff(){
   const badW=bad.reduce((s,r)=>s+r.crit,0)||bad.length;
   const p=badW/tot*100;
   const gapSum=bad.reduce((s,r)=>s+Math.abs(r.gap),0);
-  DIFF_CTX={bad};
 
   /* สรุปรายสัปดาห์ */
   const byW={};
@@ -1172,6 +1172,7 @@ function secDiff(){
     const o=byW[w]=byW[w]||{n:0,bad:0,gap:0};
     o.n++; if(r.diff){o.bad++;o.gap+=Math.abs(r.gap);}});
   const wk=Object.keys(byW).sort((a,b)=>(parseInt(a)||0)-(parseInt(b)||0));
+  DIFF_CTX={bad,byW,wk};
 
   return ringHTML(100-p,98,
       `<span>ความแม่นยำสต็อก (นับแล้วตรงกับระบบ)</span>`
@@ -1212,16 +1213,21 @@ function secDiff(){
 function drawDiff(){
   if(!DIFF_CTX)return;
   const el2=document.getElementById('c_diffwk'); if(!el2)return;
-  const byW={};
-  DIFF_CTX.bad.forEach(r=>{const w=r.week||'—';byW[w]=(byW[w]||0)+Math.abs(r.gap);});
-  const wk=Object.keys(byW).sort((a,b)=>(parseInt(a)||0)-(parseInt(b)||0));
+  const byW=DIFF_CTX.byW||{}, wk=DIFF_CTX.wk||[];
   if(!wk.length)return;
+  /* Stock Diff รายสัปดาห์ = ไม่ตรง ÷ นับทั้งหมด (%) — ตรงกับคอลัมน์ในตารางด้านล่าง */
+  const vals=wk.map(w=>{const o=byW[w]; return o&&o.n?o.bad/o.n*100:0;});
   destroy('diffwk');
   const o=baseOpts(false); o.layout={padding:{top:30}};
-  o.plugins.barPct={display:true,raw:true};
+  o.scales.y.ticks.callback=v=>v+'%';
+  o.scales.y.suggestedMax=Math.max(4,Math.ceil(Math.max(...vals)*1.15));
+  o.plugins.tooltip.callbacks={label:c=>{
+    const d=byW[wk[c.dataIndex]]||{n:0,bad:0};
+    return `Stock Diff ${(+c.raw).toFixed(2)}%  (ไม่ตรง ${fmt(d.bad)} / นับ ${fmt(d.n)})`;}};
+  o.plugins.barPct={display:true,digits:2,target:2};
   CH.diffwk=new Chart(el2,{type:'bar',
-    data:{labels:wk.map(w=>'W'+w),datasets:[{data:wk.map(w=>byW[w]),
-      backgroundColor:C.rose,borderRadius:6,maxBarThickness:70}]},options:o});
+    data:{labels:wk.map(w=>'W'+w),datasets:[{data:vals,
+      backgroundColor:vals.map(v=>v<2?C.teal:C.rose),borderRadius:6,maxBarThickness:70}]},options:o});
 }
 
 /* ================= Replenishment ================= */
