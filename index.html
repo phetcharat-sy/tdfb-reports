@@ -455,30 +455,17 @@ function parseDMY(s){
 /* dashboard เดิมโหลดทั้งชีตด้วย /export?format=csv แล้วคำนวณในเบราว์เซอร์
    ทำแบบเดียวกันเป๊ะ จะได้ตัวเลขตรงกันทุกตัว ไม่ต้องพึ่งการกรองวันที่ฝั่ง Google */
 let RAW=[], COLS=null, NO_DATE=0, SEC='overview', REPL=null, REPL_ERR='';
+const SHEET_STATE={otp:'รอโหลด',diff:'รอโหลด',dock:'รอโหลด',repl:'ยังไม่เปิด'};
 
-/* ดาวน์โหลดแบบอ่านทีละก้อน จะได้เห็นว่าข้อมูลไหลมาจริงไหม (ชีตนี้ใหญ่ระดับสิบเมกะไบต์)
-   ถ้าค้างที่ 0 MB = ติดที่เครือข่าย/สิทธิ์ · ถ้าเลขวิ่ง = แค่ต้องรอ */
-async function fetchBig(url,onProgress,ms=180000){
+/* ดาวน์โหลดตรงๆ ด้วย r.text() — วิธีเดียวกับ dashboard เดิมที่ใช้งานได้จริง
+   (เคยลองอ่านทีละก้อนเพื่อโชว์ MB แล้วทำให้ช้าจนเหมือนค้าง จึงถอยกลับมา) */
+async function fetchBig(url,ms=180000){
   const ac=new AbortController();
   const timer=setTimeout(()=>ac.abort(),ms);
   try{
     const r=await fetch(url,{signal:ac.signal});
     if(!r.ok)throw new Error('HTTP '+r.status);
-    if(!r.body||!r.body.getReader)return await r.text();
-    const reader=r.body.getReader(), dec=new TextDecoder('utf-8');
-    /* เก็บเป็นชิ้นๆ ใน array แล้วค่อย join ทีเดียว
-       ถ้าใช้ out += ต่อสตริงทีละก้อน ไฟล์ระดับสิบเมกะไบต์จะช้าแบบทวีคูณจนเหมือนค้าง */
-    const parts=[]; let got=0, tick=0;
-    for(;;){
-      const {done,value}=await reader.read();
-      if(done)break;
-      got+=value.length;
-      parts.push(dec.decode(value,{stream:true}));
-      if(++tick%40===0){ onProgress&&onProgress(got); await new Promise(r2=>setTimeout(r2,0)); }
-    }
-    parts.push(dec.decode());
-    onProgress&&onProgress(got);
-    return parts.join('');
+    return await r.text();
   }catch(e){
     throw new Error(e.name==='AbortError'?'หมดเวลารอดาวน์โหลด (ลองกดดึงข้อมูลใหม่)':e.message);
   }finally{clearTimeout(timer);}
@@ -487,9 +474,8 @@ async function fetchBig(url,onProgress,ms=180000){
 async function loadOTP(){
   const url=`https://docs.google.com/spreadsheets/d/${S_OTP}/export?format=csv&gid=0&_=${Date.now()}`;
   el('kStat').textContent='กำลังดาวน์โหลดข้อมูลจากชีต…';
-  const t=await fetchBig(url,got=>{
-    el('kStat').textContent=`กำลังดาวน์โหลดข้อมูลจากชีต… ${(got/1048576).toFixed(1)} MB`;
-  });
+  const t=await fetchBig(url);
+  SHEET_STATE.otp=`ดาวน์โหลดแล้ว ${(t.length/1048576).toFixed(1)} MB`;
   if(t.trim().startsWith('<'))throw new Error('ชีตยังไม่ได้แชร์เป็น “ทุกคนที่มีลิงก์”');
 
   /* ชีตนี้มีแสนกว่าแถว ต้องใช้ PapaParse เท่านั้น
@@ -618,7 +604,7 @@ async function loadStatic(){
     });
     if(!list.length)throw new Error('ไม่พบแถวที่มีค่า ตรง/ไม่ตรง');
     DIFF=list;
-  }catch(e){ DIFF=null; STATIC_ERR.diff=e.message; console.warn('stock diff',e); }
+  }catch(e){ DIFF=null; STATIC_ERR.diff=e.message; SHEET_STATE.diff='ผิดพลาด — '+e.message; }
 
   /* ---- Dock to Stock — 2 เกณฑ์: รับเข้า / จัดเก็บ ---- */
   try{
@@ -649,7 +635,7 @@ async function loadStatic(){
     });
     if(!Object.keys(by).length)throw new Error('ไม่พบแถวที่มีเกณฑ์');
     DOCK=by;
-  }catch(e){ DOCK=null; STATIC_ERR.dock=e.message; console.warn('dock',e); }
+  }catch(e){ DOCK=null; STATIC_ERR.dock=e.message; SHEET_STATE.dock='ผิดพลาด — '+e.message; }
 }
 
 /* ---------- แสดงผล ---------- */
@@ -995,7 +981,8 @@ async function loadRepl(){
     })).filter(r=>r.product&&!isExcludedProduct(r.product));
     if(c.p<0)throw new Error('หาคอลัมน์ Product ไม่เจอ · หัวตาราง: '+t.H.slice(0,8).join(' / '));
     if(!REPL.length)throw new Error('ไม่พบรายการสินค้า · หัวตาราง: '+t.H.slice(0,8).join(' / '));
-  }catch(e){ REPL=null; REPL_ERR=e.message; }
+    SHEET_STATE.repl=`${fmt(REPL.length)} สินค้า`;
+  }catch(e){ REPL=null; REPL_ERR=e.message; SHEET_STATE.repl='ผิดพลาด — '+e.message; }
 }
 
 let REPL_CTX=null;
@@ -1206,7 +1193,10 @@ function render(){
   el('ad').innerHTML=kpiCard({l:'Admin On-Time',t:'Target ≥ 85%',wait:true,
     note:'ยังไม่ได้ระบุชีตต้นทาง — เตรียมช่องไว้แล้ว'});
 
-  el('src').textContent='ที่มา: KPI On-Time/Out of Stock · Stock Diff · Dock to Stock (Google Sheets)';
+  el('src').innerHTML='ชีต: On-Time/Out of Stock <b>'+SHEET_STATE.otp+'</b>'
+    +' · Stock Diff <b>'+SHEET_STATE.diff+'</b>'
+    +' · Dock to Stock <b>'+SHEET_STATE.dock+'</b>'
+    +' · Replenishment <b>'+SHEET_STATE.repl+'</b>';
   const now=new Date();
   el('kTs').textContent=`ข้อมูล ณ ${now.getDate()} ${MONTHS[now.getMonth()]} ${now.getFullYear()} `
     +`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')} น.`;
