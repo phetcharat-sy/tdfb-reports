@@ -647,7 +647,7 @@ const prevMonth=k=>{const[y,m,d]=k.split('-').map(Number);
   return `${py}-${String(pm).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;};
 
 /* ---------- ดึงข้อมูล ---------- */
-let DATES=[],DIFF=null,DOCK=null,DOCK_ROWS=null,DOCK_H=null,LAST_STATS=null,DIFF_HAS_CRIT=false;
+let DATES=[],DIFF=null,DOCK=null,DOCK_ROWS=null,DOCK_H=null,DOCK_MAP=null,LAST_STATS=null,DIFF_HAS_CRIT=false;
 
 /* ===== ใช้กติกาเดียวกับ dashboard เดิม (tdfb-dashboard-v2) ทุกข้อ =====
    1. ตัดสินค้าที่ไม่ใช่สินค้าจริงออกก่อน (Box / ค่าส่ง / คูปอง / ส่วนลด / Product Card / เอกสาร)
@@ -891,12 +891,15 @@ async function loadDock(){
           cSend=t.col('วันที่ของมาส่ง'), cStore=t.col('วันที่จัดเก็บ');
     const cName=t.col('Product','สินค้า','ชื่อสินค้า'), cPo=t.col('PO','Reference','เลขที่'),
           cType=t.col('ประเภท','Type','กลุ่ม','หมวด'), cQty=t.col('จำนวน','Qty'),
-          cLot=t.col('LOT/SERIAL','LOT','SERIAL','ล็อต'),
-          cTo=t.col('ปลายทาง','TO','Location','ที่จัดเก็บ'),
-          cRecv=t.col('รับเข้าระบบ','วันที่รับเข้า'),
-          cInD=t.col('รับเข้า(วัน)','ระยะเวลารับเข้า'),
-          cStD=t.col('จัดเก็บ(วัน)','ระยะเวลาจัดเก็บ'),
+          cLot=t.col('LOT/SERIAL','LOT','SERIAL','ล็อต','เลขล็อต'),
+          cTo=t.col('ปลายทาง','TO','Location','ที่จัดเก็บ','Destination','โซน'),
+          cRecv=t.col('รับเข้าระบบ','วันที่รับเข้า','วันรับเข้า'),
+          cInD=t.col('รับเข้า(วัน)','ระยะเวลารับเข้า','จำนวนวันรับเข้า'),
+          cStD=t.col('จัดเก็บ(วัน)','ระยะเวลาจัดเก็บ','จำนวนวันจัดเก็บ'),
           cQA=t.col('QA');
+    DOCK_MAP={'LOT / SERIAL':cLot,'Product':cName,'ประเภท':cType,'ปลายทาง (TO)':cTo,
+              'วันที่มาส่ง':cSend,'รับเข้าระบบ':cRecv,'จัดเก็บ':cStore,
+              'รับเข้า (วัน)':cInD,'จัดเก็บ (วัน)':cStD,'QA (วัน)':cQA};
     if(cIn<0&&cSt<0)throw new Error('หาคอลัมน์เกณฑ์รับเข้า/จัดเก็บ ไม่เจอ');
     const pass=v=>/ผ่านเกณฑ์/.test(v)&&!/ไม่ผ่าน/.test(v);
     const by={}; const raw=[];
@@ -917,11 +920,19 @@ async function loadDock(){
       if(!isNaN(d)){o.days+=d;o.dn++;}
       const gg=k=>k>=0?String(r[k]||'').trim():'';
       const nn=k=>{const v=k>=0?dnum(r[k]):NaN;return isNaN(v)?null:v;};
+      /* คอลัมน์ "รับเข้า (วัน)" / "จัดเก็บ (วัน)" ถ้าอ่านจากชีตไม่ได้
+         ให้คำนวณเองจากวันที่ทั้งสามช่อง จะได้ไม่ขึ้นเป็นขีด — */
+      let inD=nn(cInD), stD=nn(cStD);
+      const tSend=dparse(gg(cSend)), tRecv=dparse(gg(cRecv)), tStore=dparse(gg(cStore));
+      const dayGap=(a,b)=>(!isNaN(a)&&!isNaN(b))?(b-a)/86400000:null;
+      if(inD==null)inD=dayGap(tSend,tRecv);
+      if(stD==null)stD=dayGap(tRecv,tStore);
+      if(stD==null)stD=dayGap(tSend,tStore);
       raw.push({week:w, inTxt:vi, stTxt:vs, inOk:pass(vi), stOk:pass(vs),
                 days:isNaN(d)?null:d, name:gg(cName), po:gg(cPo),
                 type:gg(cType), qty:cQty>=0?parseQty(r[cQty]):null,
                 lot:gg(cLot), to:gg(cTo), recv:gg(cRecv),
-                inD:nn(cInD), stD:nn(cStD), qa:nn(cQA),
+                inD, stD, qa:nn(cQA),
                 send:gg(cSend), store:gg(cStore)});
     });
     if(!Object.keys(by).length)throw new Error('ไม่พบแถวที่มีเกณฑ์');
@@ -1602,9 +1613,11 @@ function secDock(){
    +`</tbody></table></div>
 
      <h2 class="sec">รายละเอียดรายการ <em>${fmt(bad.length)} รายการ · ${esc(vName)} · เรียงตามสัปดาห์ น้อย → มาก</em><span></span></h2>
-     ${(bad.length&&!bad.some(r=>r.lot||r.to||r.recv))?
-       `<div class="chint" style="color:var(--bad)">อ่านคอลัมน์ LOT / ปลายทาง / รับเข้าระบบ จากชีตไม่เจอ ·
-        หัวตารางที่อ่านได้: ${esc((DOCK_H||[]).filter(Boolean).join(' · '))}</div>`:''}`
+     ${(()=>{const miss=Object.entries(DOCK_MAP||{}).filter(e=>e[1]<0).map(e=>e[0]);
+        return miss.length?`<div class="chint" style="color:var(--bad)">
+          อ่านคอลัมน์เหล่านี้จากชีตไม่เจอ: <b>${esc(miss.join(' · '))}</b><br>
+          <span style="color:var(--mute)">หัวคอลัมน์ที่อ่านได้จริง: ${esc((DOCK_H||[]).filter(Boolean).join(' | '))}</span>
+        </div>`:'';})()}`
    +(bad.length?`<div class="tscroll" style="overflow-x:auto"><table class="dt dock-dt" style="min-width:2100px"><thead><tr>
        <th style="width:110px">Week</th>
        <th style="width:250px">LOT / SERIAL</th>
