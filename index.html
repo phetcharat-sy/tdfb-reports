@@ -221,8 +221,9 @@
 #vKPI .chint{font-size:29px;line-height:1.5}
 #vKPI .empty2{font-size:33px}
 #vKPI .chip,#vKPI .kchip{font-size:27px}
-#vKPI table.dt{font-size:34px}
-#vKPI table.dt th{font-size:30px}
+#vKPI table.dt{font-size:36px}
+#vKPI table.dt th{font-size:31px}
+#vKPI table.dt td{padding:17px 18px}
 #vKPI .foot{font-size:29px}
 #vKPI .kpi .l{font-size:38px}
 #vKPI .kpi .t{font-size:30px}
@@ -230,33 +231,44 @@
 #vKPI .badge{font-size:29px}
 .sidenav button{font-size:33px}
 
-/* วงแหวนแบบแนวนอน — เดิมเรียงบนลงล่างเลยกินพื้นที่เกือบเต็มจอ
-   ย้ายคำอธิบายมาอยู่ข้างๆ วงแหวน ข้อความจะได้อยู่บรรทัดเดียวไม่ตัดคำ */
-#vKPI .ring{flex-direction:row;justify-content:flex-start;align-items:center;
-  gap:52px;padding:38px 52px;text-align:left}
-#vKPI .ring svg{width:330px;height:330px}
-#vKPI .ring .tr,#vKPI .ring .fl{stroke-width:19}
-#vKPI .ringwrap b{font-size:72px;letter-spacing:-2px}
-#vKPI .ring .cap{max-width:none;flex:1;min-width:0;font-size:35px;line-height:1.5;
-  align-items:flex-start;text-align:left;gap:8px}
-#vKPI .ring .cap .tag{margin-bottom:2px;font-size:27px}
-#vKPI .ring .cap>span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
-#vKPI .ring .cap>span.tag{white-space:nowrap}
-@media(max-width:1200px){
-  #vKPI .ring{flex-direction:column;text-align:center;gap:26px}
-  #vKPI .ring .cap{align-items:center;text-align:center}
-}
+/* วงแหวนโหมดปกติ = ของเดิม (เรียงบนลงล่าง) ไม่แตะ
+   ปรับเฉพาะโหมดพรีเซนต์ ที่วงแหวนใหญ่จนคำอธิบายถูกบีบตัดบรรทัด */
 
-/* หัวตารางลอยค้างตอนเลื่อน "หน้าเว็บ" — ต้องไม่มี ancestor ที่ overflow:auto
-   ไม่งั้น sticky จะยึดกับกล่องนั้นแทนจอ แล้วหัวตารางจะหลุดหายไปตอนเลื่อนหน้า */
-#vKPI .tscroll{max-height:none!important;overflow:visible}
+/* ตัวเลือก WEEK — รายการยาว 50+ สัปดาห์ ถ้าใช้ select ปกติจะกางเต็มจอ
+   เปลี่ยนเป็นกล่องเตี้ยๆ ที่เลื่อนเอาแทน */
+#vKPI .wsel{position:relative}
+#vKPI .wsel-p{position:absolute;top:calc(100% + 6px);left:0;z-index:60;
+  min-width:260px;max-height:420px;overflow:auto;background:#fff;
+  border:1px solid var(--line);border-radius:12px;padding:8px;
+  box-shadow:0 14px 36px rgba(20,24,40,.18)}
+#vKPI .wsel-p button{display:block;width:100%;text-align:left;background:none;border:0;
+  font-family:inherit;font-size:30px;color:var(--ink);padding:10px 16px;
+  border-radius:9px;cursor:pointer;white-space:nowrap}
+#vKPI .wsel-p button:hover{background:#EDF3F3}
+#vKPI .wsel-p button.on{background:var(--teal);color:#fff;font-weight:bold}
+#vKPI .wsel-p::-webkit-scrollbar{width:12px}
+#vKPI .wsel-p::-webkit-scrollbar-thumb{background:#C6CCD6;border-radius:6px;border:3px solid #fff}
+#vKPI #kWBtn[data-on="1"]{background:var(--teal);color:#fff;border-color:var(--teal);font-weight:bold}
+
+body.cap #vKPI .tscroll{max-height:none!important;overflow:visible}
+
+/* ตาราง Detail ไม่ยาวลากทั้งหน้า — ใส่กล่องความสูงคงที่แล้วเลื่อนในกล่อง
+   หัวตาราง sticky จะยึดกับขอบบนของกล่องนี้ เลื่อนแล้วยังเห็นชื่อคอลัมน์ */
+#vKPI .tscroll{max-height:600px;overflow:auto;position:relative;
+  border:1px solid var(--line);border-radius:18px;background:#fff;
+  box-shadow:0 1px 2px rgba(20,24,40,.04),0 8px 22px rgba(20,24,40,.05)}
+#vKPI .tscroll::-webkit-scrollbar{width:14px;height:14px}
+#vKPI .tscroll::-webkit-scrollbar-thumb{background:#C6CCD6;border-radius:7px;
+  border:3px solid #fff}
+#vKPI .tscroll::-webkit-scrollbar-track{background:#F4F6F8;border-radius:7px}
+/* ตัวตารางไม่ต้องมีกรอบ/เงา/มุมโค้งซ้ำกับกล่อง และ overflow:hidden จะทำให้ sticky ตาย */
+#vKPI .tscroll table.dt{overflow:visible;border:0;border-radius:0;box-shadow:none}
 #vKPI table.dt thead th{position:sticky;top:0;z-index:5;background:#F0F2F5;
   box-shadow:inset 0 -2px 0 var(--line)}
-#vKPI table.dt{overflow:visible}          /* overflow:hidden จะทำให้ sticky ไม่ทำงาน */
 
 /* ตารางรายการที่นับไม่ตรง — ล็อกความกว้างคอลัมน์ ไม่ให้ตัวเลขไปกองชิดขวา */
-#vKPI table.dt.big-rows{font-size:34px;table-layout:fixed}
-#vKPI table.dt.big-rows th{font-size:30px}
+#vKPI table.dt.big-rows{font-size:36px;table-layout:fixed}
+#vKPI table.dt.big-rows th{font-size:31px}
 #vKPI table.dt.big-rows .c-date{width:13%}
 #vKPI table.dt.big-rows .c-prod{width:34%}
 #vKPI table.dt.big-rows .c-n{width:9%}
@@ -264,10 +276,10 @@
 #vKPI table.dt.big-rows .c-why{width:24%}
 #vKPI table.dt.big-rows .c-prod{overflow-wrap:anywhere}
 #vKPI table.dt.big-rows td{padding:18px 14px}
-#vKPI .pname{font-size:35px}
-#vKPI .pmeta{font-size:27px}
-#vKPI .why{font-size:27px;line-height:1.45;white-space:normal}
-#vKPI .qty{font-size:32px;padding:3px 14px}
+#vKPI .pname{font-size:37px}
+#vKPI .pmeta{font-size:29px}
+#vKPI .why{font-size:29px;line-height:1.45;white-space:normal}
+#vKPI .qty{font-size:34px;padding:3px 14px}
 /* คอลัมน์สัปดาห์ต้องอยู่บรรทัดเดียว ไม่ตัดเป็น "Week" / "1" */
 #vKPI .c-week{white-space:nowrap}
 
@@ -346,11 +358,21 @@ body.present #vKPI .big .v{font-size:118.6px}
 body.present #vKPI .kpi .v{font-size:123.1px}
 body.present #vKPI .scard .sv{font-size:82.1px}
 body.present #vKPI .scard .sl{font-size:30.8px}
-body.present #vKPI table.dt{font-size:31.9px}
-body.present #vKPI table.dt th{font-size:27.4px}
-body.present #vKPI .ring svg{width:700px;height:700px}
-body.present #vKPI .ringwrap b{font-size:136.8px}
-body.present #vKPI .ring .cap{font-size:41px;max-width:640px}
+body.present #vKPI table.dt{font-size:38px}
+body.present #vKPI table.dt th{font-size:32px}
+body.present #vKPI .tscroll{max-height:none}   /* พรีเซนต์ = ถ่ายทั้งตาราง ไม่ต้องเลื่อน */
+/* โหมดพรีเซนต์: วางวงแหวนไว้ซ้าย คำอธิบายอยู่ขวา
+   ของเดิมวงแหวน 700px + คำอธิบายกว้างแค่ 640px ทำให้ข้อความตัดบรรทัดและกินพื้นที่ทั้งจอ */
+body.present #vKPI .ring{flex-direction:row;justify-content:flex-start;align-items:center;
+  gap:56px;padding:40px 56px;text-align:left}
+body.present #vKPI .ring svg{width:380px;height:380px}
+body.present #vKPI .ring .tr,body.present #vKPI .ring .fl{stroke-width:19}
+body.present #vKPI .ringwrap b{font-size:86px;letter-spacing:-2px}
+body.present #vKPI .ring .cap{font-size:40px;max-width:none;flex:1;min-width:0;
+  line-height:1.5;align-items:flex-start;text-align:left;gap:8px}
+body.present #vKPI .ring .cap>span{white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis;max-width:100%}
+body.present #vKPI .ring .cap .tag{margin-bottom:2px}
 body.present #vKPI .cbox{height:600px}
 body.present #vKPI .subsec{font-size:36.5px}
 body.present #vKPI .chname{font-size:35.3px}
@@ -409,7 +431,11 @@ body.present #vKPI .tscroll{max-height:none}
   <div class="kf"><label>MONTH</label>
     <select id="kM" autocomplete="off"><option value="">All</option></select></div>
   <div class="kf"><label>WEEK</label>
-    <select id="kW" autocomplete="off"><option value="">All</option></select></div>
+    <div class="wsel">
+      <button class="btn ghost" id="kWBtn" aria-haspopup="listbox" aria-expanded="false">All</button>
+      <div class="wsel-p" id="kWPop" role="listbox" hidden></div>
+      <select id="kW" autocomplete="off" hidden><option value="">All</option></select>
+    </div></div>
   <div class="kf"><label>DAY</label>
     <div class="kcal">
       <button class="btn ghost" id="kDayBtn" aria-haspopup="dialog" aria-expanded="false">All</button>
@@ -1322,7 +1348,7 @@ function secDiff(){
        <div class="cscroll"><div class="cbox" style="height:600px;min-width:${Math.max(900,wk.length*122)}px">
          <canvas id="c_diffwk"></canvas></div></div>
      </div>
-     <div class="tscroll" style="max-height:420px"><table class="dt"><thead><tr>
+     <div class="tscroll" style="max-height:480px"><table class="dt"><thead><tr>
        <th class="c-week">สัปดาห์</th><th style="width:250px">ช่วงวันที่</th>
        <th class="num">นับทั้งหมด</th><th class="num">ไม่ตรง</th>
        <th class="num">ผลต่าง (ชิ้น)</th><th class="num">Stock Diff</th></tr></thead><tbody>`
@@ -1335,7 +1361,7 @@ function secDiff(){
    +`</tbody></table></div>
 
      <h2 class="sec">รายการที่นับไม่ตรง <em>${fmt(bad.length)} รายการ · เรียงตามวันที่ล่าสุด</em><span></span></h2>`
-   +(bad.length?`<div class="tscroll" style="max-height:760px"><table class="dt big-rows"><thead><tr>
+   +(bad.length?`<div class="tscroll"><table class="dt big-rows"><thead><tr>
        <th class="c-date">วันที่</th><th class="c-prod">สินค้า · Lot · Location</th>
        <th class="num c-n">Odoo</th><th class="num c-n">นับได้</th>
        <th class="num c-gap">ผลต่าง</th>
@@ -1803,6 +1829,39 @@ function opts(sel,list,label,all){
   sel.value=list.includes(cur)?cur:'';
   sel.disabled=!list.length;
 }
+/* ---------- ตัวเลือก WEEK แบบเลื่อนได้ ----------
+   <select id="kW"> ยังเป็นตัวเก็บค่าจริงเหมือนเดิม ปุ่มนี้แค่เปลี่ยนค่าให้แล้วยิง change
+   โค้ดส่วนอื่น (fWeek, Clear filters ฯลฯ) จึงไม่ต้องแก้เลย */
+function openWeekPop(on){
+  const p=el('kWPop'); if(!p)return;
+  p.hidden=!on;
+  el('kWBtn').setAttribute('aria-expanded',on?'true':'false');
+  if(on){ const cur=p.querySelector('button.on'); if(cur)cur.scrollIntoView({block:'center'}); }
+}
+function buildWeekPop(){
+  const sel=el('kW'), pop=el('kWPop'), btn=el('kWBtn');
+  if(!sel||!pop||!btn)return;
+  pop.innerHTML=[...sel.options].map(o=>
+    `<button type="button" data-v="${o.value}" class="${o.value===sel.value?'on':''}">${o.textContent}</button>`
+  ).join('');
+  const cur=[...sel.options].find(o=>o.value===sel.value);
+  btn.textContent=cur?cur.textContent:'All';
+  btn.dataset.on=sel.value?'1':'0';
+  btn.disabled=sel.disabled;
+}
+el('kWBtn').addEventListener('click',e=>{
+  e.stopPropagation(); openWeekPop(el('kWPop').hidden);
+});
+el('kWPop').addEventListener('click',e=>{
+  e.stopPropagation();
+  const b=e.target.closest('button[data-v]'); if(!b)return;
+  el('kW').value=b.dataset.v;
+  openWeekPop(false);
+  el('kW').dispatchEvent(new Event('change'));
+});
+document.addEventListener('click',()=>openWeekPop(false));
+document.addEventListener('keydown',e=>{if(e.key==='Escape')openWeekPop(false);});
+
 let YEAR_INIT=false;
 function fillFilters(){
   /* ปีมาจากทั้งชีต On-Time และชีตนับสต็อก (ชีตนับสต็อกมีข้อมูลย้อนหลังหลายปี) */
@@ -1826,6 +1885,7 @@ function fillFilters(){
   const weeks=[...new Set(byM.map(r=>String(r.week)).filter(w=>w&&w!=='undefined'))]
     .sort((a,b)=>a-b);
   opts(el('kW'),weeks,v=>'Week '+v,'All');
+  buildWeekPop();
   const byW=byM.filter(r=>!fWeek()||String(r.week)===fWeek());
   CAL_DAYS=new Set(byW.map(r=>r.date).filter(Boolean));
   if(DAYSEL&&!CAL_DAYS.has(DAYSEL))DAYSEL='';
