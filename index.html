@@ -404,7 +404,7 @@ const prevMonth=k=>{const[y,m,d]=k.split('-').map(Number);
   return `${py}-${String(pm).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;};
 
 /* ---------- ดึงข้อมูล ---------- */
-let DATES=[],DIFF=null,DOCK=null,LAST_STATS=null;
+let DATES=[],DIFF=null,DOCK=null,LAST_STATS=null,DIFF_HAS_CRIT=false;
 
 /* ===== ใช้กติกาเดียวกับ dashboard เดิม (tdfb-dashboard-v2) ทุกข้อ =====
    1. ตัดสินค้าที่ไม่ใช่สินค้าจริงออกก่อน (Box / ค่าส่ง / คูปอง / ส่วนลด / Product Card / เอกสาร)
@@ -592,7 +592,8 @@ async function loadStatic(){
   try{
     const t=table(await smallSheet(S_DIFF,'0'));
     if(!t)throw new Error('หาหัวตารางไม่เจอ');
-    const cD=t.col('Day','วันที่'), cW=t.col('Week','สัปดาห์'), cC=t.col('เช็ค');
+    const cD=t.col('Day','วันที่'), cW=t.col('Week','สัปดาห์'),
+          cC=t.col('เช็ค'), cK=t.col('เกณฑ์');
     if(cC<0)throw new Error('หาคอลัมน์ “เช็ค” ไม่เจอ');
     const list=[];
     t.rows.forEach(r=>{
@@ -600,8 +601,10 @@ async function loadStatic(){
       if(c!=='ตรง'&&c!=='ไม่ตรง')return;          /* กันแถวสรุป/แถวว่างท้ายชีต */
       list.push({date:cD>=0?parseDMY(r[cD]):null,
                  week:cW>=0?String(parseInt(r[cW])||''):'',
-                 diff:c==='ไม่ตรง'});
+                 diff:c==='ไม่ตรง',
+                 crit:cK>=0?parseQty(r[cK]):0});   /* น้ำหนักตามตาราง Pivot ในชีต */
     });
+    DIFF_HAS_CRIT = list.some(r=>r.crit>0);
     if(!list.length)throw new Error('ไม่พบแถวที่มีค่า ตรง/ไม่ตรง');
     DIFF=list;
   }catch(e){ DIFF=null; STATIC_ERR.diff=e.message; SHEET_STATE.diff='ผิดพลาด — '+e.message; }
@@ -1154,10 +1157,18 @@ function render(){
     if(fMonth()&&monthIdxOf(r.date)!==MONTH_ORDER.indexOf(fMonth()))return false;
     return true;
   }
+  /* ตาราง Pivot ในชีตคิดจาก "SUM ของ เกณฑ์" แยกตามคอลัมน์ เช็ค (ตรง / ไม่ตรง)
+     ไม่ใช่การนับจำนวนแถว จึงถ่วงน้ำหนักด้วยคอลัมน์ เกณฑ์ ให้ตรงกัน
+     ถ้าชีตไม่มีคอลัมน์นั้น (หรือว่างทั้งหมด) ค่อยถอยไปนับแถวแทน */
   function diffStat(list){
     if(!list||!list.length)return null;
-    const bad=list.filter(r=>r.diff).length;
-    return {n:list.length,bad,pct:bad/list.length*100};
+    const rows=list.length, badRows=list.filter(r=>r.diff).length;
+    if(DIFF_HAS_CRIT){
+      const tot=list.reduce((s,r)=>s+r.crit,0);
+      const bad=list.filter(r=>r.diff).reduce((s,r)=>s+r.crit,0);
+      if(tot>0)return {n:tot,bad,rows,badRows,pct:bad/tot*100,weighted:true};
+    }
+    return {n:rows,bad:badRows,rows,badRows,pct:badRows/rows*100,weighted:false};
   }
   /* ไม่ได้กรอง = ยังต้องอยู่ในช่วงวันเดียวกับที่หัวรายงานแสดง
      (ชีตนับสต็อกมีข้อมูลย้อนไปถึงปี 2025 ส่วนชีต On-Time มีแค่ปีปัจจุบัน
@@ -1207,7 +1218,10 @@ function render(){
     diffV!=null?kpiCard({l:'Stock Diff',t:'Target < 2% · สัดส่วนที่นับแล้ว “ไม่ตรง” กับระบบ',
       disp:pct(diffV),v:diffV,bar:diffV*10,pass:diffV<2,
       delta:deltaHTML(diffV,diffP,false),
-      base:`ไม่ตรง ${fmt(dNow.bad)} จาก ${fmt(dNow.n)} รายการที่นับ · ตรง ${fmt(dNow.n-dNow.bad)}`
+      base:(dNow.weighted
+          ? `ไม่ตรง ${fmt(dNow.bad)} จาก ${fmt(dNow.n)} (ถ่วงน้ำหนักด้วยคอลัมน์ “เกณฑ์” แบบตาราง Pivot)`
+            +` · ${fmt(dNow.badRows)} จาก ${fmt(dNow.rows)} แถว`
+          : `ไม่ตรง ${fmt(dNow.bad)} จาก ${fmt(dNow.n)} รายการที่นับ`)
         +(lo?` · ช่วง ${showD(lo)} – ${showD(hi)}`:'')}):
       kpiCard({l:'Stock Diff',t:'Target < 2%',wait:true,
         note:STATIC_ERR.diff?('อ่านชีตไม่ได้ — '+STATIC_ERR.diff):'ไม่มีรายการนับสต็อกในช่วงที่เลือก'}),
