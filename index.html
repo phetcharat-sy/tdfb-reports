@@ -71,8 +71,8 @@
 #vKPI .sv.amber{color:#8a6a2f} #vKPI .sv.plum{color:var(--plum-d)}
 #vKPI .sv.mute{color:var(--mute)}
 
-#vKPI .cpanel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:16px}
-#vKPI .cbox{position:relative;height:340px}
+#vKPI .cpanel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:26px;margin-bottom:18px}
+#vKPI .cbox{position:relative;height:420px}
 #vKPI .g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 #vKPI .g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
 @media(max-width:1100px){#vKPI .g2,#vKPI .g3{grid-template-columns:1fr}}
@@ -696,8 +696,8 @@ function baseOpts(legend){
     plugins:{legend:{display:!!legend,labels:{color:C.mute,font:{size:20}}},
       tooltip:{backgroundColor:'#22252C',padding:10,cornerRadius:6,
         titleFont:{size:19},bodyFont:{size:18}}},
-    scales:{x:{ticks:{color:C.mute,font:{size:19}},grid:{display:false}},
-      y:{ticks:{color:C.mute,font:{size:19}},grid:{color:'rgba(34,37,44,.06)'},beginAtZero:true}}};
+    scales:{x:{ticks:{color:C.mute,font:{size:21}},grid:{display:false}},
+      y:{ticks:{color:C.mute,font:{size:21}},grid:{color:'rgba(34,37,44,.06)'},beginAtZero:true}}};
 }
 function pctOpts(target){
   const o=baseOpts(false);
@@ -711,7 +711,7 @@ function pctOpts(target){
 /* ป้ายตัวเลขบนยอดแท่ง + เส้นเป้าหมาย */
 const barPct={id:'barPct',
   beforeLayout(ch,a,op){ if(!op||!op.display)return;
-    const need=44; const p=ch.options.layout&&ch.options.layout.padding;
+    const need=52; const p=ch.options.layout&&ch.options.layout.padding;
     if(typeof p==='object'&&p){ if((p.top||0)<need)p.top=need; }
     else ch.options.layout={padding:{top:need}}; },
   afterDatasetsDraw(ch,a,op){
@@ -723,7 +723,7 @@ const barPct={id:'barPct',
       x.beginPath();x.moveTo(ch.chartArea.left,y);x.lineTo(ch.chartArea.right,y);x.stroke();
       x.setLineDash([]);
     }
-    x.font="bold 21px Tahoma";x.fillStyle='#22252C';x.textAlign='center';x.textBaseline='bottom';
+    x.font="bold 25px Tahoma";x.fillStyle='#22252C';x.textAlign='center';x.textBaseline='bottom';
     ch.data.datasets.forEach((ds,di)=>{
       const m=ch.getDatasetMeta(di); if(m.hidden)return;
       m.data.forEach((bar,i)=>{
@@ -741,16 +741,22 @@ const linePt={id:'linePt',
     if(!op||!op.display)return;
     const x=ch.ctx, area=ch.chartArea;
     x.save();
-    x.font='bold 19px Tahoma'; x.textAlign='center'; x.textBaseline='bottom';
+    x.font='bold 21px Tahoma'; x.textAlign='center'; x.textBaseline='bottom';
     ch.data.datasets.forEach((ds,di)=>{
       const m=ch.getDatasetMeta(di); if(m.hidden)return;
-      const n=ds.data.filter(v=>v!=null).length;
-      const step=n<=10?1:Math.ceil(n/12);
+      /* แสดงทุกจุด — จุดที่เลขจะทับกัน ให้สลับไปวางใต้จุดแทน */
+      const placed=[];
       m.data.forEach((pt,i)=>{
         const v=ds.data[i]; if(v==null||Number.isNaN(+v))return;
-        if(i%step!==0 && i!==ds.data.length-1) return;
         const t=Number(v).toLocaleString('en-US');
-        const y=Math.max(area.top+16, pt.y-12);
+        const w=x.measureText(t).width;
+        let y=Math.max(area.top+18, pt.y-14);
+        const hit=yy=>placed.some(b=>Math.abs(b.x-pt.x)<(b.w+w)/2+4&&Math.abs(b.y-yy)<20);
+        if(hit(y)){
+          const below=Math.min(area.bottom-4, pt.y+30);
+          y = hit(below) ? y-22 : below;
+        }
+        placed.push({x:pt.x,y,w});
         x.lineJoin='round'; x.lineWidth=5; x.strokeStyle='rgba(255,255,255,.95)';
         x.strokeText(t,pt.x,y);
         x.fillStyle='#22252C'; x.fillText(t,pt.x,y);
@@ -844,7 +850,7 @@ function secOnTime(){
 
      <h2 class="sec">Sales Channel Share <em>ออเดอร์แยกตาม Sender Name</em><span></span></h2>
      <div class="cpanel"><div class="chwrap">
-       <div class="cbox" style="flex:1;min-width:300px;height:320px"><canvas id="c_chan"></canvas></div>
+       <div class="cbox" style="flex:1;min-width:340px;height:420px"><canvas id="c_chan"></canvas></div>
        <div class="chleg" id="chanLeg"></div></div></div>
 
      <h2 class="sec">Order Detail <em>เฉพาะรายการที่ไม่ใช่ “ส่งในวัน”</em><span></span></h2>
@@ -873,14 +879,14 @@ function drawOnTime(){
   destroy('pack');
   CH.pack=new Chart(document.getElementById('c_pack'),{type:'bar',
     data:{labels:['Yes','No'],datasets:[{data:[Math.round(onT/tot*1000)/10,Math.round(late/tot*1000)/10],
-      backgroundColor:[C.teal,C.rose],borderRadius:6,maxBarThickness:60}]},options:pctOpts(98)});
+      backgroundColor:[C.teal,C.rose],borderRadius:6,maxBarThickness:96}]},options:pctOpts(98)});
 
   /* Platform vs Walk-in */
   const t2=plat+walk||1;
   destroy('plat');
   CH.plat=new Chart(document.getElementById('c_plat'),{type:'bar',
     data:{labels:['Platform','Walk-in'],datasets:[{data:[Math.round(plat/t2*1000)/10,Math.round(walk/t2*1000)/10],
-      backgroundColor:[C.tealD,C.amber],borderRadius:6,maxBarThickness:60}]},options:pctOpts()});
+      backgroundColor:[C.tealD,C.amber],borderRadius:6,maxBarThickness:96}]},options:pctOpts()});
 
   /* Shipping method */
   const su={}; ord.forEach(r=>{const u=r.urgent||'ไม่ระบุ';su[u]=(su[u]||0)+1;});
@@ -892,7 +898,7 @@ function drawOnTime(){
   CH.ship=new Chart(document.getElementById('c_ship'),{type:'bar',
     data:{labels:se.map(e=>e[0]),datasets:[{data:se.map(e=>Math.round(e[1]/t3*1000)/10),
       backgroundColor:[C.teal,C.rose,C.tealD,C.amber,C.mute].slice(0,se.length),
-      borderRadius:6,maxBarThickness:46}]},options:pctOpts()});
+      borderRadius:6,maxBarThickness:74}]},options:pctOpts()});
 
   /* Sales channel share */
   const sc={}; ord.forEach(r=>{const s=r.sender||'ไม่ระบุ';sc[s]=(sc[s]||0)+1;});
@@ -966,7 +972,7 @@ function drawOOS(){
   ot.plugins.barPct={display:true,raw:true};
   CH.top5=new Chart(document.getElementById('c_top5'),{type:'bar',
     data:{labels:top.map(e=>e[0].length>26?e[0].slice(0,24)+'…':e[0]),
-      datasets:[{data:top.map(e=>e[1]),backgroundColor:C.teal,borderRadius:6,maxBarThickness:42}]},
+      datasets:[{data:top.map(e=>e[1]),backgroundColor:C.teal,borderRadius:6,maxBarThickness:70}]},
     options:ot});
 
   const t=on+ea+la||1;
@@ -974,7 +980,7 @@ function drawOOS(){
   CH.oos=new Chart(document.getElementById('c_oos'),{type:'bar',
     data:{labels:['On time','Early','Late'],datasets:[{
       data:[Math.round(on/t*1000)/10,Math.round(ea/t*1000)/10,Math.round(la/t*1000)/10],
-      backgroundColor:[C.teal,C.tealD,C.rose],borderRadius:6,maxBarThickness:46}]},
+      backgroundColor:[C.teal,C.tealD,C.rose],borderRadius:6,maxBarThickness:74}]},
     options:pctOpts(99)});
 }
 
@@ -1089,7 +1095,7 @@ function drawRepl(){
     label:i=>['จำนวน: '+i.formattedValue+' รายการ',...(prod[e[i.dataIndex][0]]||[]).map(p=>'• '+p)]};
   CH.remark=new Chart(document.getElementById('c_remark'),{type:'bar',
     data:{labels:e.map(x=>x[0]),datasets:[{data:e.map(x=>x[1]),
-      backgroundColor:pal.slice(0,e.length),borderRadius:6,maxBarThickness:56}]},options:o});
+      backgroundColor:pal.slice(0,e.length),borderRadius:6,maxBarThickness:84}]},options:o});
 }
 
 function render(){
@@ -1153,7 +1159,12 @@ function render(){
     const bad=list.filter(r=>r.diff).length;
     return {n:list.length,bad,pct:bad/list.length*100};
   }
-  const diffNow = DIFF?diffStat(DIFF.filter(r=>diffMatch(r))):null;
+  /* ไม่ได้กรอง = ยังต้องอยู่ในช่วงวันเดียวกับที่หัวรายงานแสดง
+     (ชีตนับสต็อกมีข้อมูลย้อนไปถึงปี 2025 ส่วนชีต On-Time มีแค่ปีปัจจุบัน
+      ถ้าไม่จำกัด ตัวเลขจะมาจากคนละช่วงเวลากัน) */
+  const lo=days[0]||'', hi=days[days.length-1]||'';
+  const inRange=r=>!lo||!hi||(r.date>=lo&&r.date<=hi);
+  const diffNow = DIFF?diffStat(DIFF.filter(r=>diffMatch(r)&&inRange(r))):null;
   /* ช่วงเทียบ = วันเดียวกันเดือนก่อน (ใช้ชุดวันที่เดียวกับ KPI ด้านบน) */
   const prevDaySet=new Set([...new Set(rows.map(r=>r.date).filter(Boolean))].map(prevMonth));
   const diffPrev = DIFF?diffStat(DIFF.filter(r=>r.date&&prevDaySet.has(r.date))):null;
@@ -1196,7 +1207,8 @@ function render(){
     diffV!=null?kpiCard({l:'Stock Diff',t:'Target < 2% · สัดส่วนที่นับแล้ว “ไม่ตรง” กับระบบ',
       disp:pct(diffV),v:diffV,bar:diffV*10,pass:diffV<2,
       delta:deltaHTML(diffV,diffP,false),
-      base:`ไม่ตรง ${fmt(dNow.bad)} จาก ${fmt(dNow.n)} รายการที่นับ · ตรง ${fmt(dNow.n-dNow.bad)}`}):
+      base:`ไม่ตรง ${fmt(dNow.bad)} จาก ${fmt(dNow.n)} รายการที่นับ · ตรง ${fmt(dNow.n-dNow.bad)}`
+        +(lo?` · ช่วง ${showD(lo)} – ${showD(hi)}`:'')}):
       kpiCard({l:'Stock Diff',t:'Target < 2%',wait:true,
         note:STATIC_ERR.diff?('อ่านชีตไม่ได้ — '+STATIC_ERR.diff):'ไม่มีรายการนับสต็อกในช่วงที่เลือก'}),
 
