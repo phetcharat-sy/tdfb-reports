@@ -200,6 +200,47 @@
   color:var(--mute);font-size:24.9px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}#vKPI @media(max-width:1000px){.wrap{padding-left:4%;padding-right:4%}#kShot{padding:22px 18px 28px}
   .top{grid-template-columns:1fr}h1{font-size:49.6px}}
 
+/* ================= อ่านง่ายบนจอใหญ่ =================
+   ขยายตัวหนังสือขึ้นราว 15–18% จากของเดิม · ปรับเฉพาะขนาด ไม่แตะ layout
+   ตัวไหนที่ใหญ่อยู่แล้ว (ตัวเลข KPI ยักษ์ๆ) ขยายน้อยกว่า จะได้ไม่เทอะทะ */
+#vKPI{font-size:32px}
+#vKPI .btn,#vKPI select{font-size:33px}
+#vKPI .stat{font-size:31px}
+#vKPI .kf>label{font-size:22px}
+#vKPI h2.sec{font-size:45px}
+#vKPI h2.sec em{font-size:32px}
+#vKPI .subsec{font-size:34px}
+#vKPI .subsec em{font-size:27px}
+#vKPI .scard .sl{font-size:30px}
+#vKPI .scard .sv{font-size:70px}
+#vKPI .ring .cap{font-size:36px;max-width:900px}
+#vKPI .chint{font-size:27px;line-height:1.5}
+#vKPI .empty2{font-size:31px}
+#vKPI .chip,#vKPI .kchip{font-size:26px}
+#vKPI table.dt{font-size:32px}
+#vKPI table.dt th{font-size:28px}
+#vKPI .foot{font-size:27px}
+
+/* หัวตารางลอยค้างทุกตารางที่มี scroll — เลื่อนแล้วยังรู้ว่าคอลัมน์ไหนคืออะไร */
+#vKPI .tscroll{position:relative}
+#vKPI .tscroll table.dt th{position:sticky;top:0;z-index:3;background:#F0F2F5;
+  box-shadow:inset 0 -2px 0 var(--line)}
+
+/* ตารางรายการที่นับไม่ตรง — ล็อกความกว้างคอลัมน์ ไม่ให้ตัวเลขไปกองชิดขวา */
+#vKPI table.dt.big-rows{font-size:33px;table-layout:fixed}
+#vKPI table.dt.big-rows th{font-size:29px}
+#vKPI table.dt.big-rows .c-date{width:13%}
+#vKPI table.dt.big-rows .c-prod{width:34%}
+#vKPI table.dt.big-rows .c-n{width:9%}
+#vKPI table.dt.big-rows .c-gap{width:11%}
+#vKPI table.dt.big-rows .c-why{width:24%}
+#vKPI table.dt.big-rows .c-prod{overflow-wrap:anywhere}
+#vKPI table.dt.big-rows td{padding:18px 14px}
+#vKPI .pname{font-size:33px}
+#vKPI .pmeta{font-size:26px}
+#vKPI .why{font-size:26px;line-height:1.45;white-space:normal}
+#vKPI .qty{font-size:31px;padding:3px 14px}
+
 :root{--teal:#3E8E8C;--teal-d:#2F6F6D;--plum:#6B5CA5;--plum-d:#514682;
       --amber:#D89A2E;--rose:#B4462F;--page:#EEF0F3;--card:#FFF;--soft:#F7F8FA;
       --line:#E3E6EB;--ink:#22252C;--mute:#5F6675}*{box-sizing:border-box}[hidden]{display:none!important}body{margin:0;color:var(--ink);
@@ -829,7 +870,7 @@ function kpiCard(o){
 /* ---------- หน้าย่อยของ Warehouse ---------- */
 const S_REPL='1QenNK8fW03G5bfQYStkufPa8RybxuK-W9d0ktz-mr4Y';
 const CH={};
-let CFZ=1;                       /* ตัวคูณขนาดฟอนต์ในกราฟ (โหมดพรีเซนต์ = 1.4) */
+let CFZ=1.18;                    /* ตัวคูณขนาดฟอนต์ในกราฟ (โหมดพรีเซนต์ = 1.6) */
 const cf=n=>Math.round(n*CFZ);
 const C={teal:'#3E8E8C',tealD:'#2F6F6D',plum:'#6B5CA5',plumD:'#514682',
          amber:'#D89A2E',rose:'#B4462F',good:'#3F7A65',mute:'#5F6675'};
@@ -1226,17 +1267,21 @@ function secDiff(){
   const multiYear=new Set(wk.map(k=>byW[k].y)).size>1;
   DIFF_CTX={bad,byW,wk,wpct,multiYear};
 
+  const allD=rows.map(r=>r.date).filter(Boolean).sort();
+  const span=allD.length?`${showD(allD[0])} – ${showD(allD[allD.length-1])}`:'—';
+
   return ringHTML(100-p,98,
       `<span>ความแม่นยำสต็อก (นับแล้วตรงกับระบบ)</span>`
-     +`<span>เป้าหมาย Stock Diff <b>&lt; 2%</b> · ตอนนี้ <b>${pct(p)}</b></span>`)
+     +`<span>เป้าหมาย Stock Diff <b>&lt; 2%</b> · ตอนนี้ <b>${pct(p)}</b></span>`
+     +`<span style="opacity:.8">นับจากรายการวันที่ ${span}</span>`)
    +`<div class="sgrid">${card('รายการที่นับ',rows.length)}
       ${card('ไม่ตรง',bad.length,'rose')}${card('ตรง',rows.length-bad.length,'teal')}
       ${card('ผลต่างรวม (ชิ้น)',gapSum,'amber')}</div>
 
      <h2 class="sec">สรุปรายสัปดาห์<span></span></h2>
      <div class="cpanel">
-       <div class="chint">เป้าหมาย &lt; 2% · แท่งเขียว = ผ่าน · แท่งแดง = เกินเกณฑ์${DIFF_HAS_CRIT?' · คิด % แบบถ่วงน้ำหนักด้วยเกณฑ์ เหมือนหน้า KPI ทุกแผนก':''}${wk.length>14?' · เลื่อนซ้าย-ขวาเพื่อดูทุกสัปดาห์':''}</div>
-       <div class="cscroll"><div class="cbox" style="height:560px;min-width:${Math.max(900,wk.length*105)}px">
+       <div class="chint">เป้าหมาย &lt; 2% · แท่งเขียว = ผ่าน · แท่งแดง = เกินเกณฑ์${DIFF_HAS_CRIT?' · คิด % แบบถ่วงน้ำหนักด้วยเกณฑ์ เหมือนหน้า KPI ทุกแผนก':''}${wk.length>14?' · เลื่อนซ้าย-ขวาเพื่อดูทุกสัปดาห์':''}${multiYear?'<br><b style="color:var(--bad)">กำลังรวมข้อมูลมากกว่า 1 ปี</b> — เลือกตัวกรอง YEAR เพื่อให้ตัวเลขตรงกับ Pivot ในชีต':''}</div>
+       <div class="cscroll"><div class="cbox" style="height:600px;min-width:${Math.max(900,wk.length*122)}px">
          <canvas id="c_diffwk"></canvas></div></div>
      </div>
      <div class="tscroll" style="max-height:420px"><table class="dt"><thead><tr>
@@ -1252,17 +1297,17 @@ function secDiff(){
    +`</tbody></table></div>
 
      <h2 class="sec">รายการที่นับไม่ตรง <em>${fmt(bad.length)} รายการ · เรียงตามวันที่ล่าสุด</em><span></span></h2>`
-   +(bad.length?`<div class="tscroll" style="max-height:700px"><table class="dt big-rows"><thead><tr>
-       <th style="width:190px">วันที่</th><th>สินค้า · Lot · Location</th>
-       <th class="num" style="width:130px">Odoo</th><th class="num" style="width:130px">นับได้</th>
-       <th class="num" style="width:160px">ผลต่าง</th>
-       <th style="width:230px">สาเหตุ</th></tr></thead><tbody>`
+   +(bad.length?`<div class="tscroll" style="max-height:760px"><table class="dt big-rows"><thead><tr>
+       <th class="c-date">วันที่</th><th class="c-prod">สินค้า · Lot · Location</th>
+       <th class="num c-n">Odoo</th><th class="num c-n">นับได้</th>
+       <th class="num c-gap">ผลต่าง</th>
+       <th class="c-why">สาเหตุ</th></tr></thead><tbody>`
       +[...bad].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))
                             ||Math.abs(dgap(b))-Math.abs(dgap(a))).map(r=>{
         const g=dgap(r);
         return `<tr>
         <td style="white-space:nowrap">${showD(r.date)}</td>
-        <td><span class="pname">${esc(r.name||'—')}</span>
+        <td class="c-prod"><span class="pname">${esc(r.name||'—')}</span>
             <span class="pmeta">${esc(r.lot||'—')} · ${esc(r.loc||'—')}</span></td>
         <td class="num">${fmt(r.odoo)}</td>
         <td class="num">${fmt(r.wh)}</td>
@@ -1619,11 +1664,22 @@ function opts(sel,list,label,all){
   sel.value=list.includes(cur)?cur:'';
   sel.disabled=!list.length;
 }
+let YEAR_INIT=false;
 function fillFilters(){
   /* ปีมาจากทั้งชีต On-Time และชีตนับสต็อก (ชีตนับสต็อกมีข้อมูลย้อนหลังหลายปี) */
   const years=[...new Set([...RAW,...(DIFF||[])].map(yrOf).filter(y=>y&&y.length===4))]
     .sort((a,b)=>b.localeCompare(a));
   opts(el('kY'),years,v=>v,'All');
+  /* ตั้งต้นที่ "ปีปัจจุบัน" เสมอ — เปิดแดชบอร์ดปีไหนก็เห็นผลของปีนั้น
+     ข้อมูลปีก่อนๆ จะไม่ขึ้น จนกว่าจะเลือกตัวกรอง YEAR เอง
+     ถ้าปีปัจจุบันยังไม่มีข้อมูลเลย ค่อยถอยไปใช้ปีล่าสุดที่มี */
+  if(!YEAR_INIT&&years.length){
+    YEAR_INIT=true;
+    if(!el('kY').value){
+      const now=String(new Date().getFullYear());
+      el('kY').value = years.includes(now) ? now : years[0];
+    }
+  }
   const byY=RAW.filter(r=>!fYear()||yrOf(r)===fYear());
   const months=MONTH_ORDER.filter(m=>byY.some(r=>r.month===m));
   opts(el('kM'),months,v=>MONTH_EN[MONTH_ORDER.indexOf(v)]||v,'All');
@@ -1716,6 +1772,7 @@ async function boot(){
   }
   el('kReload').disabled=false;
   await staticJob;
+  fillFilters();     /* ชีตนับสต็อกเพิ่งโหลดเสร็จ — เติมปีที่มีเฉพาะในชีตนั้นเข้า dropdown */
   render();
 }
 el('kReload').addEventListener('click',boot);
@@ -1738,7 +1795,7 @@ function kPresent(on){
   if(on&&!document.fullscreenElement)document.documentElement.requestFullscreen?.().catch(()=>{});
   if(!on&&document.fullscreenElement)document.exitFullscreen?.();
   /* กราฟต้องวาดใหม่ตามกล่องที่เปลี่ยนขนาด */
-  CFZ=on?1.4:1;
+  CFZ=on?1.6:1.18;
   render();   /* วาดกราฟใหม่ด้วยขนาดฟอนต์ของโหมดนั้น */
 }
 el('kPresent').addEventListener('click',()=>kPresent(true));
