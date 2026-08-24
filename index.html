@@ -466,17 +466,19 @@ async function fetchBig(url,onProgress,ms=180000){
     if(!r.ok)throw new Error('HTTP '+r.status);
     if(!r.body||!r.body.getReader)return await r.text();
     const reader=r.body.getReader(), dec=new TextDecoder('utf-8');
-    let out='', got=0, tick=0;
+    /* เก็บเป็นชิ้นๆ ใน array แล้วค่อย join ทีเดียว
+       ถ้าใช้ out += ต่อสตริงทีละก้อน ไฟล์ระดับสิบเมกะไบต์จะช้าแบบทวีคูณจนเหมือนค้าง */
+    const parts=[]; let got=0, tick=0;
     for(;;){
       const {done,value}=await reader.read();
       if(done)break;
       got+=value.length;
-      out+=dec.decode(value,{stream:true});
-      if(++tick%12===0)onProgress&&onProgress(got);
+      parts.push(dec.decode(value,{stream:true}));
+      if(++tick%40===0){ onProgress&&onProgress(got); await new Promise(r2=>setTimeout(r2,0)); }
     }
-    out+=dec.decode();
+    parts.push(dec.decode());
     onProgress&&onProgress(got);
-    return out;
+    return parts.join('');
   }catch(e){
     throw new Error(e.name==='AbortError'?'หมดเวลารอดาวน์โหลด (ลองกดดึงข้อมูลใหม่)':e.message);
   }finally{clearTimeout(timer);}
@@ -492,8 +494,8 @@ async function loadOTP(){
 
   /* ชีตนี้มีแสนกว่าแถว ต้องใช้ PapaParse เท่านั้น
      ตัวแยก CSV ที่เขียนเองไล่ทีละตัวอักษร จะช้าจนหน้าค้าง */
-  el('kStat').textContent='กำลังอ่านข้อมูล…';
-  await new Promise(r=>setTimeout(r,0));
+  el('kStat').textContent='กำลังแยกข้อมูล (แสนกว่าแถว)…';
+  await new Promise(r=>setTimeout(r,30));
   const rows=(typeof Papa!=='undefined')
     ? Papa.parse(t,{skipEmptyLines:true}).data
     : parseCSV(t);
@@ -510,6 +512,7 @@ async function loadOTP(){
   if(COLS.ref<0||COLS.del<0)
     throw new Error('หาคอลัมน์ไม่เจอ — หัวตารางที่อ่านได้: '+H.slice(0,8).join(' / '));
 
+  el('kStat').textContent=`กำลังจัดข้อมูล ${fmt(rows.length-1)} แถว…`;
   RAW=[];
   for(let i=1;i<rows.length;i++){
     const r=rows[i];
@@ -1322,7 +1325,10 @@ el('kClear').addEventListener('click',()=>{
 
 async function boot(){
   el('kStat').className='stat';el('kReload').disabled=true;
-  el('kStat').textContent='กำลังอ่านรายการวันที่จากชีต…';
+  el('kStat').textContent='กำลังเชื่อมต่อชีต…';
+  /* Stock Diff / Dock to Stock เป็นชีตเล็ก โหลดคู่ขนานไปเลย ไม่ต้องรอชีตใหญ่ */
+  const staticJob=loadStatic().then(()=>{ if(RAW.length)render(); })
+                              .catch(e=>console.warn('static',e));
   try{
     const n=await loadOTP();
     if(!DATES.length)throw new Error('อ่านคอลัมน์ “วันที่ต้องการจัดส่ง” ไม่ได้');
@@ -1340,10 +1346,8 @@ async function boot(){
     return;
   }
   el('kReload').disabled=false;
-
-  /* Stock Diff / Dock to Stock โหลดต่อเบื้องหลัง แล้วค่อยวาดซ้ำ */
-  loadStatic().then(()=>render())
-              .catch(e=>console.warn('static',e));
+  await staticJob;
+  render();
 }
 el('kReload').addEventListener('click',boot);
 el('kSave').addEventListener('click',async()=>{
@@ -1365,6 +1369,9 @@ window.KPI_SEC=async(sec)=>{
   render();
   if(SEC==='repl'&&!REPL){ await loadRepl(); render(); }
 };
+
+/* ให้หน้า Replenishment เริ่มโหลดชีตของตัวเองทันที ไม่ต้องรอชีต On-Time ที่ใหญ่กว่ามาก */
+if((location.hash||'').startsWith('#kpi-repl')) loadRepl().then(()=>{ if(SEC==='repl')render(); });
 
 boot();
 
