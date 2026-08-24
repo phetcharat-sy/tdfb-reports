@@ -1088,7 +1088,7 @@ function detailTable(rows){
   const sorted=[...ex].sort((a,b)=>{
     const ah=a.rteam&&a.rteam.trim()?1:0, bh=b.rteam&&b.rteam.trim()?1:0;
     if(ah!==bh)return bh-ah;
-    return (b.date||'').localeCompare(a.date||'');
+    return (a.date||'').localeCompare(b.date||'');
   });
   const seen=new Set(), out=[];
   sorted.forEach(r=>{ if(!r.key||seen.has(r.key))return; seen.add(r.key); out.push(r); });
@@ -1360,14 +1360,14 @@ function secDiff(){
         <td class="num ${v<2?'good':'bad'}">${pct(v)}</td></tr>`;}).join('')
    +`</tbody></table></div>
 
-     <h2 class="sec">รายการที่นับไม่ตรง <em>${fmt(bad.length)} รายการ · เรียงตามวันที่ล่าสุด</em><span></span></h2>`
+     <h2 class="sec">รายการที่นับไม่ตรง <em>${fmt(bad.length)} รายการ · เรียงตามวันที่ เก่า → ใหม่</em><span></span></h2>`
    +(bad.length?`<div class="tscroll"><table class="dt big-rows"><thead><tr>
        <th class="c-date">วันที่</th><th class="c-prod">สินค้า · Lot · Location</th>
        <th class="num c-n">Odoo</th><th class="num c-n">นับได้</th>
        <th class="num c-gap">ผลต่าง</th>
        <th class="c-why">สาเหตุ</th></tr></thead><tbody>`
-      +[...bad].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))
-                            ||Math.abs(dgap(b))-Math.abs(dgap(a))).map(r=>{
+      +[...bad].sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))
+                            ||Math.abs(dgap(a))-Math.abs(dgap(b))).map(r=>{
         const g=dgap(r);
         return `<tr>
         <td style="white-space:nowrap">${showD(r.date)}</td>
@@ -1438,7 +1438,8 @@ function secDock(){
   DOCK_CTX={byW,wk,wOn};
 
   const bad=rows.filter(r=>!r.inOk||!r.stOk)
-    .sort((a,b)=>(b.days??-1)-(a.days??-1));
+    .sort((a,b)=>(parseInt(a.week)||0)-(parseInt(b.week)||0)
+                 ||(a.days??-1)-(b.days??-1));
 
   return ringHTML(allP,90,
       `<span>ON-TIME รวม (รับเข้า + จัดเก็บ)</span>`
@@ -1469,7 +1470,7 @@ function secDock(){
         <td class="num ${v>=90?'good':'bad'}">${pct1(v)}</td></tr>`;}).join('')
    +`</tbody></table></div>
 
-     <h2 class="sec">รายการที่ไม่ผ่านเกณฑ์ <em>${fmt(bad.length)} รายการ · เรียงตามระยะเวลานานสุด</em><span></span></h2>`
+     <h2 class="sec">รายการที่ไม่ผ่านเกณฑ์ <em>${fmt(bad.length)} รายการ · เรียงตามสัปดาห์ น้อย → มาก</em><span></span></h2>`
    +(bad.length?`<div class="tscroll"><table class="dt big-rows"><thead><tr>
        <th class="c-date">สัปดาห์</th><th class="c-prod">สินค้า · อ้างอิง</th>
        <th class="c-n">ของมาส่ง</th><th class="c-n">จัดเก็บ</th>
@@ -1581,7 +1582,7 @@ function secRepl(){
 
     <h2 class="sec">สาเหตุที่ยังไม่ได้เติม <em>Products blocked, by reason</em><span></span></h2>
     <div class="cpanel"><div class="cbox"><canvas id="c_remark"></canvas></div></div>
-    ${byQty.length?`<div class="tscroll" style="max-height:300px"><table class="dt"><thead><tr>
+    ${byQty.length?`<div class="tscroll"><table class="dt"><thead><tr>
        <th>Product</th><th class="num">จำนวนที่ต้องเติม</th><th>Remark</th></tr></thead><tbody>`
       +byQty.map(r=>`<tr><td><b>${esc(r.product)}</b></td>
         <td class="num"><span class="qty">${fmt(r.qty)}</span></td>
@@ -1626,6 +1627,14 @@ function drawRepl(){
       backgroundColor:pal.slice(0,e.length),borderRadius:6,maxBarThickness:84}]},options:o});
 }
 
+/* ตารางสั้น (ไม่ถึง 10 แถว) ไม่ต้องมีกล่องเลื่อน — แสดงยาวรวดเดียวไปเลย */
+function fitScrolls(){
+  document.querySelectorAll('#vKPI .tscroll').forEach(d=>{
+    const n=d.querySelectorAll('tbody tr').length;
+    if(n&&n<10){ d.style.maxHeight='none'; d.style.overflowY='visible'; }
+  });
+}
+
 function render(){
   const isOv = SEC==='overview';
   el('ovBox').hidden=!isOv;
@@ -1642,6 +1651,7 @@ function render(){
   if(!isOv){
     el('detail').innerHTML = SEC==='ontime'?secOnTime() : SEC==='oos'?secOOS()
                            : SEC==='diff'?secDiff() : SEC==='dock'?secDock() : secRepl();
+    fitScrolls();
     /* กราฟต้องวาดหลัง canvas เข้า DOM แล้ว */
     requestAnimationFrame(()=>{
       try{ if(SEC==='ontime')drawOnTime(); else if(SEC==='oos')drawOOS();
