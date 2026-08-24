@@ -529,8 +529,15 @@ function combineStatus(p,w){
 function parseDMY(s){
   if(!s)return null;
   const str=String(s).trim();
-  let m=str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-  if(m)return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+  /* ชีตนับสต็อกเขียนปีแบบ 2 หลัก (13/8/26) ส่วนชีต On-Time เขียน 4 หลัก (13/08/2026)
+     ต้องรับได้ทั้งคู่ และรองรับปี พ.ศ. ด้วย */
+  let m=str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+  if(m){
+    let y=+m[3];
+    if(y<100)y+=2000;
+    if(y>2500)y-=543;
+    return `${y}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+  }
   m=str.match(/^Date\((\d{4}),(\d{1,2}),(\d{1,2})/);
   if(m)return `${m[1]}-${String(+m[2]+1).padStart(2,'0')}-${m[3].padStart(2,'0')}`;
   m=str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
