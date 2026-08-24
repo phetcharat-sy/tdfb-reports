@@ -512,7 +512,7 @@ async function loadOTP(){
       month:g(COLS.month), week:g(COLS.week),
       wh:g(COLS.wh), pack:g(COLS.pack),
       qty:COLS.qty>=0?parseQty(r[COLS.qty]):0,
-      product:String(prod||'').trim(),
+      product:g(COLS.prod),
       create:g(COLS.create), customer:g(COLS.cust), source:g(COLS.src),
       urgent:g(COLS.urgent), sender:g(COLS.sender), channel:g(COLS.chan),
       dstat:g(COLS.dstat), rteam:g(COLS.rteam)
