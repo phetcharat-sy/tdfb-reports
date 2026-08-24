@@ -67,9 +67,9 @@
   cursor:pointer;text-decoration:underline;padding:0}
 
 /* ---------- หน้าย่อย Warehouse: การ์ดสถิติ / แผงกราฟ / ตาราง ---------- */
-#vKPI .ring{display:flex;align-items:center;justify-content:center;gap:100px;flex-wrap:wrap;
+#vKPI .ring{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;
   background:linear-gradient(150deg,#2F6F6D 0%,#245B59 55%,#1E4E4D 100%);
-  border:0;border-radius:28px;padding:60px 54px;margin-bottom:26px;color:#fff;
+  border:0;border-radius:28px;padding:56px 40px 52px;margin-bottom:26px;color:#fff;text-align:center;
   box-shadow:0 4px 12px rgba(20,24,40,.14),0 22px 56px rgba(31,84,82,.30);
   position:relative;overflow:hidden}
 #vKPI .ring::after{content:"";position:absolute;right:-120px;top:-140px;
@@ -77,21 +77,22 @@
   background:radial-gradient(circle,rgba(255,255,255,.10),transparent 70%)}
 #vKPI .ring.miss{background:linear-gradient(150deg,#9C4230 0%,#8A3727 55%,#6E2E22 100%);
   box-shadow:0 4px 12px rgba(20,24,40,.14),0 22px 56px rgba(140,55,39,.32)}
-#vKPI .ring svg{width:520px;height:520px;transform:rotate(-90deg);flex:none}
+#vKPI .ring svg{width:560px;height:560px;transform:rotate(-90deg);flex:none}
 #vKPI .ring .tr{fill:none;stroke:rgba(255,255,255,.20);stroke-width:17}
 #vKPI .ring .fl{fill:none;stroke:#8FE0C4;stroke-width:17;stroke-linecap:round;
   transition:stroke-dashoffset 1s cubic-bezier(.16,.8,.24,1)}
 #vKPI .ring .fl.miss{stroke:#FFC4B4}
 #vKPI .ringwrap{position:relative;flex:none}
 #vKPI .ringwrap b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-  font-size:160px;letter-spacing:-4px;color:#fff;font-weight:bold;line-height:1}
-#vKPI .ringwrap b i{font-style:normal;font-size:.42em;margin-left:6px;
-  align-self:flex-start;margin-top:.5em;opacity:.85}
+  gap:6px;color:#fff;font-weight:bold;line-height:1;
+  font-size:104px;letter-spacing:-3px}
+#vKPI .ringwrap b i{font-style:normal;font-size:.46em;letter-spacing:0;
+  opacity:.9;transform:translateY(-.30em)}
 #vKPI .ringwrap b.miss{color:var(--bad)}
-#vKPI .ring .cap{font-size:34px;color:rgba(255,255,255,.92);line-height:1.75;max-width:560px;
-  position:relative;z-index:1}
+#vKPI .ring .cap{font-size:32px;color:rgba(255,255,255,.92);line-height:1.65;max-width:760px;
+  position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:6px}
 #vKPI .ring .cap b{color:#fff}
-#vKPI .ring .cap .tag{display:inline-block;margin-bottom:14px;padding:7px 22px;border-radius:30px;
+#vKPI .ring .cap .tag{display:inline-block;margin-bottom:6px;padding:7px 22px;border-radius:30px;
   font-size:25px;font-weight:bold;background:rgba(255,255,255,.20);color:#fff;
   border:1px solid rgba(255,255,255,.32)}
 #vKPI .ring .cap b{color:var(--ink)}
@@ -99,9 +100,9 @@
 #vKPI .sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-bottom:16px}
 #vKPI .scard{background:#fff;border:1px solid var(--line);border-radius:18px;
   box-shadow:0 1px 2px rgba(20,24,40,.04),0 8px 20px rgba(20,24,40,.05);
-  padding:36px 30px;text-align:center;display:flex;flex-direction:column;gap:8px}
-#vKPI .scard .sl{font-size:32px;color:var(--mute);letter-spacing:.04em}
-#vKPI .scard .sv{font-size:78px;font-weight:bold;letter-spacing:-1px;line-height:1.15}
+  padding:28px 24px;text-align:center;display:flex;flex-direction:column;gap:4px}
+#vKPI .scard .sl{font-size:26.2px;color:var(--mute);letter-spacing:.04em}
+#vKPI .scard .sv{font-size:63.8px;font-weight:bold;letter-spacing:-1px;line-height:1.15}
 #vKPI .sv.teal{color:var(--teal-d)} #vKPI .sv.rose{color:var(--bad)}
 #vKPI .sv.amber{color:#8a6a2f} #vKPI .sv.plum{color:var(--plum-d)}
 #vKPI .sv.mute{color:var(--mute)}
@@ -135,12 +136,12 @@
 #vKPI .hero .big-pct.pass{color:var(--good)} #vKPI .hero .big-pct.fail{color:var(--bad)}
 #vKPI .hero .meta{font-size:22.8px;color:var(--mute);line-height:1.7}
 #vKPI .hero .meta b{color:var(--ink)}
-#vKPI table.dt{width:100%;border-collapse:collapse;font-size:34px;background:#fff;
+#vKPI table.dt{width:100%;border-collapse:collapse;font-size:28.5px;background:#fff;
   border:1px solid var(--line);border-radius:18px;overflow:hidden;
   box-shadow:0 1px 2px rgba(20,24,40,.04),0 8px 22px rgba(20,24,40,.05)}
 #vKPI table.dt th{background:#F0F2F5;text-align:left;color:var(--mute);font-weight:normal;
-  font-size:30px;padding:22px 24px}
-#vKPI table.dt td{padding:20px 24px;border-top:1px solid #ECEEF2}
+  font-size:25.1px;padding:15px 18px}
+#vKPI table.dt td{padding:14px 18px;border-top:1px solid #ECEEF2}
 #vKPI table.dt tr:hover td{background:#FAFBFC}
 #vKPI table.dt .num{text-align:right;font-variant-numeric:tabular-nums}
 #vKPI .bad{color:var(--bad);font-weight:bold} #vKPI .good{color:var(--good);font-weight:bold}
@@ -256,7 +257,7 @@ body.present #vKPI .scard .sv{font-size:82.1px}
 body.present #vKPI .scard .sl{font-size:30.8px}
 body.present #vKPI table.dt{font-size:31.9px}
 body.present #vKPI table.dt th{font-size:27.4px}
-body.present #vKPI .ring svg{width:540px;height:540px}
+body.present #vKPI .ring svg{width:700px;height:700px}
 body.present #vKPI .ringwrap b{font-size:136.8px}
 body.present #vKPI .ring .cap{font-size:41px;max-width:640px}
 body.present #vKPI .cbox{height:600px}
@@ -972,7 +973,7 @@ function secOnTime(){
 
   ONTIME_CTX={ord,lines,onT,late,plat,walk};
 
-  return ringHTML(p,98,`แพ็คเสร็จตามวันที่ต้องการ<br>เป้าหมาย <b>≥ 98%</b>`)
+  return ringHTML(p,98,`<span>แพ็คเสร็จตามวันที่ต้องการ</span><span>เป้าหมาย <b>≥ 98%</b></span>`)
    +`<div class="sgrid">${card('Orders',total)}${card('Packed On Time',onT,'teal')}
        ${card('แพ็คล่าช้า',late,'rose')}${card('ยังไม่ได้จัดส่ง',pend,'mute')}</div>
      <div class="sgrid">${card('Customers',cust)}${card('Platform',plat,'amber')}
@@ -1076,7 +1077,7 @@ function secOOS(){
   const p=Math.round(((on+ea)/(tq||1))*10000)/100;
   OOS_CTX={rows,on,ea,la};
 
-  return ringHTML(p,99,`WH ส่งของให้ Packing ตามกำหนด<br>เป้าหมาย <b>≥ 99%</b>`)
+  return ringHTML(p,99,`<span>WH ส่งของให้ Packing ตามกำหนด</span><span>เป้าหมาย <b>≥ 99%</b></span>`)
    +`<div class="sgrid">${card('จำนวนสินค้า (ชิ้น)',tq)}${card('On-Time Dispatch',on,'teal')}
       ${card('จัดส่งก่อนกำหนด',ea,'amber')}${card('จัดส่งล่าช้า',la,'rose')}${card('Orders',ord)}</div>
 
