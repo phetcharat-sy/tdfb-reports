@@ -295,6 +295,7 @@ body.present #vKPI .tscroll{max-height:none}
       <div class="grp">Warehouse</div>
       <button data-view="kpi" data-sec="ontime">KPI On-Time Performance</button>
       <button data-view="kpi" data-sec="oos">KPI Out Of Stock</button>
+      <button data-view="kpi" data-sec="diff">Stock Diff</button>
       <button data-view="kpi" data-sec="repl">Replenishment</button>
       <button data-view="report" data-team="warehouse">รายงานประจำวัน</button>
 
@@ -699,16 +700,22 @@ async function loadDiff(){
     const t=table(await smallSheet(S_DIFF,'0',s=>SHEET_STATE.diff=s));
     if(!t)throw new Error('หาหัวตารางไม่เจอ');
     const cD=t.col('Day','วันที่'), cW=t.col('Week','สัปดาห์'),
-          cC=t.col('เช็ค'), cK=t.col('เกณฑ์');
+          cC=t.col('เช็ค'), cK=t.col('เกณฑ์'),
+          cM=t.col('เดือน'), cN=t.col('Name'), cL=t.col('Lot'), cLoc=t.col('Location'),
+          cO=t.col('Odoo'), cWh=t.col('WH'), cDf=t.col('Diff'), cR=t.col('สาเหตุ');
     if(cC<0)throw new Error('หาคอลัมน์ “เช็ค” ไม่เจอ');
     const list=[];
     t.rows.forEach(r=>{
       const c=(r[cC]||'').trim();
       if(c!=='ตรง'&&c!=='ไม่ตรง')return;          /* กันแถวสรุป/แถวว่างท้ายชีต */
+      const g2=k=>k>=0?String(r[k]||'').trim():'';
       list.push({date:cD>=0?parseDMY(r[cD]):null,
                  week:cW>=0?String(parseInt(r[cW])||''):'',
                  diff:c==='ไม่ตรง',
-                 crit:cK>=0?parseQty(r[cK]):0});   /* น้ำหนักตามตาราง Pivot ในชีต */
+                 crit:cK>=0?parseQty(r[cK]):0,    /* น้ำหนักตามตาราง Pivot ในชีต */
+                 month:g2(cM), name:g2(cN), lot:g2(cL), loc:g2(cLoc),
+                 odoo:cO>=0?parseQty(r[cO]):0, wh:cWh>=0?parseQty(r[cWh]):0,
+                 gap:cDf>=0?parseQty(r[cDf]):0, reason:g2(cR)});
     });
     DIFF_HAS_CRIT = list.some(r=>r.crit>0);
     if(!list.length)throw new Error('ไม่พบแถวที่มีค่า ตรง/ไม่ตรง');
@@ -1136,6 +1143,87 @@ function drawOOS(){
     options:pctOpts(99)});
 }
 
+/* ================= Stock Diff (รายละเอียดของที่นับไม่ตรง) ================= */
+let DIFF_CTX=null;
+function secDiff(){
+  if(!DIFF)return `<div class="empty2">${STATIC_ERR.diff?'อ่านชีตไม่ได้ — '+STATIC_ERR.diff:'กำลังโหลดข้อมูล…'}</div>`;
+
+  /* ใช้ตัวกรอง MONTH/WEEK/DAY ชุดเดียวกับหน้าอื่น */
+  const midx=k=>k?+k.slice(5,7)-1:-1;
+  const rows=DIFF.filter(r=>{
+    if(!r.date)return false;
+    if(DAYSEL)return r.date===DAYSEL;
+    if(fWeek()&&r.week!==fWeek())return false;
+    if(fMonth()&&midx(r.date)!==MONTH_ORDER.indexOf(fMonth()))return false;
+    return true;
+  });
+  if(!rows.length)return '<div class="empty2">ไม่มีรายการนับสต็อกในช่วงที่เลือก</div>';
+
+  const bad=rows.filter(r=>r.diff);
+  const tot=rows.reduce((s,r)=>s+r.crit,0)||rows.length;
+  const badW=bad.reduce((s,r)=>s+r.crit,0)||bad.length;
+  const p=badW/tot*100;
+  const gapSum=bad.reduce((s,r)=>s+Math.abs(r.gap),0);
+  DIFF_CTX={bad};
+
+  /* สรุปรายสัปดาห์ */
+  const byW={};
+  rows.forEach(r=>{const w=r.week||'—';
+    const o=byW[w]=byW[w]||{n:0,bad:0,gap:0};
+    o.n++; if(r.diff){o.bad++;o.gap+=Math.abs(r.gap);}});
+  const wk=Object.keys(byW).sort((a,b)=>(parseInt(a)||0)-(parseInt(b)||0));
+
+  return ringHTML(100-p,98,
+      `<span>ความแม่นยำสต็อก (นับแล้วตรงกับระบบ)</span>`
+     +`<span>เป้าหมาย Stock Diff <b>&lt; 2%</b> · ตอนนี้ <b>${pct(p)}</b></span>`)
+   +`<div class="sgrid">${card('รายการที่นับ',rows.length)}
+      ${card('ไม่ตรง',bad.length,'rose')}${card('ตรง',rows.length-bad.length,'teal')}
+      ${card('ผลต่างรวม (ชิ้น)',gapSum,'amber')}</div>
+
+     <h2 class="sec">สรุปรายสัปดาห์<span></span></h2>
+     <div class="cpanel"><div class="cbox"><canvas id="c_diffwk"></canvas></div></div>
+     <div class="tscroll" style="max-height:360px"><table class="dt"><thead><tr>
+       <th>สัปดาห์</th><th class="num">นับทั้งหมด</th><th class="num">ไม่ตรง</th>
+       <th class="num">ผลต่าง (ชิ้น)</th><th class="num">Stock Diff</th></tr></thead><tbody>`
+   +wk.map(w=>{const o=byW[w],v=o.bad/o.n*100;
+      return `<tr><td>Week ${w}</td><td class="num">${fmt(o.n)}</td>
+        <td class="num">${fmt(o.bad)}</td><td class="num">${fmt(o.gap)}</td>
+        <td class="num ${v<2?'good':'bad'}">${pct(v)}</td></tr>`;}).join('')
+   +`</tbody></table></div>
+
+     <h2 class="sec">รายการที่นับไม่ตรง <em>เรียงตามผลต่างมากสุด</em><span></span></h2>`
+   +(bad.length?`<div class="tscroll"><table class="dt"><thead><tr>
+       <th>วันที่</th><th>สินค้า</th><th>Lot</th><th>Location</th>
+       <th class="num">Odoo</th><th class="num">นับได้</th><th class="num">ผลต่าง</th>
+       <th>สาเหตุ</th></tr></thead><tbody>`
+      +[...bad].sort((a,b)=>Math.abs(b.gap)-Math.abs(a.gap)).map(r=>`<tr>
+        <td style="white-space:nowrap">${showD(r.date)}</td>
+        <td><b>${esc(r.name||'—')}</b></td>
+        <td style="white-space:nowrap">${esc(r.lot||'—')}</td>
+        <td style="white-space:nowrap">${esc(r.loc||'—')}</td>
+        <td class="num">${fmt(r.odoo)}</td>
+        <td class="num">${fmt(r.wh)}</td>
+        <td class="num"><span class="qty">${r.wh-r.odoo>0?'+':''}${fmt(r.wh-r.odoo)}</span></td>
+        <td>${esc(r.reason||'—')}</td></tr>`).join('')
+      +'</tbody></table></div>'
+     :'<div class="empty2">ไม่มีรายการที่นับไม่ตรงในช่วงนี้</div>');
+}
+
+function drawDiff(){
+  if(!DIFF_CTX)return;
+  const el2=document.getElementById('c_diffwk'); if(!el2)return;
+  const byW={};
+  DIFF_CTX.bad.forEach(r=>{const w=r.week||'—';byW[w]=(byW[w]||0)+Math.abs(r.gap);});
+  const wk=Object.keys(byW).sort((a,b)=>(parseInt(a)||0)-(parseInt(b)||0));
+  if(!wk.length)return;
+  destroy('diffwk');
+  const o=baseOpts(false); o.layout={padding:{top:30}};
+  o.plugins.barPct={display:true,raw:true};
+  CH.diffwk=new Chart(el2,{type:'bar',
+    data:{labels:wk.map(w=>'W'+w),datasets:[{data:wk.map(w=>byW[w]),
+      backgroundColor:C.rose,borderRadius:6,maxBarThickness:70}]},options:o});
+}
+
 /* ================= Replenishment ================= */
 const BLOCKED=['ไม่มีโควต้า','ไม่มีโควตา','ไม่มี raw material','ไม่มีraw material'];
 const isBlocked=r=>{const s=(r.remark||'').toLowerCase();return !!s&&BLOCKED.some(k=>s.includes(k));};
@@ -1257,15 +1345,18 @@ function render(){
   const TITLE={overview:['ภาพรวม KPI ทุกแผนก','Warehouse · Delivery · Admin — TDFB'],
                ontime:['KPI On-Time Performance','Warehouse · แพ็คสินค้าเสร็จตามวันที่ต้องการ'],
                oos:['KPI Out Of Stock','Warehouse · WH ส่งของให้ Packing ตามกำหนด'],
+               diff:['Stock Diff','Warehouse · ความแม่นยำสต็อก · รายการที่นับไม่ตรง'],
                repl:['Replenishment','Warehouse · รายการที่ต้องเติมสต็อก']};
   const tt=TITLE[SEC]||TITLE.overview;
   el('kTitle').textContent=tt[0];
   el('kSub').textContent=tt[1];
   if(!isOv){
-    el('detail').innerHTML = SEC==='ontime'?secOnTime() : SEC==='oos'?secOOS() : secRepl();
+    el('detail').innerHTML = SEC==='ontime'?secOnTime() : SEC==='oos'?secOOS()
+                           : SEC==='diff'?secDiff() : secRepl();
     /* กราฟต้องวาดหลัง canvas เข้า DOM แล้ว */
     requestAnimationFrame(()=>{
-      try{ if(SEC==='ontime')drawOnTime(); else if(SEC==='oos')drawOOS(); else drawRepl(); }
+      try{ if(SEC==='ontime')drawOnTime(); else if(SEC==='oos')drawOOS();
+           else if(SEC==='diff')drawDiff(); else drawRepl(); }
       catch(e){ console.warn('chart',e); }
     });
   }
