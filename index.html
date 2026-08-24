@@ -234,6 +234,19 @@
 /* วงแหวนโหมดปกติ = ของเดิม (เรียงบนลงล่าง) ไม่แตะ
    ปรับเฉพาะโหมดพรีเซนต์ ที่วงแหวนใหญ่จนคำอธิบายถูกบีบตัดบรรทัด */
 
+/* แถบตัวกรองย่อยในแต่ละหน้า (chip) */
+#vKPI .fbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:0 0 16px}
+#vKPI .fbar .fl{font-size:25px;color:var(--mute);letter-spacing:.12em;
+  text-transform:uppercase;margin-right:6px}
+#vKPI .fbar button{font-family:inherit;font-size:28px;padding:9px 24px;border-radius:30px;
+  border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;
+  transition:background .12s ease,color .12s ease}
+#vKPI .fbar button:hover{background:#EDF3F3}
+#vKPI .fbar button.on{background:var(--teal);border-color:var(--teal);color:#fff;font-weight:bold}
+#vKPI .fbar button.on.rose{background:var(--bad);border-color:var(--bad)}
+#vKPI .fbar button.on.amber{background:#B98526;border-color:#B98526}
+#vKPI .fbar .cnt{opacity:.75;font-weight:normal}
+
 /* ตัวเลือก WEEK — รายการยาว 50+ สัปดาห์ ถ้าใช้ select ปกติจะกางเต็มจอ
    เปลี่ยนเป็นกล่องเตี้ยๆ ที่เลื่อนเอาแทน */
 #vKPI .wsel{position:relative}
@@ -1083,8 +1096,29 @@ const card=(l,v,cls)=>`<div class="scard"><div class="sl">${l}</div>
   <div class="sv ${cls||''}">${typeof v==='number'?fmt(v):v}</div></div>`;
 
 /* ตาราง Order Detail — เฉพาะรายการที่ไม่ใช่ "ส่งในวัน" ตัดซ้ำด้วย Order Reference */
-function detailTable(rows){
-  const ex=rows.filter(r=>classify(r.wh)!=='ontime');
+/* ---------- ตัวกรองย่อยรายหน้า (chip) ----------
+   เก็บค่าไว้ใน SUBF · กดชิปหรือคลิกบนกราฟ แล้วเรียก render() ใหม่
+   ค่าเริ่มต้นของแต่ละคีย์คือตัวเลือกแรกในลิสต์ */
+const SUBF={};
+const sf=(k,d)=>SUBF[k]!==undefined?SUBF[k]:d;
+/* items = [[value,label,cls?], ...] */
+function chipBar(key,label,items,cur){
+  return `<div class="fbar"><span class="fl">${label}</span>`
+    +items.map(([v,t,cls])=>`<button type="button" data-sf="${key}" data-v="${v}"
+        class="${v===cur?'on '+(cls||''):''}">${t}</button>`).join('')
+    +`</div>`;
+}
+function detailTable(rows,mode){
+  mode=mode||'ex';
+  /* ex = เฉพาะที่ไม่ใช่ "ส่งในวัน" (ค่าเดิม) · all = ทุกแถว
+     yes = ตรงเวลา+ก่อนกำหนด · no = ล่าช้า · หรือระบุตรงๆ ontime/early/late */
+  const keep=r=>{const c=classify(r.wh);
+    return mode==='all' ? true
+         : mode==='ex'  ? c!=='ontime'
+         : mode==='yes' ? (c==='ontime'||c==='early')
+         : mode==='no'  ? c==='late'
+         : c===mode;};
+  const ex=rows.filter(keep);
   const sorted=[...ex].sort((a,b)=>{
     const ah=a.rteam&&a.rteam.trim()?1:0, bh=b.rteam&&b.rteam.trim()?1:0;
     if(ah!==bh)return bh-ah;
@@ -1092,13 +1126,18 @@ function detailTable(rows){
   });
   const seen=new Set(), out=[];
   sorted.forEach(r=>{ if(!r.key||seen.has(r.key))return; seen.add(r.key); out.push(r); });
-  if(!out.length)return '<div class="empty2">ไม่มีรายการที่ผิดปกติ (ทุกออเดอร์ส่งในวัน)</div>';
+  if(!out.length)return '<div class="empty2">ไม่มีรายการที่ตรงกับตัวกรองนี้</div>';
   return `<div class="tscroll"><table class="dt"><thead><tr>
-    <th>Order Ref</th><th>Source</th><th>Product</th><th>Remark Team</th></tr></thead><tbody>`
-   +out.map(r=>`<tr><td><b>${esc(r.ref)}</b></td>
+    <th>Order Ref</th><th>Source</th><th>Product</th><th>สถานะ</th><th>Remark Team</th></tr></thead><tbody>`
+   +out.map(r=>{const c=classify(r.wh);
+      const lbl=c==='ontime'?'<span class="good">ส่งในวัน</span>'
+              :c==='early' ?'<span style="color:#8a6a2f;font-weight:bold">ก่อนกำหนด</span>'
+              :'<span class="bad">ล่าช้า</span>';
+      return `<tr><td><b>${esc(r.ref)}</b></td>
       <td style="white-space:nowrap">${esc(r.source||'—')}</td>
       <td>${esc(r.product||'—')}</td>
-      <td>${chip(r.rteam)}</td></tr>`).join('')
+      <td style="white-space:nowrap">${lbl}</td>
+      <td>${chip(r.rteam)}</td></tr>`;}).join('')
    +'</tbody></table></div>';
 }
 const CHIPS=[['#E3EFEE','#2F6F6D'],['#F6EBD6','#7A5613'],['#F7E4DF','#8A3524'],
@@ -1130,6 +1169,17 @@ function secOnTime(){
 
   ONTIME_CTX={ord,lines,onT,late,plat,walk};
 
+  /* ตัวกรองย่อยของหน้านี้ — มีผลเฉพาะตาราง Order Detail ด้านล่าง
+     การ์ดและกราฟด้านบนยังเป็นภาพรวมทั้งหมดเหมือนเดิม */
+  const fPack=sf('ot_pack','ex'), fPlat=sf('ot_plat',''), fChan=sf('ot_chan','');
+  const chanList=[...new Set(lines.map(r=>(r.sender||'').trim()).filter(Boolean))].sort();
+  const dl=lines.filter(r=>{
+    if(fPlat==='plat'&&!isPlatform(r.source))return false;
+    if(fPlat==='walk'&&isPlatform(r.source))return false;
+    if(fChan&&(r.sender||'').trim()!==fChan)return false;
+    return true;
+  });
+
   return ringHTML(p,98,`<span>แพ็คเสร็จตามวันที่ต้องการ</span><span>เป้าหมาย <b>≥ 98%</b></span>`)
    +`<div class="sgrid">${card('Orders',total)}${card('Packed On Time',onT,'teal')}
        ${card('แพ็คล่าช้า',late,'rose')}${card('ยังไม่ได้จัดส่ง',pend,'mute')}</div>
@@ -1153,8 +1203,16 @@ function secOnTime(){
        <div class="cbox" style="flex:1;min-width:340px;height:420px"><canvas id="c_chan"></canvas></div>
        <div class="chleg" id="chanLeg"></div></div></div>
 
-     <h2 class="sec">Order Detail <em>เฉพาะรายการที่ไม่ใช่ “ส่งในวัน”</em><span></span></h2>
-     ${detailTable(lines)}`;
+     <h2 class="sec">Order Detail <em>คลิกที่กราฟด้านบน หรือเลือกชิปด้านล่างเพื่อกรอง</em><span></span></h2>
+     ${chipBar('ot_pack','Packing On-Time',
+        [['ex','ไม่ใช่ส่งในวัน'],['yes','Yes · ตรงเวลา'],['no','No · ล่าช้า','rose'],['all','ทั้งหมด']],fPack)}
+     ${chipBar('ot_plat','Platform',
+        [['','ทั้งหมด'],['plat','Platform'],['walk','Walk-in','amber']],fPlat)}
+     ${chanList.length>1?chipBar('ot_chan','Sales Channel',
+        [['','ทั้งหมด'],...chanList.map(c=>[c,c])],fChan):''}
+     <div style="font-size:26px;color:var(--mute);margin:-8px 0 12px">
+       แสดง ${fmt(uniqOrders(dl))} ออเดอร์ จากทั้งหมด ${fmt(total)}</div>
+     ${detailTable(dl,fPack)}`;
 }
 let ONTIME_CTX=null;
 
@@ -1174,19 +1232,25 @@ function drawOnTime(){
       borderColor:C.teal,backgroundColor:'rgba(62,142,140,.13)',tension:.3,fill:true,
       borderWidth:2,pointRadius:wk.length===1?9:3,pointBackgroundColor:C.teal}]},options:o1});
 
-  /* Packing On-Time */
+  /* Packing On-Time — คลิกแท่งเพื่อกรองตาราง Order Detail ด้านล่าง */
   const tot=onT+late||1;
   destroy('pack');
+  const oPack=pctOpts(98);
+  oPack.onClick=(e,els)=>{ if(els.length){ SUBF.ot_pack=els[0].index===0?'yes':'no'; render(); } };
+  oPack.onHover=(e,els)=>{e.native.target.style.cursor=els.length?'pointer':'default';};
   CH.pack=new Chart(document.getElementById('c_pack'),{type:'bar',
     data:{labels:['Yes','No'],datasets:[{data:[Math.round(onT/tot*1000)/10,Math.round(late/tot*1000)/10],
-      backgroundColor:[C.teal,C.rose],borderRadius:6,maxBarThickness:96}]},options:pctOpts(98)});
+      backgroundColor:[C.teal,C.rose],borderRadius:6,maxBarThickness:96}]},options:oPack});
 
-  /* Platform vs Walk-in */
+  /* Platform vs Walk-in — คลิกแท่งเพื่อกรอง */
   const t2=plat+walk||1;
   destroy('plat');
+  const oPlat=pctOpts();
+  oPlat.onClick=(e,els)=>{ if(els.length){ SUBF.ot_plat=els[0].index===0?'plat':'walk'; render(); } };
+  oPlat.onHover=(e,els)=>{e.native.target.style.cursor=els.length?'pointer':'default';};
   CH.plat=new Chart(document.getElementById('c_plat'),{type:'bar',
     data:{labels:['Platform','Walk-in'],datasets:[{data:[Math.round(plat/t2*1000)/10,Math.round(walk/t2*1000)/10],
-      backgroundColor:[C.tealD,C.amber],borderRadius:6,maxBarThickness:96}]},options:pctOpts()});
+      backgroundColor:[C.tealD,C.amber],borderRadius:6,maxBarThickness:96}]},options:oPlat});
 
   /* Shipping method */
   const su={}; ord.forEach(r=>{const u=r.urgent||'ไม่ระบุ';su[u]=(su[u]||0)+1;});
@@ -1208,14 +1272,17 @@ function drawOnTime(){
   const cols=ce.map((e,i)=>pal[i%pal.length]);
   const pcts=ce.map(e=>Math.round(e[1]/t4*1000)/10);
   const leg=document.getElementById('chanLeg');
-  if(leg)leg.innerHTML='<div class="t">Orders by brand</div>'
-    +ce.map((e,i)=>`<div class="chrow"><span class="chdot" style="background:${cols[i]}"></span>
+  if(leg)leg.innerHTML='<div class="t">Orders by brand · คลิกเพื่อกรอง</div>'
+    +ce.map((e,i)=>`<div class="chrow" data-sf="ot_chan" data-v="${esc(e[0])}" style="cursor:pointer">
+      <span class="chdot" style="background:${cols[i]}"></span>
       <div class="chname">${esc(e[0])}<div class="chsub">${fmt(e[1])} orders</div></div>
       <div class="chpct">${Number.isInteger(pcts[i])?pcts[i]:pcts[i].toFixed(1)}%</div></div>`).join('');
   destroy('chan');
   CH.chan=new Chart(document.getElementById('c_chan'),{type:'pie',
     data:{labels:ce.map(e=>e[0]),datasets:[{data:pcts,backgroundColor:cols}]},
     options:{responsive:true,maintainAspectRatio:false,layout:{padding:10},
+      onClick:(e,els)=>{ if(els.length){ SUBF.ot_chan=ce[els[0].index][0]; render(); } },
+      onHover:(e,els)=>{e.native.target.style.cursor=els.length?'pointer':'default';},
       plugins:{legend:{display:false},pieLbl:{display:true,minPercent:5},
         tooltip:{titleFont:{size:cf(22)},bodyFont:{size:cf(21)},padding:12,
           callbacks:{label:c=>c.label+': '+c.formattedValue+'% ('+fmt(ce[c.dataIndex][1])+' orders)'}}}}});
@@ -1233,6 +1300,7 @@ function secOOS(){
   const ord=uniqOrders(rows);
   const p=Math.round(((on+ea)/(tq||1))*10000)/100;
   OOS_CTX={rows,on,ea,la};
+  const fSt=sf('oos_st','ex');
 
   return ringHTML(p,99,`<span>WH ส่งของให้ Packing ตามกำหนด</span><span>เป้าหมาย <b>≥ 99%</b></span>`)
    +`<div class="sgrid">${card('จำนวนสินค้า (ชิ้น)',tq)}${card('On-Time Dispatch',on,'teal')}
@@ -1248,8 +1316,11 @@ function secOOS(){
          <div class="cpanel"><div class="cbox"><canvas id="c_oos"></canvas></div></div></div>
      </div>
 
-     <h2 class="sec">Order Detail <em>เฉพาะรายการที่ไม่ใช่ “ส่งในวัน”</em><span></span></h2>
-     ${detailTable(rows)}`;
+     <h2 class="sec">Order Detail <em>คลิกกราฟ Out-of-Stock Rate หรือเลือกชิปเพื่อกรอง</em><span></span></h2>
+     ${chipBar('oos_st','สถานะการส่งของ',
+        [['ex','ไม่ใช่ส่งในวัน'],['ontime','On time'],['early','Early','amber'],
+         ['late','Late','rose'],['all','ทั้งหมด']],fSt)}
+     ${detailTable(rows,fSt)}`;
 }
 
 function drawOOS(){
@@ -1279,11 +1350,14 @@ function drawOOS(){
 
   const t=on+ea+la||1;
   destroy('oos');
+  const oO=pctOpts(99);
+  oO.onClick=(e,els)=>{ if(els.length){ SUBF.oos_st=['ontime','early','late'][els[0].index]; render(); } };
+  oO.onHover=(e,els)=>{e.native.target.style.cursor=els.length?'pointer':'default';};
   CH.oos=new Chart(document.getElementById('c_oos'),{type:'bar',
     data:{labels:['On time','Early','Late'],datasets:[{
       data:[Math.round(on/t*1000)/10,Math.round(ea/t*1000)/10,Math.round(la/t*1000)/10],
       backgroundColor:[C.teal,C.tealD,C.rose],borderRadius:6,maxBarThickness:74}]},
-    options:pctOpts(99)});
+    options:oO});
 }
 
 /* ================= Stock Diff (รายละเอียดของที่นับไม่ตรง) ================= */
@@ -1334,6 +1408,10 @@ function secDiff(){
   const allD=rows.map(r=>r.date).filter(Boolean).sort();
   const span=allD.length?`${showD(allD[0])} – ${showD(allD[allD.length-1])}`:'—';
 
+  /* ตัวกรองย่อย: ดูเฉพาะที่นับไม่ตรง / ที่นับตรง / ทั้งหมด */
+  const fDf=sf('df_st','bad');
+  const dRows=fDf==='all'?rows:fDf==='ok'?rows.filter(r=>!r.diff):bad;
+
   return ringHTML(100-p,98,
       `<span>ความแม่นยำสต็อก (นับแล้วตรงกับระบบ)</span>`
      +`<span>เป้าหมาย Stock Diff <b>&lt; 2%</b> · ตอนนี้ <b>${pct(p)}</b></span>`
@@ -1360,13 +1438,15 @@ function secDiff(){
         <td class="num ${v<2?'good':'bad'}">${pct(v)}</td></tr>`;}).join('')
    +`</tbody></table></div>
 
-     <h2 class="sec">รายการที่นับไม่ตรง <em>${fmt(bad.length)} รายการ · เรียงตามวันที่ เก่า → ใหม่</em><span></span></h2>`
-   +(bad.length?`<div class="tscroll"><table class="dt big-rows"><thead><tr>
+     <h2 class="sec">รายการนับสต็อก <em>${fmt(dRows.length)} รายการ · เรียงตามวันที่ เก่า → ใหม่</em><span></span></h2>
+     ${chipBar('df_st','ผลการนับ',
+        [['bad','ไม่ตรง','rose'],['ok','ตรง'],['all','ทั้งหมด']],fDf)}`
+   +(dRows.length?`<div class="tscroll"><table class="dt big-rows"><thead><tr>
        <th class="c-date">วันที่</th><th class="c-prod">สินค้า · Lot · Location</th>
        <th class="num c-n">Odoo</th><th class="num c-n">นับได้</th>
        <th class="num c-gap">ผลต่าง</th>
        <th class="c-why">สาเหตุ</th></tr></thead><tbody>`
-      +[...bad].sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))
+      +[...dRows].sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))
                             ||Math.abs(dgap(a))-Math.abs(dgap(b))).map(r=>{
         const g=dgap(r);
         return `<tr>
@@ -1375,11 +1455,12 @@ function secDiff(){
             <span class="pmeta">${esc(r.lot||'—')} · ${esc(r.loc||'—')}</span></td>
         <td class="num">${fmt(r.odoo)}</td>
         <td class="num">${fmt(r.wh)}</td>
-        <td class="num"><span class="qty ${g>0?'up':'down'}">${g>0?'+':''}${fmt(g)}</span></td>
+        <td class="num">${r.diff?`<span class="qty ${g>0?'up':'down'}">${g>0?'+':''}${fmt(g)}</span>`
+                                :'<span class="good">ตรง</span>'}</td>
         <td>${r.reason?`<span class="why has">${esc(r.reason)}</span>`
                       :'<span class="why">ยังไม่ระบุ</span>'}</td></tr>`;}).join('')
       +'</tbody></table></div>'
-     :'<div class="empty2">ไม่มีรายการที่นับไม่ตรงในช่วงนี้</div>');
+     :'<div class="empty2">ไม่มีรายการที่ตรงกับตัวกรองนี้</div>');
 }
 
 function drawDiff(){
@@ -1423,7 +1504,11 @@ function secDock(){
 
   const n=rows.length;
   const inOk=rows.filter(r=>r.inOk).length, stOk=rows.filter(r=>r.stOk).length;
-  const inP=n?inOk/n*100:0, stP=n?stOk/n*100:0, allP=(inP+stP)/2;
+  const inP=n?inOk/n*100:0, stP=n?stOk/n*100:0;
+  /* เลือกดูรวม / เฉพาะรับเข้า / เฉพาะจัดเก็บ — มีผลทั้งวงแหวน กราฟ และตาราง */
+  const fDk=sf('dk_v','all');
+  const allP = fDk==='in'?inP : fDk==='st'?stP : (inP+stP)/2;
+  const vName = fDk==='in'?'รับเข้า' : fDk==='st'?'จัดเก็บ' : 'รับเข้า + จัดเก็บ';
   const dd=rows.filter(r=>r.days!=null).map(r=>r.days);
   const avg=dd.length?dd.reduce((a,b)=>a+b,0)/dd.length:null;
   const worst=dd.length?Math.max(...dd):null;
@@ -1434,15 +1519,22 @@ function secDock(){
     o.n++; if(r.inOk)o.inOk++; if(r.stOk)o.stOk++;
     if(r.days!=null){o.days+=r.days;o.dn++;}});
   const wk=Object.keys(byW).sort((a,b)=>(parseInt(a)||0)-(parseInt(b)||0));
-  const wOn=o=>o.n?(o.inOk/o.n*100+o.stOk/o.n*100)/2:0;
-  DOCK_CTX={byW,wk,wOn};
+  /* ON-TIME รายสัปดาห์ตามมุมมองที่เลือก */
+  const wOn=o=>!o.n?0
+    : fDk==='in' ? o.inOk/o.n*100
+    : fDk==='st' ? o.stOk/o.n*100
+    : (o.inOk/o.n*100+o.stOk/o.n*100)/2;
+  DOCK_CTX={byW,wk,wOn,vName};
 
-  const bad=rows.filter(r=>!r.inOk||!r.stOk)
+  /* รายการที่ไม่ผ่าน — ตามมุมมองที่เลือกเช่นกัน */
+  const bad=rows.filter(r=> fDk==='in' ? !r.inOk : fDk==='st' ? !r.stOk : (!r.inOk||!r.stOk))
     .sort((a,b)=>(parseInt(a.week)||0)-(parseInt(b.week)||0)
                  ||(a.days??-1)-(b.days??-1));
 
-  return ringHTML(allP,90,
-      `<span>ON-TIME รวม (รับเข้า + จัดเก็บ)</span>`
+  return chipBar('dk_v','มุมมอง',
+      [['all','รวม (รับเข้า + จัดเก็บ)'],['in','เฉพาะรับเข้า'],['st','เฉพาะจัดเก็บ','amber']],fDk)
+   +ringHTML(allP,90,
+      `<span>ON-TIME ${esc(vName)}</span>`
      +`<span>เป้าหมาย ไม่ผ่านเกณฑ์ <b>&lt; 10%</b> · ตอนนี้ <b>${pct1(100-allP)}</b></span>`
      +`<span style="opacity:.8">${fmt(n)} รายการ · ${wk.length} สัปดาห์${fWeek()?` · Week ${fWeek()}`:''}</span>`)
    +`<div class="sgrid">${card('รับเข้าตรงเวลา',pct1(inP),inP>=90?'teal':'rose')}
@@ -1450,7 +1542,7 @@ function secDock(){
       ${card('ระยะเวลาเฉลี่ย (วัน)',avg==null?'—':avg.toFixed(1),'amber')}
       ${card('นานสุด (วัน)',worst==null?'—':worst.toFixed(1),'rose')}</div>
 
-     <h2 class="sec">ON-TIME รายสัปดาห์<span></span></h2>
+     <h2 class="sec">ON-TIME รายสัปดาห์ <em>${esc(vName)}</em><span></span></h2>
      <div class="cpanel">
        <div class="chint">เป้าหมาย ON-TIME ≥ 90% (ไม่ผ่านเกณฑ์ &lt; 10%) · แท่งเขียว = ผ่าน · แท่งแดง = ต่ำกว่าเป้า${wk.length>14?' · เลื่อนซ้าย-ขวาเพื่อดูทุกสัปดาห์':''}</div>
        <div class="cscroll"><div class="cbox" style="height:560px;min-width:${Math.max(900,wk.length*122)}px">
@@ -1459,7 +1551,7 @@ function secDock(){
      <div class="tscroll"><table class="dt"><thead><tr>
        <th class="c-week">สัปดาห์</th><th class="num">รายการ</th>
        <th class="num">รับเข้าตรงเวลา</th><th class="num">จัดเก็บตรงเวลา</th>
-       <th class="num">ระยะเวลาเฉลี่ย (วัน)</th><th class="num">ON-TIME รวม</th>
+       <th class="num">ระยะเวลาเฉลี่ย (วัน)</th><th class="num">ON-TIME ${esc(vName)}</th>
      </tr></thead><tbody>`
    +wk.map(w=>{const o=byW[w],v=wOn(o);
       return `<tr><td class="c-week"><b>Week ${o.w}</b></td>
@@ -1470,7 +1562,7 @@ function secDock(){
         <td class="num ${v>=90?'good':'bad'}">${pct1(v)}</td></tr>`;}).join('')
    +`</tbody></table></div>
 
-     <h2 class="sec">รายการที่ไม่ผ่านเกณฑ์ <em>${fmt(bad.length)} รายการ · เรียงตามสัปดาห์ น้อย → มาก</em><span></span></h2>`
+     <h2 class="sec">รายการที่ไม่ผ่านเกณฑ์ <em>${fmt(bad.length)} รายการ · ${esc(vName)} · เรียงตามสัปดาห์ น้อย → มาก</em><span></span></h2>`
    +(bad.length?`<div class="tscroll"><table class="dt big-rows"><thead><tr>
        <th class="c-date">สัปดาห์</th><th class="c-prod">สินค้า · อ้างอิง</th>
        <th class="c-n">ของมาส่ง</th><th class="c-n">จัดเก็บ</th>
@@ -1492,7 +1584,7 @@ function secDock(){
 function drawDock(){
   if(!DOCK_CTX)return;
   const el2=document.getElementById('c_dockwk'); if(!el2)return;
-  const {byW,wk,wOn}=DOCK_CTX; if(!wk.length)return;
+  const {byW,wk,wOn,vName}=DOCK_CTX; if(!wk.length)return;
   const vals=wk.map(w=>wOn(byW[w]));
   destroy('dockwk');
   const o=baseOpts(false); o.layout={padding:{top:30}};
@@ -1502,7 +1594,7 @@ function drawDock(){
   o.plugins.tooltip.callbacks={
     title:c=>'Week '+wk[c[0].dataIndex],
     label:c=>{const d=byW[wk[c.dataIndex]];
-      return `ON-TIME ${(+c.raw).toFixed(1)}%  ·  ${fmt(d.n)} รายการ`
+      return `ON-TIME ${vName} ${(+c.raw).toFixed(1)}%  ·  ${fmt(d.n)} รายการ`
         +(d.dn?`  ·  เฉลี่ย ${(d.days/d.dn).toFixed(1)} วัน`:'');}};
   o.plugins.barPct={display:true,digits:1,target:90};
   o.scales.x.ticks.font={size:cf(26)};
@@ -1626,6 +1718,14 @@ function drawRepl(){
     data:{labels:e.map(x=>x[0]),datasets:[{data:e.map(x=>x[1]),
       backgroundColor:pal.slice(0,e.length),borderRadius:6,maxBarThickness:84}]},options:o});
 }
+
+/* กดชิปตัวกรองย่อย หรือคลิกแถวใน legend ของกราฟวงกลม */
+el('detail').addEventListener('click',e=>{
+  const b=e.target.closest('[data-sf]'); if(!b)return;
+  const k=b.dataset.sf, v=b.dataset.v;
+  SUBF[k]=(SUBF[k]===v&&v!==''&&k!=='ot_pack'&&k!=='oos_st'&&k!=='df_st'&&k!=='dk_v')?'':v;
+  render();
+});
 
 /* ตารางสั้น (ไม่ถึง 10 แถว) ไม่ต้องมีกล่องเลื่อน — แสดงยาวรวดเดียวไปเลย */
 function fitScrolls(){
