@@ -110,6 +110,24 @@
 #vKPI .cpanel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:28px;margin-bottom:18px;
   box-shadow:0 1px 2px rgba(20,24,40,.04),0 8px 22px rgba(20,24,40,.05)}
 #vKPI .cbox{position:relative;height:520px}
+#vKPI .cscroll{overflow-x:auto;overflow-y:hidden;padding-bottom:6px}
+#vKPI .cscroll::-webkit-scrollbar{height:12px}
+#vKPI .cscroll::-webkit-scrollbar-thumb{background:#CBD0D9;border-radius:6px}
+#vKPI .cscroll::-webkit-scrollbar-track{background:#F0F2F5;border-radius:6px}
+#vKPI .chint{font-size:23px;color:var(--mute);margin:-6px 0 12px 2px}
+/* ตารางรายการที่นับไม่ตรง — หัวตารางลอย · ตัวเลขอ่านง่าย */
+#vKPI table.dt.big-rows{font-size:30px}
+#vKPI table.dt.big-rows th{position:sticky;top:0;z-index:3;font-size:26px;
+  box-shadow:inset 0 -2px 0 var(--line)}
+#vKPI table.dt.big-rows td{padding:18px 20px;vertical-align:middle}
+#vKPI table.dt.big-rows tbody tr:nth-child(even) td{background:#FAFBFC}
+#vKPI table.dt.big-rows tbody tr:hover td{background:#F1F6F5}
+#vKPI .pname{font-size:30px;font-weight:bold;line-height:1.35;display:block}
+#vKPI .pmeta{font-size:23px;color:var(--mute);font-weight:normal;
+  font-variant-numeric:tabular-nums;margin-top:3px;display:block}
+#vKPI .why{display:inline-block;background:#EEF0F3;color:var(--mute);
+  padding:3px 14px;border-radius:20px;font-size:23px}
+#vKPI .why.has{background:#F3EFFA;color:var(--plum-d)}
 #vKPI .g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 #vKPI .g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
 @media(max-width:1100px){#vKPI .g2,#vKPI .g3{grid-template-columns:1fr}}
@@ -128,6 +146,8 @@
 #vKPI .chip{display:inline-block;padding:3px 12px;border-radius:7px;font-weight:bold;font-size:23.9px}
 #vKPI .qty{display:inline-block;background:#F7E4DF;color:var(--bad);font-weight:bold;
   padding:2px 10px;border-radius:6px}
+#vKPI .qty.up{background:#F7E4DF;color:var(--bad)}
+#vKPI .qty.down{background:#E7EDF7;color:#3D5B8C}
 #vKPI .empty2{background:var(--soft);border:1px dashed var(--line);border-radius:14px;
   padding:60px 20px;text-align:center;color:var(--mute);font-size:27.4px}
 #vKPI .hero{background:var(--soft);border:1px solid var(--line);border-radius:14px;
@@ -444,6 +464,17 @@ const pct1=n=>n==null?'—':(Math.round(n*10)/10).toString().replace(/\.0$/,'')+
 const MONTHS=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
               'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 const showD=k=>{if(!k)return '—';const[y,m,d]=k.split('-');return `${d} ${MONTHS[+m-1]} ${y}`;};
+/* วันที่แบบสั้น สำหรับแสดงช่วงของสัปดาห์ เช่น 21 ก.ค. */
+const MON_S=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const shortD=k=>{if(!k)return '';const[,m,d]=k.split('-');return `${+d} ${MON_S[+m-1]}`;};
+/* ช่วงวันของสัปดาห์ = วันแรก–วันสุดท้ายที่มีการนับจริงในสัปดาห์นั้น */
+const weekRange=(a,b)=>{
+  if(!a&&!b)return '';
+  if(!b||a===b)return shortD(a||b)+' '+String(a||b).slice(0,4);
+  const ya=a.slice(0,4), yb=b.slice(0,4);
+  return ya===yb ? `${shortD(a)} – ${shortD(b)} ${yb}`
+                 : `${shortD(a)} ${ya} – ${shortD(b)} ${yb}`;
+};
 
 function parseCSV(t){
   const rows=[];let row=[],cell='',q=false;
@@ -857,11 +888,15 @@ const barPct={id:'barPct',
     x.font="bold "+cf(29)+"px Tahoma";x.fillStyle='#22252C';x.textAlign='center';x.textBaseline='bottom';
     ch.data.datasets.forEach((ds,di)=>{
       const m=ch.getDatasetMeta(di); if(m.hidden)return;
+      let lastR=-1e9;                       /* ขอบขวาของป้ายก่อนหน้า — กันตัวเลขทับกัน */
       m.data.forEach((bar,i)=>{
         const v=ds.data[i]; if(v==null||Number.isNaN(+v))return;
         const t=op.raw?Number(v).toLocaleString('en-US')
                       :(op.digits!=null?(+v).toFixed(op.digits)
                         :(Number.isInteger(+v)?v:(+v).toFixed(1)))+'%';
+        const w=x.measureText(t).width;
+        if(bar.x-w/2 < lastR+6) return;     /* ไม่มีที่พอ — ข้ามป้ายนี้ไป */
+        lastR=bar.x+w/2;
         x.fillText(t,bar.x,Math.max(18,bar.y-10));
       });
     });
@@ -1145,6 +1180,9 @@ function drawOOS(){
 }
 
 /* ================= Stock Diff (รายละเอียดของที่นับไม่ตรง) ================= */
+/* ผลต่างที่แสดง = นับได้ − Odoo · ถ้าไม่มีสองคอลัมน์นี้ ให้ใช้คอลัมน์ Diff จากชีต
+   ใช้ตัวเดียวกันทั้งการ "เรียง" และการ "แสดง" ลำดับจึงตรงกับตัวเลขที่เห็นเสมอ */
+const dgap=r=>(r.wh||r.odoo)?(r.wh-r.odoo):r.gap;
 let DIFF_CTX=null;
 function secDiff(){
   if(!DIFF)return `<div class="empty2">${STATIC_ERR.diff?'อ่านชีตไม่ได้ — '+STATIC_ERR.diff:'กำลังโหลดข้อมูล…'}</div>`;
@@ -1166,13 +1204,19 @@ function secDiff(){
   const p=badW/tot*100;
   const gapSum=bad.reduce((s,r)=>s+Math.abs(r.gap),0);
 
-  /* สรุปรายสัปดาห์ */
+  /* สรุปรายสัปดาห์
+     % ต้องคิดแบบเดียวกับหน้า KPI ทุกแผนก คือถ่วงน้ำหนักด้วยคอลัมน์ "เกณฑ์"
+     (SUM เกณฑ์ของไม่ตรง ÷ SUM เกณฑ์ทั้งหมด) ไม่ใช่การนับจำนวนแถว
+     ถ้าชีตไม่มีคอลัมน์เกณฑ์ ค่อยถอยไปนับแถวแทน */
   const byW={};
   rows.forEach(r=>{const w=r.week||'—';
-    const o=byW[w]=byW[w]||{n:0,bad:0,gap:0};
-    o.n++; if(r.diff){o.bad++;o.gap+=Math.abs(r.gap);}});
+    const o=byW[w]=byW[w]||{n:0,bad:0,gap:0,cTot:0,cBad:0,d0:'',d1:''};
+    o.n++; o.cTot+=r.crit;
+    if(r.diff){o.bad++;o.cBad+=r.crit;o.gap+=Math.abs(r.gap);}
+    if(r.date){ if(!o.d0||r.date<o.d0)o.d0=r.date; if(!o.d1||r.date>o.d1)o.d1=r.date; }});
+  const wpct=o=>(DIFF_HAS_CRIT&&o.cTot>0)?o.cBad/o.cTot*100:(o.n?o.bad/o.n*100:0);
   const wk=Object.keys(byW).sort((a,b)=>(parseInt(a)||0)-(parseInt(b)||0));
-  DIFF_CTX={bad,byW,wk};
+  DIFF_CTX={bad,byW,wk,wpct};
 
   return ringHTML(100-p,98,
       `<span>ความแม่นยำสต็อก (นับแล้วตรงกับระบบ)</span>`
@@ -1182,30 +1226,41 @@ function secDiff(){
       ${card('ผลต่างรวม (ชิ้น)',gapSum,'amber')}</div>
 
      <h2 class="sec">สรุปรายสัปดาห์<span></span></h2>
-     <div class="cpanel"><div class="cbox"><canvas id="c_diffwk"></canvas></div></div>
-     <div class="tscroll" style="max-height:360px"><table class="dt"><thead><tr>
-       <th>สัปดาห์</th><th class="num">นับทั้งหมด</th><th class="num">ไม่ตรง</th>
+     <div class="cpanel">
+       <div class="chint">เป้าหมาย &lt; 2% · แท่งเขียว = ผ่าน · แท่งแดง = เกินเกณฑ์${DIFF_HAS_CRIT?' · คิด % แบบถ่วงน้ำหนักด้วยเกณฑ์ เหมือนหน้า KPI ทุกแผนก':''}${wk.length>14?' · เลื่อนซ้าย-ขวาเพื่อดูทุกสัปดาห์':''}</div>
+       <div class="cscroll"><div class="cbox" style="height:560px;min-width:${Math.max(900,wk.length*105)}px">
+         <canvas id="c_diffwk"></canvas></div></div>
+     </div>
+     <div class="tscroll" style="max-height:420px"><table class="dt"><thead><tr>
+       <th style="width:150px">สัปดาห์</th><th style="width:250px">ช่วงวันที่</th>
+       <th class="num">นับทั้งหมด</th><th class="num">ไม่ตรง</th>
        <th class="num">ผลต่าง (ชิ้น)</th><th class="num">Stock Diff</th></tr></thead><tbody>`
-   +wk.map(w=>{const o=byW[w],v=o.bad/o.n*100;
-      return `<tr><td>Week ${w}</td><td class="num">${fmt(o.n)}</td>
+   +wk.map(w=>{const o=byW[w],v=wpct(o);
+      return `<tr><td><b>Week ${w}</b></td>
+        <td style="white-space:nowrap;color:var(--mute)">${weekRange(o.d0,o.d1)||'—'}</td>
+        <td class="num">${fmt(o.n)}</td>
         <td class="num">${fmt(o.bad)}</td><td class="num">${fmt(o.gap)}</td>
         <td class="num ${v<2?'good':'bad'}">${pct(v)}</td></tr>`;}).join('')
    +`</tbody></table></div>
 
-     <h2 class="sec">รายการที่นับไม่ตรง <em>เรียงตามผลต่างมากสุด</em><span></span></h2>`
-   +(bad.length?`<div class="tscroll"><table class="dt"><thead><tr>
-       <th>วันที่</th><th>สินค้า</th><th>Lot</th><th>Location</th>
-       <th class="num">Odoo</th><th class="num">นับได้</th><th class="num">ผลต่าง</th>
-       <th>สาเหตุ</th></tr></thead><tbody>`
-      +[...bad].sort((a,b)=>Math.abs(b.gap)-Math.abs(a.gap)).map(r=>`<tr>
+     <h2 class="sec">รายการที่นับไม่ตรง <em>${fmt(bad.length)} รายการ · เรียงตามผลต่างมากสุด</em><span></span></h2>`
+   +(bad.length?`<div class="tscroll" style="max-height:700px"><table class="dt big-rows"><thead><tr>
+       <th style="width:190px">วันที่</th><th>สินค้า · Lot · Location</th>
+       <th class="num" style="width:130px">Odoo</th><th class="num" style="width:130px">นับได้</th>
+       <th class="num" style="width:160px">ผลต่าง</th>
+       <th style="width:230px">สาเหตุ</th></tr></thead><tbody>`
+      +[...bad].sort((a,b)=>Math.abs(dgap(b))-Math.abs(dgap(a))
+                            ||String(b.date||'').localeCompare(String(a.date||''))).map(r=>{
+        const g=dgap(r);
+        return `<tr>
         <td style="white-space:nowrap">${showD(r.date)}</td>
-        <td><b>${esc(r.name||'—')}</b></td>
-        <td style="white-space:nowrap">${esc(r.lot||'—')}</td>
-        <td style="white-space:nowrap">${esc(r.loc||'—')}</td>
+        <td><span class="pname">${esc(r.name||'—')}</span>
+            <span class="pmeta">${esc(r.lot||'—')} · ${esc(r.loc||'—')}</span></td>
         <td class="num">${fmt(r.odoo)}</td>
         <td class="num">${fmt(r.wh)}</td>
-        <td class="num"><span class="qty">${r.wh-r.odoo>0?'+':''}${fmt(r.wh-r.odoo)}</span></td>
-        <td>${esc(r.reason||'—')}</td></tr>`).join('')
+        <td class="num"><span class="qty ${g>0?'up':'down'}">${g>0?'+':''}${fmt(g)}</span></td>
+        <td>${r.reason?`<span class="why has">${esc(r.reason)}</span>`
+                      :'<span class="why">ยังไม่ระบุ</span>'}</td></tr>`;}).join('')
       +'</tbody></table></div>'
      :'<div class="empty2">ไม่มีรายการที่นับไม่ตรงในช่วงนี้</div>');
 }
@@ -1213,21 +1268,28 @@ function secDiff(){
 function drawDiff(){
   if(!DIFF_CTX)return;
   const el2=document.getElementById('c_diffwk'); if(!el2)return;
-  const byW=DIFF_CTX.byW||{}, wk=DIFF_CTX.wk||[];
+  const byW=DIFF_CTX.byW||{}, wk=DIFF_CTX.wk||[], wpct=DIFF_CTX.wpct;
   if(!wk.length)return;
-  /* Stock Diff รายสัปดาห์ = ไม่ตรง ÷ นับทั้งหมด (%) — ตรงกับคอลัมน์ในตารางด้านล่าง */
-  const vals=wk.map(w=>{const o=byW[w]; return o&&o.n?o.bad/o.n*100:0;});
+  /* ใช้ % ชุดเดียวกับตารางด้านล่างและหน้า KPI (ถ่วงน้ำหนักด้วยเกณฑ์) */
+  const vals=wk.map(w=>wpct(byW[w]||{n:0,bad:0,cTot:0,cBad:0}));
   destroy('diffwk');
   const o=baseOpts(false); o.layout={padding:{top:30}};
   o.scales.y.ticks.callback=v=>v+'%';
   o.scales.y.suggestedMax=Math.max(4,Math.ceil(Math.max(...vals)*1.15));
-  o.plugins.tooltip.callbacks={label:c=>{
-    const d=byW[wk[c.dataIndex]]||{n:0,bad:0};
-    return `Stock Diff ${(+c.raw).toFixed(2)}%  (ไม่ตรง ${fmt(d.bad)} / นับ ${fmt(d.n)})`;}};
+  o.plugins.tooltip.callbacks={
+    title:c=>{const d=byW[wk[c[0].dataIndex]]||{};
+      const rg=weekRange(d.d0,d.d1);
+      return 'Week '+wk[c[0].dataIndex]+(rg?'  ·  '+rg:'');},
+    label:c=>{
+      const d=byW[wk[c.dataIndex]]||{n:0,bad:0};
+      return `Stock Diff ${(+c.raw).toFixed(2)}%  (ไม่ตรง ${fmt(d.bad)} / นับ ${fmt(d.n)} รายการ)`;}};
   o.plugins.barPct={display:true,digits:2,target:2};
+  o.scales.x.ticks.font={size:cf(26)};
+  o.scales.y.ticks.font={size:cf(26)};
   CH.diffwk=new Chart(el2,{type:'bar',
     data:{labels:wk.map(w=>'W'+w),datasets:[{data:vals,
-      backgroundColor:vals.map(v=>v<2?C.teal:C.rose),borderRadius:6,maxBarThickness:70}]},options:o});
+      backgroundColor:vals.map(v=>v<2?C.teal:C.rose),borderRadius:6,
+      maxBarThickness:70,minBarLength:2}]},options:o});
 }
 
 /* ================= Replenishment ================= */
