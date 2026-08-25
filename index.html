@@ -247,6 +247,21 @@
 #vKPI .fbar button.on.amber{background:#B98526;border-color:#B98526}
 #vKPI .fbar .cnt{opacity:.75;font-weight:normal}
 
+/* ---------- หน้า Forecast ---------- */
+#vKPI .cgrid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:6px}
+@media(max-width:1500px){#vKPI .cgrid2{grid-template-columns:1fr}}
+#vKPI .chname2{font-size:31px;font-weight:bold;color:var(--ink);margin-bottom:12px}
+#vKPI .fnote{background:#F7F8FA;border:1px solid var(--line);border-left:5px solid var(--plum);
+  border-radius:14px;padding:22px 26px;margin:0 0 18px;font-size:28px;line-height:1.65;color:var(--ink)}
+#vKPI .fnote>div{margin-top:6px;color:var(--ink)}
+#vKPI .fnote code{display:block;margin-top:12px;background:#EEF0F3;border-radius:9px;
+  padding:12px 16px;font-family:'IBM Plex Mono',monospace,Tahoma;font-size:24px;
+  color:var(--plum-d);line-height:1.6}
+#vKPI .fwarn{margin-top:12px;color:var(--bad);font-size:26px}
+#vKPI tr.ddrow td{background:#FBF1E8!important}
+#vKPI .ddtag{display:inline-block;background:#F3E3CB;color:#8a6a2f;font-weight:bold;
+  font-size:23px;padding:2px 12px;border-radius:20px;margin-left:8px;white-space:nowrap}
+
 /* ตารางรายละเอียด Dock to Stock — คอลัมน์เยอะ เลื่อนแนวนอนได้ */
 #vKPI table.dt.dock-dt{font-size:30px}
 #vKPI table.dt.dock-dt th{font-size:27px;white-space:nowrap}
@@ -436,6 +451,7 @@ body.present #vKPI .tscroll{max-height:none}
       <button data-view="kpi" data-sec="diff">Stock Diff</button>
       <button data-view="kpi" data-sec="dock">Dock To Stock Time</button>
       <button data-view="kpi" data-sec="repl">Replenishment</button>
+      <button data-view="kpi" data-sec="fc">Forecast</button>
       <button data-view="report" data-team="warehouse">รายงานประจำวัน</button>
 
       <div class="grp">Delivery</div>
@@ -1645,6 +1661,369 @@ function drawDock(){
       maxBarThickness:70,minBarLength:2}]},options:o});
 }
 
+/* ================= Forecast (พยากรณ์ยอดและกำลังคน) =================
+   ยกมาจาก tdfb-dashboard-v2 แล้วปรับดีไซน์ให้เข้ากับแดชบอร์ดนี้
+   ข้อมูลใช้ชีตเดิมของแดชบอร์ดนี้ทั้งหมด — RAW (On-Time) สำหรับยอดขาย
+   และ REPL (Replenishment) สำหรับ Stock คงเหลือ */
+
+/* Double Day = วันที่ตรงกับเลขเดือน เช่น 1.1, 2.2, … 12.12 */
+const isDD=d=>d.getDate()===(d.getMonth()+1);
+function countDD(start,end){
+  if(!start||!end)return 0;
+  let n=0;
+  const cur=new Date(start.getFullYear(),start.getMonth(),start.getDate());
+  const last=new Date(end.getFullYear(),end.getMonth(),end.getDate());
+  while(cur<=last){ if(isDD(cur))n++; cur.setDate(cur.getDate()+1); }
+  return n;
+}
+const dkey=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const shortTH=d=>d?d.getDate()+' '+MON_S[d.getMonth()]:'';
+
+/* เรียนรู้ว่า Double Day ยอดพุ่งกี่เท่า เทียบกับ 7 วันก่อนหน้า
+   ต้องเคยเกิดอย่างน้อย 2 ครั้งถึงจะเชื่อ และ cap ไว้ 3 เท่า กันค่าสุดโต่ง */
+const DD_MIN_SAMPLES=2, DD_MAX_MULT=3;
+function learnDD(byDate){
+  const keys=Object.keys(byDate).sort();
+  if(!keys.length)return {multiplier:null,samples:0};
+  const ratios=[];
+  keys.forEach(k=>{
+    const d=new Date(k+'T00:00:00');
+    if(!isDD(d))return;
+    let sum=0,n=0;
+    for(let off=1;off<=7;off++){
+      const p=new Date(d); p.setDate(d.getDate()-off);
+      const pk=dkey(p);
+      if(byDate[pk]!==undefined){sum+=byDate[pk];n++;}
+    }
+    if(n>0&&sum>0)ratios.push(byDate[k]/(sum/n));
+  });
+  if(ratios.length<DD_MIN_SAMPLES)return {multiplier:null,samples:ratios.length};
+  const avg=ratios.reduce((s,v)=>s+v,0)/ratios.length;
+  return {multiplier:Math.min(avg,DD_MAX_MULT),samples:ratios.length};
+}
+
+/* พยากรณ์ 4 สัปดาห์ = เฉลี่ย 4 สัปดาห์ล่าสุด + ความชัน (linear regression) + Double Day */
+function fcWeekly(weekList,byWeek,range,dd){
+  const hist=weekList.map(w=>byWeek[w]||0);
+  const n=hist.length;
+  const lastN=Math.min(4,n);
+  const avg4=hist.slice(-lastN).reduce((s,v)=>s+v,0)/(lastN||1);
+  let slope=0;
+  if(n>=2){
+    const xm=(n-1)/2, ym=hist.reduce((s,v)=>s+v,0)/n;
+    let num=0,den=0;
+    hist.forEach((y,i)=>{num+=(i-xm)*(y-ym);den+=(i-xm)**2;});
+    slope=den?num/den:0;
+  }
+  const lastW=Number(weekList[n-1])||n;
+  const boost=(dd&&dd.multiplier)||1;
+  const lastRange=range[weekList[n-1]];
+  const lastDate=lastRange?lastRange.max:new Date();
+  const daily=avg4/7;
+  const fc=[],fcLbl=[],fcRange=[],ddCount=[];
+  for(let i=1;i<=4;i++){
+    let v=Math.max(0,avg4+slope*i);
+    const s=new Date(lastDate); s.setDate(lastDate.getDate()+7*(i-1)+1);
+    const e=new Date(lastDate); e.setDate(lastDate.getDate()+7*i);
+    const c=countDD(s,e);
+    ddCount.push(c);
+    if(c>0&&boost>1)v+=daily*(boost-1)*c;
+    fc.push(Math.max(0,Math.round(v)));
+    fcLbl.push('W'+(lastW+i)+'*');
+    fcRange.push(shortTH(s)+' – '+shortTH(e)+' (คาด)');
+  }
+  const histRange=weekList.map(w=>{const r=range[w];return r?shortTH(r.min)+' – '+shortTH(r.max):'';});
+  return {labels:[...weekList.map(w=>'W'+w),...fcLbl],hist,fc,
+          ranges:[...histRange,...fcRange],avg4,slope,boost,
+          ddSamples:(dd&&dd.samples)||0,ddCount,weeksUsed:n};
+}
+
+/* พยากรณ์ 7 วัน ด้วย Holt's Exponential Smoothing
+   fit บนข้อมูลทุกวันจริง แต่กราฟโชว์ทุก 5 วัน กันแกน x รก */
+function fcDaily(byDate){
+  const keys=Object.keys(byDate).sort();
+  if(!keys.length)return null;
+  const startKey=keys[0], lastKey=keys[keys.length-1];
+  const start=new Date(startKey+'T00:00:00'), last=new Date(lastKey+'T00:00:00');
+  const total=Math.round((last-start)/86400000)+1;
+  if(total<7)return null;
+  const allKeys=[],allVals=[];
+  for(let i=0;i<total;i++){
+    const d=new Date(start); d.setDate(start.getDate()+i);
+    const k=dkey(d); allKeys.push(k); allVals.push(byDate[k]||0);
+  }
+  const A=0.3,B=0.15;
+  let level=allVals[0], trend=allVals.length>1?allVals[1]-allVals[0]:0;
+  for(let i=1;i<allVals.length;i++){
+    const prev=level;
+    level=A*allVals[i]+(1-A)*(level+trend);
+    trend=B*(level-prev)+(1-B)*trend;
+  }
+  const dd=learnDD(byDate), boost=dd.multiplier||1;
+  const STEP=5, idx=[];
+  for(let i=0;i<allKeys.length;i+=STEP)idx.push(i);
+  if(idx[idx.length-1]!==allKeys.length-1)idx.push(allKeys.length-1);
+  const hist=idx.map(i=>allVals[i]);
+  const histLbl=idx.map(i=>shortTH(new Date(allKeys[i]+'T00:00:00')));
+  const fc=[],fcLbl=[],fcDates=[],fcDD=[];
+  for(let i=1;i<=7;i++){
+    const d=new Date(last); d.setDate(last.getDate()+i);
+    let v=Math.max(0,level+trend*i);
+    const flag=isDD(d); fcDD.push(flag);
+    if(flag&&boost>1)v*=boost;
+    fc.push(Math.max(0,Math.round(v)));
+    fcLbl.push(shortTH(d)+'*'); fcDates.push(d);
+  }
+  return {labels:[...histLbl,...fcLbl],hist,fc,fcDates,fcDD,
+          level,trend,boost,ddSamples:dd.samples,days:total};
+}
+
+/* เกณฑ์กำลังคน — ยกมาจาก dashboard v2 ตรงๆ */
+const STAFF={ordPerPerson:200,packHours:6,endOfLine:1,
+             whPerHour:88,whHours:6,whHandhelds:3};
+
+let FC_CTX=null;
+function secForecast(){
+  if(!RAW.length)return '<div class="empty2">ยังไม่มีข้อมูลยอดขาย</div>';
+
+  /* ใช้ทั้งปี ไม่อิงตัวกรอง MONTH/WEEK/DAY เพราะการพยากรณ์ต้องเห็นประวัติต่อเนื่อง */
+  const rows=RAW.filter(r=>r.date&&(!fYear()||r.date.slice(0,4)===fYear()));
+  if(rows.length<20)return '<div class="empty2">ข้อมูลน้อยเกินไปสำหรับการพยากรณ์</div>';
+
+  const ordByDate={}, qtyByDate={}, ordByWeek={}, qtyByWeek={},
+        datesByWeek={}, demandPW={};
+  rows.forEach(r=>{
+    (ordByDate[r.date]=ordByDate[r.date]||new Set()).add(r.key);
+    qtyByDate[r.date]=(qtyByDate[r.date]||0)+r.qty;
+    const w=r.week;
+    if(w){
+      (ordByWeek[w]=ordByWeek[w]||new Set()).add(r.key);
+      qtyByWeek[w]=(qtyByWeek[w]||0)+r.qty;
+      (datesByWeek[w]=datesByWeek[w]||[]).push(r.date);
+      if(r.product){
+        const p=demandPW[r.product]=demandPW[r.product]||{};
+        p[w]=(p[w]||0)+r.qty;
+      }
+    }
+  });
+  const ordCntDate={}; Object.entries(ordByDate).forEach(([k,v])=>ordCntDate[k]=v.size);
+  const ordCntWeek={}; Object.entries(ordByWeek).forEach(([k,v])=>ordCntWeek[k]=v.size);
+
+  const range={};
+  Object.entries(datesByWeek).forEach(([w,ds])=>{
+    ds.sort();
+    range[w]={min:new Date(ds[0]+'T00:00:00'),max:new Date(ds[ds.length-1]+'T00:00:00')};
+  });
+  const weekList=Object.keys(ordCntWeek).sort((a,b)=>Number(a)-Number(b));
+  const nWeeks=weekList.length||1;
+
+  const wOrd=fcWeekly(weekList,ordCntWeek,range,learnDD(ordCntDate));
+  const wQty=fcWeekly(weekList,qtyByWeek,range,learnDD(qtyByDate));
+  const dOrd=fcDaily(ordCntDate);
+  const dQty=fcDaily(qtyByDate);
+
+  /* Stock depletion — จับคู่ชื่อสินค้าระหว่างชีตยอดขายกับชีต Replenishment */
+  const avgDemand={};
+  Object.entries(demandPW).forEach(([p,wd])=>{
+    avgDemand[p]=Object.values(wd).reduce((s,v)=>s+v,0)/nWeeks;
+  });
+  let dep=[];
+  if(REPL){
+    dep=REPL.map(r=>{
+      const stock=parseQty(r.wh300)||0;
+      const demand=avgDemand[r.product]||0;
+      return {...r,stock,demand,weeksLeft:demand>0?stock/demand:null};
+    }).filter(r=>r.demand>0||r.stock>0)
+      .sort((a,b)=>(a.weeksLeft==null?1e9:a.weeksLeft)-(b.weeksLeft==null?1e9:b.weeksLeft));
+  }
+  const crit=dep.filter(r=>r.weeksLeft!=null&&r.weeksLeft<2).length;
+  const warn=dep.filter(r=>r.weeksLeft!=null&&r.weeksLeft>=2&&r.weeksLeft<4).length;
+  const okc=dep.filter(r=>r.weeksLeft==null||r.weeksLeft>=4).length;
+
+  /* กำลังคน 7 วันข้างหน้า */
+  const staff=[];
+  if(dOrd&&dQty){
+    dOrd.fc.forEach((o,i)=>{
+      const q=dQty.fc[i]||0;
+      const pk=Math.max(1,Math.ceil(o/STAFF.ordPerPerson));
+      const wh=Math.max(1,Math.ceil(q/(STAFF.whPerHour*STAFF.whHours)));
+      staff.push({d:dOrd.fcDates[i],lbl:shortTH(dOrd.fcDates[i]),dd:dOrd.fcDD[i],
+                  ord:o,qty:q,pack:pk,total:pk+STAFF.endOfLine,
+                  wh,over:wh>STAFF.whHandhelds});
+    });
+  }
+
+  const items1=depItems(dep,1), items4=depItems(dep,4);
+  FC_CTX={wOrd,wQty,dOrd,dQty,items1,items4};
+
+  const ddNote=wOrd.ddSamples>=DD_MIN_SAMPLES
+    ? `เรียนรู้ Double Day จาก ${wOrd.ddSamples} ครั้งในอดีต — ยอดพุ่งราว ${wOrd.boost.toFixed(2)} เท่า`
+    : `ยังมีตัวอย่าง Double Day ในอดีตไม่ถึง ${DD_MIN_SAMPLES} ครั้ง จึงไม่บวกเพิ่ม`;
+
+  return `<div class="sgrid">
+      ${card('วิกฤต < 2 สัปดาห์',crit,'rose')}
+      ${card('เฝ้าระวัง 2–4 สัปดาห์',warn,'amber')}
+      ${card('ปกติ ≥ 4 สัปดาห์',okc,'teal')}
+      ${card('สินค้าที่วิเคราะห์ได้',dep.length)}</div>
+
+    <h2 class="sec">พยากรณ์รายสัปดาห์ <em>ยอดจริง + ประมาณการ 4 สัปดาห์ข้างหน้า</em><span></span></h2>
+    <div class="fnote">
+      <b>วิธีคิด</b> — บวกกัน 3 อย่าง
+      <div>1. <b>ยอดปกติ</b> เฉลี่ยจาก 4 สัปดาห์ล่าสุด = <b>${fmt(Math.round(wOrd.avg4))}</b> ออเดอร์ / <b>${fmt(Math.round(wQty.avg4))}</b> ชิ้น</div>
+      <div>2. <b>แนวโน้ม</b> จากข้อมูล ${wOrd.weeksUsed} สัปดาห์ = <b>${wOrd.slope>=0?'+':''}${wOrd.slope.toFixed(1)}</b> ออเดอร์/สัปดาห์ · <b>${wQty.slope>=0?'+':''}${wQty.slope.toFixed(1)}</b> ชิ้น/สัปดาห์</div>
+      <div>3. <b>Double Day</b> (1.1, 2.2, … 12.12) — ${esc(ddNote)}</div>
+      <code>พยากรณ์ (h สัปดาห์ข้างหน้า) = avg4 + slope × h + Double Day boost</code>
+    </div>
+    <div class="cgrid2">
+      <div class="cpanel"><div class="chname2">จำนวนออเดอร์ / สัปดาห์</div>
+        <div class="cbox" style="height:420px"><canvas id="c_fcwo"></canvas></div></div>
+      <div class="cpanel"><div class="chname2">จำนวนสินค้า (ชิ้น) / สัปดาห์</div>
+        <div class="cbox" style="height:420px"><canvas id="c_fcwq"></canvas></div></div>
+    </div>
+
+    <h2 class="sec">พยากรณ์รายวัน <em>ยอดจริง + ประมาณการ 7 วันข้างหน้า</em><span></span></h2>
+    ${dOrd?`<div class="fnote">
+      <b>วิธีคิด</b> — Holt's Exponential Smoothing ให้น้ำหนักวันใกล้มากกว่าวันไกล
+      <div>1. <b>ยอดฐาน</b> วันใหม่ 30% + ยอดฐานเดิม 70% · ตอนนี้ Level = <b>${fmt(Math.round(dOrd.level))}</b> ออเดอร์/วัน</div>
+      <div>2. <b>แนวโน้ม</b> Trend = <b>${dOrd.trend>=0?'+':''}${dOrd.trend.toFixed(2)}</b> ออเดอร์/วัน</div>
+      <div>3. <b>Double Day</b> คูณเพิ่มตามที่เคยเกิด (สูงสุด 3 เท่า ต้องเคยเกิด ≥ 2 ครั้ง)</div>
+      <code>Level(t) = 0.3 × จริง(t) + 0.7 × (Level(t-1) + Trend(t-1))<br>
+            Trend(t) = 0.15 × (Level(t) − Level(t-1)) + 0.85 × Trend(t-1)<br>
+            พยากรณ์ (h วันข้างหน้า) = Level + Trend × h</code>
+      <div class="fwarn">กราฟโชว์จุดทุก 5 วันเพื่อไม่ให้รก แต่คำนวณจากข้อมูลทุกวันจริง (${fmt(dOrd.days)} วัน)</div>
+    </div>
+    <div class="cgrid2">
+      <div class="cpanel"><div class="chname2">จำนวนออเดอร์ / วัน</div>
+        <div class="cbox" style="height:420px"><canvas id="c_fcdo"></canvas></div></div>
+      <div class="cpanel"><div class="chname2">จำนวนสินค้า (ชิ้น) / วัน</div>
+        <div class="cbox" style="height:420px"><canvas id="c_fcdq"></canvas></div></div>
+    </div>`:'<div class="empty2">ข้อมูลรายวันไม่พอสำหรับพยากรณ์ (ต้องมีอย่างน้อย 7 วัน)</div>'}
+
+    ${staff.length?`<h2 class="sec">พยากรณ์อัตรากำลังคน <em>7 วันข้างหน้า · แถวไฮไลท์ = Double Day</em><span></span></h2>
+    <div class="fnote">
+      <div><b>ทีม Packing</b> — 1 คนแพ็คได้ ${STAFF.ordPerPerson} ออเดอร์/วัน (${STAFF.packHours} ชม.) + คนท้ายไลน์แยกพัสดุอีก 1 คนเสมอ</div>
+      <div><b>ทีม WH หยิบของ</b> — 1 คนหยิบได้ ${STAFF.whPerHour} ชิ้น/ชม. (${STAFF.whHours} ชม. = ${fmt(STAFF.whPerHour*STAFF.whHours)} ชิ้น/วัน) · มี handheld ${STAFF.whHandhelds} เครื่อง</div>
+      <code>Packing = ceil(ออเดอร์ ÷ ${STAFF.ordPerPerson}) + 1 ท้ายไลน์ · WH = ceil(ชิ้น ÷ ${STAFF.whPerHour*STAFF.whHours})</code>
+    </div>
+    <div class="tscroll"><table class="dt"><thead><tr>
+      <th style="width:230px">วันที่</th>
+      <th class="num">ออเดอร์ (คาด)</th><th class="num">ชิ้น (คาด)</th>
+      <th class="num">Packing</th><th class="num">ท้ายไลน์</th>
+      <th class="num">รวม Packing Team</th><th class="num">WH หยิบของ</th>
+    </tr></thead><tbody>`
+    +staff.map(s=>`<tr${s.dd?' class="ddrow"':''}>
+      <td style="white-space:nowrap"><b>${esc(s.lbl)}</b>${s.dd?' <span class="ddtag">Double Day</span>':''}</td>
+      <td class="num">${fmt(s.ord)}</td><td class="num">${fmt(s.qty)}</td>
+      <td class="num">${s.pack}</td><td class="num">${STAFF.endOfLine}</td>
+      <td class="num"><b>${s.total}</b></td>
+      <td class="num ${s.over?'bad':''}">${s.wh}${s.over?` <span class="ddtag">เกิน ${STAFF.whHandhelds} เครื่อง</span>`:''}</td>
+    </tr>`).join('')
+    +'</tbody></table></div>':''}
+
+    ${items1.length?`<h2 class="sec">Stock เทียบ Demand <em>เรียงตาม demand มากสุด · แท่งแดง = ส่วนที่สต็อกไม่พอ</em><span></span></h2>
+    <div class="cgrid2">
+      <div class="cpanel"><div class="chname2">1 สัปดาห์ข้างหน้า</div>
+        <div class="cbox" style="height:${Math.max(420,items1.length*54)}px"><canvas id="c_fc1w"></canvas></div></div>
+      <div class="cpanel"><div class="chname2">4 สัปดาห์ข้างหน้า (1 เดือน)</div>
+        <div class="cbox" style="height:${Math.max(420,items4.length*54)}px"><canvas id="c_fc4w"></canvas></div></div>
+    </div>`:''}
+
+    ${dep.length?`<h2 class="sec">Stock Depletion Forecast <em>${fmt(dep.length)} สินค้า · เรียงจากวิกฤตที่สุด</em><span></span></h2>
+    <div class="tscroll"><table class="dt"><thead><tr>
+      <th>Product</th><th class="num">Demand เฉลี่ย/สัปดาห์</th>
+      <th class="num">Stock WH300</th><th class="num">เหลือ (สัปดาห์)</th>
+      <th class="num">สถานะ</th><th>สาเหตุที่ยังไม่เติม</th>
+    </tr></thead><tbody>`
+    +dep.map(r=>{
+      const w=r.weeksLeft;
+      const st=w==null?'<span style="color:var(--mute)">ไม่มี demand</span>'
+        :w<2?'<span class="bad">วิกฤต</span>'
+        :w<4?'<span style="color:#8a6a2f;font-weight:bold">เฝ้าระวัง</span>'
+        :'<span class="good">ปกติ</span>';
+      return `<tr><td><b>${esc(r.product)}</b></td>
+        <td class="num">${r.demand?r.demand.toFixed(1):'—'}</td>
+        <td class="num">${fmt(r.stock)}</td>
+        <td class="num">${w==null?'—':w>99?'99+':w.toFixed(1)}</td>
+        <td class="num">${st}</td>
+        <td>${r.remark?`<span class="why has">${esc(r.remark)}</span>`:'<span class="why">—</span>'}</td></tr>`;
+    }).join('')
+    +'</tbody></table></div>'
+    :'<div class="empty2">ยังไม่มีข้อมูล Replenishment สำหรับคำนวณ Stock Depletion</div>'}`;
+}
+
+/* จับคู่ stock กับ demand ที่คาดไว้ n สัปดาห์ · เอา 14 อันดับ demand สูงสุด */
+function depItems(dep,weeks){
+  return dep.filter(r=>r.demand>0).map(r=>{
+    const need=Math.round(r.demand*weeks);
+    return {...r,need,covered:Math.min(r.stock,need),deficit:Math.max(0,need-r.stock)};
+  }).sort((a,b)=>b.need-a.need||b.deficit-a.deficit).slice(0,14);
+}
+
+/* เส้นทึบ = ยอดจริง · เส้นประ = พยากรณ์ · จุดสีเหลือง = Double Day */
+function fcLineChart(id,key,s,unit){
+  const el2=document.getElementById(id); if(!el2||!s)return;
+  destroy(key);
+  const nH=s.hist.length;
+  const histData=[...s.hist,...s.fc.map(()=>null)];
+  /* ต่อเส้นให้เนียน — จุดสุดท้ายของเส้นจริงเป็นจุดเริ่มของเส้นพยากรณ์ */
+  const fcData=[...s.hist.map((v,i)=>i===nH-1?v:null),...s.fc];
+  const o=baseOpts(true);
+  o.interaction={mode:'index',intersect:false};
+  o.plugins.tooltip.callbacks={
+    title:c=>{const i=c[0].dataIndex;
+      return s.labels[i]+(s.ranges&&s.ranges[i]?'  ·  '+s.ranges[i]:'');},
+    label:c=>c.raw==null?null:`${c.dataset.label}: ${fmt(c.raw)} ${unit}`};
+  o.scales.y.ticks.callback=v=>fmt(v);
+  CH[key]=new Chart(el2,{type:'line',
+    data:{labels:s.labels,datasets:[
+      {label:'ยอดจริง',data:histData,borderColor:C.teal,backgroundColor:'rgba(62,142,140,.12)',
+       borderWidth:3,tension:.32,fill:true,pointRadius:3,pointBackgroundColor:C.teal,spanGaps:false},
+      {label:'พยากรณ์',data:fcData,borderColor:C.plum,borderDash:[8,5],
+       borderWidth:3,tension:.32,fill:false,pointRadius:5,
+       pointBackgroundColor:s.labels.map((_,i)=>{
+         const j=i-nH;
+         return (j>=0&&s.fcDD&&s.fcDD[j])||(j>=0&&s.ddCount&&s.ddCount[j]>0)?C.amber:C.plum;}),
+       spanGaps:false}]},
+    options:o});
+}
+
+/* แท่งนอนซ้อน: เขียว = ครอบคลุมด้วย stock · แดง = ขาด */
+function fcStackChart(id,key,items,weeks){
+  const el2=document.getElementById(id); if(!el2||!items.length)return;
+  destroy(key);
+  const o=baseOpts(true);
+  o.indexAxis='y';
+  o.scales.x={stacked:true,ticks:{color:C.mute,font:{size:cf(22)},callback:v=>fmt(v)},
+              grid:{color:'rgba(34,37,44,.06)'},beginAtZero:true};
+  o.scales.y={stacked:true,ticks:{color:C.mute,font:{size:cf(22)}},grid:{display:false}};
+  o.plugins.tooltip.callbacks={
+    title:c=>items[c[0].dataIndex].product,
+    label:c=>{const r=items[c.dataIndex];
+      return [`${c.dataset.label}: ${fmt(c.raw)} ชิ้น`,
+              `Stock ปัจจุบัน: ${fmt(r.stock)}`,
+              `Demand ${weeks} สัปดาห์: ${fmt(r.need)}`,
+              `ขาด: ${fmt(r.deficit)}`];}};
+  CH[key]=new Chart(el2,{type:'bar',
+    data:{labels:items.map(r=>r.product.length>30?r.product.slice(0,28)+'…':r.product),
+      datasets:[
+      {label:'ครอบคลุมด้วย Stock',data:items.map(r=>r.covered),
+       backgroundColor:'rgba(62,142,140,.85)',maxBarThickness:22,stack:'s'},
+      {label:`ขาดตามคาดการณ์ (${weeks}w)`,data:items.map(r=>r.deficit),
+       backgroundColor:'rgba(176,74,58,.9)',maxBarThickness:22,stack:'s'}]},
+    options:o});
+}
+
+function drawForecast(){
+  if(!FC_CTX)return;
+  const {wOrd,wQty,dOrd,dQty,items1,items4}=FC_CTX;
+  fcLineChart('c_fcwo','fcwo',wOrd,'ออเดอร์');
+  fcLineChart('c_fcwq','fcwq',wQty,'ชิ้น');
+  fcLineChart('c_fcdo','fcdo',dOrd,'ออเดอร์');
+  fcLineChart('c_fcdq','fcdq',dQty,'ชิ้น');
+  fcStackChart('c_fc1w','fc1w',items1,1);
+  fcStackChart('c_fc4w','fc4w',items4,4);
+}
+
 /* ================= Replenishment ================= */
 const BLOCKED=['ไม่มีโควต้า','ไม่มีโควตา','ไม่มี raw material','ไม่มีraw material'];
 const isBlocked=r=>{const s=(r.remark||'').toLowerCase();return !!s&&BLOCKED.some(k=>s.includes(k));};
@@ -1784,18 +2163,21 @@ function render(){
                oos:['KPI Out Of Stock','Warehouse · WH ส่งของให้ Packing ตามกำหนด'],
                diff:['Stock Diff','Warehouse · ความแม่นยำสต็อก · รายการที่นับไม่ตรง'],
                dock:['Dock To Stock Time','Warehouse · GR → Putaway · รับเข้าและจัดเก็บตามเกณฑ์'],
-               repl:['Replenishment','Warehouse · รายการที่ต้องเติมสต็อก']};
+               repl:['Replenishment','Warehouse · รายการที่ต้องเติมสต็อก'],
+               fc:['Forecast','Warehouse · พยากรณ์ยอดขาย สต็อก และอัตรากำลังคน']};
   const tt=TITLE[SEC]||TITLE.overview;
   el('kTitle').textContent=tt[0];
   el('kSub').textContent=tt[1];
   if(!isOv){
     el('detail').innerHTML = SEC==='ontime'?secOnTime() : SEC==='oos'?secOOS()
-                           : SEC==='diff'?secDiff() : SEC==='dock'?secDock() : secRepl();
+                           : SEC==='diff'?secDiff() : SEC==='dock'?secDock()
+                           : SEC==='fc'?secForecast() : secRepl();
     fitScrolls();
     /* กราฟต้องวาดหลัง canvas เข้า DOM แล้ว */
     requestAnimationFrame(()=>{
       try{ if(SEC==='ontime')drawOnTime(); else if(SEC==='oos')drawOOS();
-           else if(SEC==='diff')drawDiff(); else if(SEC==='dock')drawDock(); else drawRepl(); }
+           else if(SEC==='diff')drawDiff(); else if(SEC==='dock')drawDock();
+           else if(SEC==='fc')drawForecast(); else drawRepl(); }
       catch(e){ console.warn('chart',e); }
     });
   }
@@ -2160,11 +2542,11 @@ document.addEventListener('keydown',e=>{
 window.KPI_SEC=async(sec)=>{
   SEC=sec||'overview';
   render();
-  if(SEC==='repl'&&!REPL){ await loadRepl(); render(); }
+  if((SEC==='repl'||SEC==='fc')&&!REPL){ await loadRepl(); render(); }
 };
 
 /* ให้หน้า Replenishment เริ่มโหลดชีตของตัวเองทันที ไม่ต้องรอชีต On-Time ที่ใหญ่กว่ามาก */
-if((location.hash||'').startsWith('#kpi-repl')) loadRepl().then(()=>{ if(SEC==='repl')render(); });
+if(/^#kpi-(repl|fc)/.test(location.hash||'')) loadRepl().then(()=>{ if(SEC==='repl'||SEC==='fc')render(); });
 
 boot();
 
