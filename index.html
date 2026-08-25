@@ -261,6 +261,19 @@
 #vKPI tr.ddrow td{background:#FBF1E8!important}
 #vKPI .ddtag{display:inline-block;background:#F3E3CB;color:#8a6a2f;font-weight:bold;
   font-size:23px;padding:2px 12px;border-radius:20px;margin-left:8px;white-space:nowrap}
+#vKPI .dim{color:var(--mute);font-weight:normal}
+#vKPI .stfbar{display:flex;gap:20px;flex-wrap:wrap;align-items:flex-end;
+  background:var(--soft);border:1px solid var(--line);border-radius:12px;
+  padding:16px 20px;margin-bottom:16px}
+#vKPI .stfbar label{display:flex;flex-direction:column;gap:6px;font-size:24px;
+  color:var(--mute);letter-spacing:.04em}
+#vKPI .stfbar select,#vKPI .stfbar input{font-family:inherit;font-size:30px;
+  background:#fff;border:1px solid var(--line);border-radius:10px;padding:9px 14px;
+  color:var(--ink)}
+#vKPI .stfbar input{max-width:150px}
+#vKPI .stfres{flex:1 1 100%;font-size:27px;line-height:1.6;color:var(--ink);
+  border-top:1px dashed var(--line);padding-top:12px;min-height:6px}
+#vKPI .stfres:empty{border:0;padding:0;min-height:0}
 
 /* ตารางรายละเอียด Dock to Stock — คอลัมน์เยอะ เลื่อนแนวนอนได้ */
 #vKPI table.dt.dock-dt{font-size:30px}
@@ -383,6 +396,8 @@ body.cap .wrap{height:auto;overflow:visible;padding:0}#vRPT #shot.cap-slide{widt
 .sidenav button:focus-visible{outline:2px solid var(--plum);outline-offset:-2px}
 .side-foot{padding:20px 28px 26px;font-size:20.5px;color:#8AA9A7;
   border-top:1px solid rgba(255,255,255,.10)}
+/* เส้นคั่นก่อนเมนูเดี่ยวบรรทัดสุดท้าย (Forecast) — ไม่ได้อยู่ใต้หัวข้อไหน */
+.sidenav .nav-sep{height:1px;background:rgba(255,255,255,.13);margin:22px 22px 14px}
 .main{flex:1;min-width:0}
 .side-toggle{display:none;position:fixed;top:12px;left:12px;z-index:80;
   background:#243138;color:#fff;border:0;border-radius:10px;width:50px;height:50px;
@@ -451,7 +466,6 @@ body.present #vKPI .tscroll{max-height:none}
       <button data-view="kpi" data-sec="diff">Stock Diff</button>
       <button data-view="kpi" data-sec="dock">Dock To Stock Time</button>
       <button data-view="kpi" data-sec="repl">Replenishment</button>
-      <button data-view="kpi" data-sec="fc">Forecast</button>
       <button data-view="report" data-team="warehouse">รายงานประจำวัน</button>
 
       <div class="grp">Delivery</div>
@@ -459,6 +473,9 @@ body.present #vKPI .tscroll{max-height:none}
 
       <div class="grp">Admin</div>
       <button data-view="report" data-team="admin">รายงานประจำวัน</button>
+
+      <div class="nav-sep"></div>
+      <button data-view="kpi" data-sec="fc">Forecast</button>
     </nav>
     <div class="side-foot">ข้อมูลสดจาก Google Sheets</div>
   </aside>
@@ -1350,8 +1367,8 @@ function secOOS(){
          <div class="cpanel"><div class="cbox"><canvas id="c_oos"></canvas></div></div></div>
      </div>
 
-     <h2 class="sec">Order Detail <em>ทุกรายการตามตัวกรองด้านบน · คลิกกราฟเพื่อกรองได้</em><span></span></h2>
-     ${detailTable(rows,'all')}`;
+     <h2 class="sec">Order Detail <em>เฉพาะรายการที่มีปัญหา — ไม่ใช่ “ส่งในวัน”</em><span></span></h2>
+     ${detailTable(rows,'ex')}`;
 }
 
 function drawOOS(){
@@ -1474,13 +1491,13 @@ function secDiff(){
         <td class="num ${v<2?'good':'bad'}">${pct(v)}</td></tr>`;}).join('')
    +`</tbody></table></div>
 
-     <h2 class="sec">รายการนับสต็อก <em>${fmt(rows.length)} รายการ · เรียงตามวันที่ เก่า → ใหม่</em><span></span></h2>`
-   +(rows.length?`<div class="tscroll"><table class="dt big-rows"><thead><tr>
+     <h2 class="sec">รายการที่นับไม่ตรง <em>${fmt(bad.length)} รายการ · เรียงตามวันที่ เก่า → ใหม่</em><span></span></h2>`
+   +(bad.length?`<div class="tscroll"><table class="dt big-rows"><thead><tr>
        <th class="c-date">วันที่</th><th class="c-prod">สินค้า · Lot · Location</th>
        <th class="num c-n">Odoo</th><th class="num c-n">นับได้</th>
        <th class="num c-gap">ผลต่าง</th>
        <th class="c-why">สาเหตุ</th></tr></thead><tbody>`
-      +[...rows].sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))
+      +[...bad].sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))
                             ||Math.abs(dgap(a))-Math.abs(dgap(b))).map(r=>{
         const g=dgap(r);
         return `<tr>
@@ -1489,12 +1506,11 @@ function secDiff(){
             <span class="pmeta">${esc(r.lot||'—')} · ${esc(r.loc||'—')}</span></td>
         <td class="num">${fmt(r.odoo)}</td>
         <td class="num">${fmt(r.wh)}</td>
-        <td class="num">${r.diff?`<span class="qty ${g>0?'up':'down'}">${g>0?'+':''}${fmt(g)}</span>`
-                                :'<span class="good">ตรง</span>'}</td>
+        <td class="num"><span class="qty ${g>0?'up':'down'}">${g>0?'+':''}${fmt(g)}</span></td>
         <td>${r.reason?`<span class="why has">${esc(r.reason)}</span>`
                       :'<span class="why">ยังไม่ระบุ</span>'}</td></tr>`;}).join('')
       +'</tbody></table></div>'
-     :'<div class="empty2">ไม่มีรายการที่ตรงกับตัวกรองนี้</div>');
+     :'<div class="empty2">นับตรงทุกรายการในช่วงนี้</div>');
 }
 
 function drawDiff(){
@@ -1661,6 +1677,48 @@ function drawDock(){
       maxBarThickness:70,minBarLength:2}]},options:o});
 }
 
+/* ป้ายตัวเลขบนจุดกราฟเส้น — ยอดจริงตัวปกติ · พยากรณ์ตัวเอียงสีม่วง
+   ข้ามป้ายที่ทับกัน แต่ป้ายของช่วงพยากรณ์ห้ามหาย (ไล่ขยับขึ้นหาที่ว่าง) */
+const lineLbl={id:'lineLbl',
+  beforeLayout(ch,a,op){ if(!op||!op.display)return;
+    const p=ch.options.layout&&ch.options.layout.padding;
+    const need=Math.round(46*CFZ);
+    if(typeof p==='object'&&p){ if((p.top||0)<need)p.top=need; }
+    else ch.options.layout={padding:{top:need}}; },
+  afterDatasetsDraw(ch,a,op){
+    if(!op||!op.display)return;
+    const x=ch.ctx, area=ch.chartArea, boxes=[];
+    const nH=op.histLen||0;
+    x.save(); x.textAlign='center'; x.textBaseline='bottom';
+    const put=(txt,px,py,fc)=>{
+      x.font=(fc?'italic bold ':'bold ')+cf(fc?25:23)+'px Tahoma';
+      const w=x.measureText(txt).width, h=cf(fc?25:23);
+      const clash=yy=>{const b={x1:px-w/2-4,x2:px+w/2+4,y1:yy-h-3,y2:yy+3};
+        return {b,hit:boxes.some(o=>!(b.x2<o.x1||b.x1>o.x2||b.y2<o.y1||b.y1>o.y2))};};
+      let y=Math.max(area.top+h+2,py-11), r=clash(y);
+      if(r.hit&&fc){ for(let k=1;k<=14;k++){const up=y-(h+5)*k;
+        if(up<area.top+h+2)break; const t=clash(up); if(!t.hit){y=up;r=t;break;} } }
+      if(r.hit)return;
+      boxes.push(r.b);
+      x.lineJoin='round'; x.lineWidth=5; x.strokeStyle='rgba(255,255,255,.92)';
+      x.strokeText(txt,px,y);
+      x.fillStyle=fc?C.plumD:'#22252C';
+      x.fillText(txt,px,y);
+    };
+    ch.data.datasets.forEach((ds,di)=>{
+      const m=ch.getDatasetMeta(di); if(m.hidden)return;
+      const isFc=di===1;
+      m.data.forEach((pt,i)=>{
+        const v=ds.data[i]; if(v==null||Number.isNaN(+v))return;
+        if(isFc&&i<nH)return;            /* จุดต่อเส้น ไม่ต้องซ้ำป้าย */
+        if(!isFc&&!(i===nH-1||i%2===0))return;   /* ยอดจริงโชว์สลับจุด กันรก */
+        put(fmt(v),pt.x,pt.y,isFc);
+      });
+    });
+    x.restore();
+  }};
+if(window.Chart&&!Chart.registry.plugins.get('lineLbl'))Chart.register(lineLbl);
+
 /* ================= Forecast (พยากรณ์ยอดและกำลังคน) =================
    ยกมาจาก tdfb-dashboard-v2 แล้วปรับดีไซน์ให้เข้ากับแดชบอร์ดนี้
    ข้อมูลใช้ชีตเดิมของแดชบอร์ดนี้ทั้งหมด — RAW (On-Time) สำหรับยอดขาย
@@ -1780,7 +1838,78 @@ function fcDaily(byDate){
 
 /* เกณฑ์กำลังคน — ยกมาจาก dashboard v2 ตรงๆ */
 const STAFF={ordPerPerson:200,packHours:6,endOfLine:1,
-             whPerHour:88,whHours:6,whHandhelds:3};
+             whPerHour:88,whHours:6,whHandhelds:3,
+             lunchHours:1,otAfter:'17:00',shiftStart:'08:00'};
+
+const t2m=s=>{const[h,m]=s.split(':').map(Number);return h*60+m;};
+const m2t=mins=>{const d=Math.floor(mins/(24*60));let mm=mins%(24*60);
+  if(mm<0)mm+=24*60;
+  return String(Math.floor(mm/60)).padStart(2,'0')+':'+String(mm%60).padStart(2,'0')
+    +(d>0?` (+${d}d)`:'');};
+
+/* คิดเวลาเลิกงานจริงจากจำนวนคนที่มาทำงาน — กติกา 3 ข้อจาก v2
+   1. ฝั่งแพ็ค คนท้ายไลน์ไม่ได้แพ็ค ต้องหักออกก่อนคิดกำลังการผลิต
+   2. หักพักเที่ยง 1 ชม. ทุกวัน (ทีมพักพร้อมกัน) — เป็นเวลาบนนาฬิกาที่ไม่ได้ผลิตงาน
+   3. OT วัดจากนาฬิกา ไม่ใช่จำนวนชั่วโมง — เสร็จเลย 17:00 เท่าไหร่คือ OT */
+function shiftOutcome(amount,staffAvail,ratePerHour,opts){
+  opts=opts||{};
+  if(!staffAvail||staffAvail<=0)return null;
+  const excluded=opts.excludeEndOfLine?STAFF.endOfLine:0;
+  const working=staffAvail-excluded;
+  if(working<=0)return {notEnough:true,staffAvail,excluded};
+  const cap=opts.maxConcurrent||null;
+  const eff=cap?Math.min(working,cap):working;
+  const workHours=amount/(eff*ratePerHour);
+  const startMin=t2m(STAFF.shiftStart);
+  const finishMin=startMin+Math.round(workHours*60)+Math.round(STAFF.lunchHours*60);
+  const otMin=Math.max(0,finishMin-t2m(STAFF.otAfter));
+  return {notEnough:false,staffAvail,excluded,working,eff,workHours,
+    netBeforeOT:(t2m(STAFF.otAfter)-startMin)/60-STAFF.lunchHours,
+    idle:(cap&&working>cap)?working-cap:0,
+    finish:m2t(finishMin),otHours:otMin/60};
+}
+function shiftText(r,verb){
+  const p=[];
+  p.push(r.excluded>0
+    ? `คิดจาก <b>${r.working} คน</b> <span class="dim">(ใส่มา ${r.staffAvail} − ท้ายไลน์ ${r.excluded})</span>`
+    : `คิดจาก <b>${r.working} คน</b>`);
+  p.push(`เวลาทำงานสุทธิ <b>${r.workHours.toFixed(1)} ชม.</b> <span class="dim">/ มีให้ ${r.netBeforeOT.toFixed(0)} ชม. + พักเที่ยง ${STAFF.lunchHours} ชม.</span>`);
+  p.push(`${verb}เสร็จ <b style="color:${r.otHours>0?'var(--bad)':'var(--good)'}">${r.finish}</b>`);
+  p.push(r.otHours>0
+    ? `OT <b style="color:var(--bad)">${r.otHours.toFixed(1)} ชม.</b> <span class="dim">(เลย ${STAFF.otAfter})</span>`
+    : '<span style="color:var(--good)">ไม่ต้องทำ OT</span>');
+  return p.join(' · ');
+}
+
+/* ค่าที่ผู้ใช้กรอกในช่องคำนวณกำลังคน — เก็บไว้ไม่ให้หายตอน re-render */
+const STAFF_IN={pIdx:0,pStaff:'',wIdx:0,wStaff:''};
+let STAFF_ROWS=[];
+
+function recalcStaff(){
+  const pr=STAFF_ROWS[Number(STAFF_IN.pIdx)], wr=STAFF_ROWS[Number(STAFF_IN.wIdx)];
+  const pEl=document.getElementById('stfPRes'), wEl=document.getElementById('stfWRes');
+  if(pEl){
+    const n=Number(STAFF_IN.pStaff);
+    if(!pr||!n){ pEl.innerHTML=''; }
+    else{
+      const r=shiftOutcome(pr.ord,n,STAFF.ordPerPerson/STAFF.packHours,{excludeEndOfLine:true});
+      pEl.innerHTML=!r?'':r.notEnough
+        ? `<span style="color:var(--bad)">ใส่มา ${r.staffAvail} คน แต่ต้องกันคนท้ายไลน์ไว้ ${r.excluded} คน จึงไม่มีคนแพ็คเหลือ — ต้องมีอย่างน้อย ${r.excluded+1} คน</span>`
+        : shiftText(r,'แพ็ค');
+    }
+  }
+  if(wEl){
+    const n=Number(STAFF_IN.wStaff);
+    if(!wr||!n){ wEl.innerHTML=''; }
+    else{
+      const r=shiftOutcome(wr.qty,n,STAFF.whPerHour,{maxConcurrent:STAFF.whHandhelds});
+      const idle=r&&r.idle>0
+        ? ` <span class="dim">(มี handheld แค่ ${STAFF.whHandhelds} เครื่อง ใช้พร้อมกันได้ ${r.eff} คน อีก ${r.idle} คนต้องหมุนเวียน)</span>`
+        : '';
+      wEl.innerHTML=!r?'':(r.notEnough?'':shiftText(r,'หยิบของ')+idle);
+    }
+  }
+}
 
 let FC_CTX=null;
 function secForecast(){
@@ -1855,6 +1984,9 @@ function secForecast(){
 
   const items1=depItems(dep,1), items4=depItems(dep,4);
   FC_CTX={wOrd,wQty,dOrd,dQty,items1,items4};
+  STAFF_ROWS=staff;
+  if(Number(STAFF_IN.pIdx)>=staff.length)STAFF_IN.pIdx=0;
+  if(Number(STAFF_IN.wIdx)>=staff.length)STAFF_IN.wIdx=0;
 
   const ddNote=wOrd.ddSamples>=DD_MIN_SAMPLES
     ? `เรียนรู้ Double Day จาก ${wOrd.ddSamples} ครั้งในอดีต — ยอดพุ่งราว ${wOrd.boost.toFixed(2)} เท่า`
@@ -1901,24 +2033,52 @@ function secForecast(){
 
     ${staff.length?`<h2 class="sec">พยากรณ์อัตรากำลังคน <em>7 วันข้างหน้า · แถวไฮไลท์ = Double Day</em><span></span></h2>
     <div class="fnote">
-      <div><b>ทีม Packing</b> — 1 คนแพ็คได้ ${STAFF.ordPerPerson} ออเดอร์/วัน (${STAFF.packHours} ชม.) + คนท้ายไลน์แยกพัสดุอีก 1 คนเสมอ</div>
-      <div><b>ทีม WH หยิบของ</b> — 1 คนหยิบได้ ${STAFF.whPerHour} ชิ้น/ชม. (${STAFF.whHours} ชม. = ${fmt(STAFF.whPerHour*STAFF.whHours)} ชิ้น/วัน) · มี handheld ${STAFF.whHandhelds} เครื่อง</div>
-      <code>Packing = ceil(ออเดอร์ ÷ ${STAFF.ordPerPerson}) + 1 ท้ายไลน์ · WH = ceil(ชิ้น ÷ ${STAFF.whPerHour*STAFF.whHours})</code>
+      <div><b>ทีม Packing</b> — 1 คนแพ็คได้ ${STAFF.ordPerPerson} ออเดอร์/วัน (${STAFF.packHours} ชม. = ${(STAFF.ordPerPerson/STAFF.packHours).toFixed(0)} ออเดอร์/ชม.) + คนท้ายไลน์แยกพัสดุอีก 1 คนเสมอ ไม่ว่ายอดจะน้อยแค่ไหน</div>
+      <div><b>ทีม WH หยิบของ</b> — 1 คนหยิบได้ ${STAFF.whPerHour} ชิ้น/ชม. (${STAFF.whHours} ชม. = ${fmt(STAFF.whPerHour*STAFF.whHours)} ชิ้น/วัน) · มี handheld ${STAFF.whHandhelds} เครื่อง เกินกว่านั้นต้องหมุนเวียน</div>
+      <code>ตาราง (ควรมีกี่คน): Packing = ceil(ออเดอร์ ÷ ${STAFF.ordPerPerson}) + 1 ท้ายไลน์ · WH = ceil(ชิ้น ÷ ${STAFF.whPerHour*STAFF.whHours})<br>
+        ช่องกรอก (เสร็จกี่โมง): คนแพ็ค = คนที่ใส่ − 1 · เวลาสุทธิ = ออเดอร์ ÷ (คนแพ็ค × ${(STAFF.ordPerPerson/STAFF.packHours).toFixed(0)}) · WH = ชิ้น ÷ (คน × ${STAFF.whPerHour})<br>
+        เวลาเลิก = ${STAFF.shiftStart} + เวลาสุทธิ + พักเที่ยง ${STAFF.lunchHours} ชม. · OT = ส่วนที่เลย ${STAFF.otAfter}</code>
     </div>
-    <div class="tscroll"><table class="dt"><thead><tr>
-      <th style="width:230px">วันที่</th>
-      <th class="num">ออเดอร์ (คาด)</th><th class="num">ชิ้น (คาด)</th>
-      <th class="num">Packing</th><th class="num">ท้ายไลน์</th>
-      <th class="num">รวม Packing Team</th><th class="num">WH หยิบของ</th>
-    </tr></thead><tbody>`
-    +staff.map(s=>`<tr${s.dd?' class="ddrow"':''}>
-      <td style="white-space:nowrap"><b>${esc(s.lbl)}</b>${s.dd?' <span class="ddtag">Double Day</span>':''}</td>
-      <td class="num">${fmt(s.ord)}</td><td class="num">${fmt(s.qty)}</td>
-      <td class="num">${s.pack}</td><td class="num">${STAFF.endOfLine}</td>
-      <td class="num"><b>${s.total}</b></td>
-      <td class="num ${s.over?'bad':''}">${s.wh}${s.over?` <span class="ddtag">เกิน ${STAFF.whHandhelds} เครื่อง</span>`:''}</td>
-    </tr>`).join('')
-    +'</tbody></table></div>':''}
+    <div class="cgrid2">
+      <div class="cpanel">
+        <div class="chname2">Packing / Delivery <span class="dim">(เริ่มกะ ${STAFF.shiftStart} น.)</span></div>
+        <div class="stfbar">
+          <label>วันที่ <select id="stfPDate" data-stf="pIdx">${
+            staff.map((s,i)=>`<option value="${i}"${String(STAFF_IN.pIdx)===String(i)?' selected':''}>${esc(s.lbl)}${s.dd?' ⚡':''}</option>`).join('')}</select></label>
+          <label>จำนวนคนที่มาทำงานจริง <input type="number" min="2" id="stfPStaff" data-stf="pStaff"
+            placeholder="เช่น 4" value="${esc(STAFF_IN.pStaff)}"></label>
+          <div class="stfres" id="stfPRes"></div>
+        </div>
+        <div class="tscroll"><table class="dt"><thead><tr>
+          <th style="width:230px">วันที่</th><th class="num">ออเดอร์ (คาด)</th>
+          <th class="num">Packing</th><th class="num">ท้ายไลน์</th><th class="num">รวมทีม</th>
+        </tr></thead><tbody>`
+        +staff.map(s=>`<tr${s.dd?' class="ddrow"':''}>
+          <td style="white-space:nowrap"><b>${esc(s.lbl)}</b>${s.dd?' <span class="ddtag">Double Day</span>':''}</td>
+          <td class="num">${fmt(s.ord)}</td><td class="num">${s.pack}</td>
+          <td class="num">${STAFF.endOfLine}</td><td class="num"><b>${s.total}</b></td></tr>`).join('')
+        +`</tbody></table></div>
+      </div>
+      <div class="cpanel">
+        <div class="chname2">WH <span class="dim">(เริ่มกะ ${STAFF.shiftStart} น.)</span></div>
+        <div class="stfbar">
+          <label>วันที่ <select id="stfWDate" data-stf="wIdx">${
+            staff.map((s,i)=>`<option value="${i}"${String(STAFF_IN.wIdx)===String(i)?' selected':''}>${esc(s.lbl)}${s.dd?' ⚡':''}</option>`).join('')}</select></label>
+          <label>จำนวนคนที่มีจริง <input type="number" min="1" id="stfWStaff" data-stf="wStaff"
+            placeholder="เช่น 2" value="${esc(STAFF_IN.wStaff)}"></label>
+          <div class="stfres" id="stfWRes"></div>
+        </div>
+        <div class="tscroll"><table class="dt"><thead><tr>
+          <th style="width:230px">วันที่</th><th class="num">สินค้า ชิ้น (คาด)</th>
+          <th class="num">WH หยิบของ (คน)</th>
+        </tr></thead><tbody>`
+        +staff.map(s=>`<tr${s.dd?' class="ddrow"':''}>
+          <td style="white-space:nowrap"><b>${esc(s.lbl)}</b>${s.dd?' <span class="ddtag">Double Day</span>':''}</td>
+          <td class="num">${fmt(s.qty)}</td>
+          <td class="num ${s.over?'bad':''}">${s.wh}${s.over?` <span class="ddtag">เกิน ${STAFF.whHandhelds} เครื่อง</span>`:''}</td></tr>`).join('')
+        +`</tbody></table></div>
+      </div>
+    </div>`:''}
 
     ${items1.length?`<h2 class="sec">Stock เทียบ Demand <em>เรียงตาม demand มากสุด · แท่งแดง = ส่วนที่สต็อกไม่พอ</em><span></span></h2>
     <div class="cgrid2">
@@ -1974,6 +2134,7 @@ function fcLineChart(id,key,s,unit){
       return s.labels[i]+(s.ranges&&s.ranges[i]?'  ·  '+s.ranges[i]:'');},
     label:c=>c.raw==null?null:`${c.dataset.label}: ${fmt(c.raw)} ${unit}`};
   o.scales.y.ticks.callback=v=>fmt(v);
+  o.plugins.lineLbl={display:true,histLen:nH};
   CH[key]=new Chart(el2,{type:'line',
     data:{labels:s.labels,datasets:[
       {label:'ยอดจริง',data:histData,borderColor:C.teal,backgroundColor:'rgba(62,142,140,.12)',
@@ -2022,6 +2183,7 @@ function drawForecast(){
   fcLineChart('c_fcdq','fcdq',dQty,'ชิ้น');
   fcStackChart('c_fc1w','fc1w',items1,1);
   fcStackChart('c_fc4w','fc4w',items4,4);
+  recalcStaff();
 }
 
 /* ================= Replenishment ================= */
@@ -2137,6 +2299,16 @@ function drawRepl(){
     data:{labels:e.map(x=>x[0]),datasets:[{data:e.map(x=>x[1]),
       backgroundColor:pal.slice(0,e.length),borderRadius:6,maxBarThickness:84}]},options:o});
 }
+
+/* ช่องกรอกกำลังคน — อัปเดตแค่บรรทัดผลลัพธ์ ไม่ re-render ทั้งหน้า ช่องกรอกจึงไม่เสีย focus */
+el('detail').addEventListener('input',e=>{
+  const t=e.target.closest('[data-stf]'); if(!t)return;
+  STAFF_IN[t.dataset.stf]=t.value; recalcStaff();
+});
+el('detail').addEventListener('change',e=>{
+  const t=e.target.closest('[data-stf]'); if(!t)return;
+  STAFF_IN[t.dataset.stf]=t.value; recalcStaff();
+});
 
 /* กดชิปตัวกรองย่อย หรือคลิกแถวใน legend ของกราฟวงกลม */
 el('detail').addEventListener('click',e=>{
