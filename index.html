@@ -386,9 +386,6 @@ body.present #vKPI .scard .sl{font-size:30.8px}
 body.present #vKPI table.dt{font-size:38px}
 body.present #vKPI table.dt th{font-size:32px}
 body.present #vKPI .tscroll{max-height:none}   /* พรีเซนต์ = ถ่ายทั้งตาราง ไม่ต้องเลื่อน */
-/* ซ่อนตัวกรอง */
-#vKPI .toolbar{display:none}
-#vKPI .fbar{display:none}
 /* โหมดพรีเซนต์: วางวงแหวนไว้ซ้าย คำอธิบายอยู่ขวา
    ของเดิมวงแหวน 700px + คำอธิบายกว้างแค่ 640px ทำให้ข้อความตัดบรรทัดและกินพื้นที่ทั้งจอ */
 body.present #vKPI .ring{flex-direction:row;justify-content:flex-start;align-items:center;
@@ -1187,30 +1184,8 @@ function chip(raw){
 
 /* ================= On-Time Performance ================= */
 function secOnTime(){
-  const all0=filteredRows();
-  if(!all0.length)return '<div class="empty2">ไม่มีข้อมูลในช่วงที่เลือก</div>';
-
-  /* ตัวกรองย่อยของหน้านี้ — มีผลกับทั้งหน้า (วงแหวน การ์ด กราฟ และตาราง)
-     แบบเดียวกับหน้า Dock To Stock Time */
-  const fPack=sf('ot_pack','all'), fPlat=sf('ot_plat',''), fChan=sf('ot_chan','');
-  const chanList=[...new Set(all0.map(r=>(r.sender||'').trim()).filter(Boolean))].sort();
-  const bars=chipBar('ot_pack','Packing On-Time',
-        [['all','ทั้งหมด'],['yes','Yes · ตรงเวลา'],['no','No · ล่าช้า','rose']],fPack)
-    +chipBar('ot_plat','Platform',
-        [['','ทั้งหมด'],['plat','Platform'],['walk','Walk-in','amber']],fPlat)
-    +(chanList.length>1?chipBar('ot_chan','Sales Channel',
-        [['','ทั้งหมด'],...chanList.map(c=>[c,c])],fChan):'');
-
-  const lines=all0.filter(r=>{
-    if(fPlat==='plat'&&!isPlatform(r.source))return false;
-    if(fPlat==='walk'&&isPlatform(r.source))return false;
-    if(fChan&&(r.sender||'').trim()!==fChan)return false;
-    if(fPack!=='all'){const c=classify(r.wh);
-      if(fPack==='yes'&&c==='late')return false;
-      if(fPack==='no'&&c!=='late')return false;}
-    return true;
-  });
-  if(!lines.length)return bars+'<div class="empty2">ไม่มีข้อมูลที่ตรงกับตัวกรองนี้</div>';
+  const lines=filteredRows();
+  if(!lines.length)return '<div class="empty2">ไม่มีข้อมูลในช่วงที่เลือก</div>';
 
   const ord=toOrderLevel(lines);
   const total=uniqOrders(lines);
@@ -1227,11 +1202,7 @@ function secOnTime(){
 
   ONTIME_CTX={ord,lines,onT,late,plat,walk};
 
-  const nFilt=(fPack!=='all'||fPlat||fChan);
-
-  return bars
-   +(nFilt?`<div class="chint">กำลังกรอง — แสดง ${fmt(total)} ออเดอร์ จากทั้งหมด ${fmt(uniqOrders(all0))} ออเดอร์ในช่วงนี้</div>`:'')
-   +ringHTML(p,98,`<span>แพ็คเสร็จตามวันที่ต้องการ</span><span>เป้าหมาย <b>≥ 98%</b></span>`)
+  return ringHTML(p,98,`<span>แพ็คเสร็จตามวันที่ต้องการ</span><span>เป้าหมาย <b>≥ 98%</b></span>`)
    +`<div class="sgrid">${card('Orders',total)}${card('Packed On Time',onT,'teal')}
        ${card('แพ็คล่าช้า',late,'rose')}${card('ยังไม่ได้จัดส่ง',pend,'mute')}</div>
      <div class="sgrid">${card('Customers',cust)}${card('Platform',plat,'amber')}
@@ -1254,8 +1225,8 @@ function secOnTime(){
        <div class="cbox" style="flex:1;min-width:340px;height:420px"><canvas id="c_chan"></canvas></div>
        <div class="chleg" id="chanLeg"></div></div></div>
 
-     <h2 class="sec">Order Detail <em>ทุกรายการตามตัวกรองด้านบน · คลิกกราฟเพื่อกรองได้</em><span></span></h2>
-     ${detailTable(lines,'all')}`;
+     <h2 class="sec">Order Detail <em>เฉพาะรายการที่ไม่ใช่ “ส่งในวัน”</em><span></span></h2>
+     ${detailTable(lines,'ex')}`;
 }
 let ONTIME_CTX=null;
 
@@ -1275,22 +1246,18 @@ function drawOnTime(){
       borderColor:C.teal,backgroundColor:'rgba(62,142,140,.13)',tension:.3,fill:true,
       borderWidth:2,pointRadius:wk.length===1?9:3,pointBackgroundColor:C.teal}]},options:o1});
 
-  /* Packing On-Time — คลิกแท่งเพื่อกรองตาราง Order Detail ด้านล่าง */
+  /* Packing On-Time */
   const tot=onT+late||1;
   destroy('pack');
   const oPack=pctOpts(98);
-  oPack.onClick=(e,els)=>{ if(els.length){ SUBF.ot_pack=els[0].index===0?'yes':'no'; render(); } };
-  oPack.onHover=(e,els)=>{e.native.target.style.cursor=els.length?'pointer':'default';};
   CH.pack=new Chart(document.getElementById('c_pack'),{type:'bar',
     data:{labels:['Yes','No'],datasets:[{data:[Math.round(onT/tot*1000)/10,Math.round(late/tot*1000)/10],
       backgroundColor:[C.teal,C.rose],borderRadius:6,maxBarThickness:96}]},options:oPack});
 
-  /* Platform vs Walk-in — คลิกแท่งเพื่อกรอง */
+  /* Platform vs Walk-in */
   const t2=plat+walk||1;
   destroy('plat');
   const oPlat=pctOpts();
-  oPlat.onClick=(e,els)=>{ if(els.length){ SUBF.ot_plat=els[0].index===0?'plat':'walk'; render(); } };
-  oPlat.onHover=(e,els)=>{e.native.target.style.cursor=els.length?'pointer':'default';};
   CH.plat=new Chart(document.getElementById('c_plat'),{type:'bar',
     data:{labels:['Platform','Walk-in'],datasets:[{data:[Math.round(plat/t2*1000)/10,Math.round(walk/t2*1000)/10],
       backgroundColor:[C.tealD,C.amber],borderRadius:6,maxBarThickness:96}]},options:oPlat});
@@ -1315,8 +1282,8 @@ function drawOnTime(){
   const cols=ce.map((e,i)=>pal[i%pal.length]);
   const pcts=ce.map(e=>Math.round(e[1]/t4*1000)/10);
   const leg=document.getElementById('chanLeg');
-  if(leg)leg.innerHTML='<div class="t">Orders by brand · คลิกเพื่อกรอง</div>'
-    +ce.map((e,i)=>`<div class="chrow" data-sf="ot_chan" data-v="${esc(e[0])}" style="cursor:pointer">
+  if(leg)leg.innerHTML='<div class="t">Orders by brand</div>'
+    +ce.map((e,i)=>`<div class="chrow">
       <span class="chdot" style="background:${cols[i]}"></span>
       <div class="chname">${esc(e[0])}<div class="chsub">${fmt(e[1])} orders</div></div>
       <div class="chpct">${Number.isInteger(pcts[i])?pcts[i]:pcts[i].toFixed(1)}%</div></div>`).join('');
@@ -1324,8 +1291,6 @@ function drawOnTime(){
   CH.chan=new Chart(document.getElementById('c_chan'),{type:'pie',
     data:{labels:ce.map(e=>e[0]),datasets:[{data:pcts,backgroundColor:cols}]},
     options:{responsive:true,maintainAspectRatio:false,layout:{padding:10},
-      onClick:(e,els)=>{ if(els.length){ SUBF.ot_chan=ce[els[0].index][0]; render(); } },
-      onHover:(e,els)=>{e.native.target.style.cursor=els.length?'pointer':'default';},
       plugins:{legend:{display:false},pieLbl:{display:true,minPercent:5},
         tooltip:{titleFont:{size:cf(22)},bodyFont:{size:cf(21)},padding:12,
           callbacks:{label:c=>c.label+': '+c.formattedValue+'% ('+fmt(ce[c.dataIndex][1])+' orders)'}}}}});
