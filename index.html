@@ -327,7 +327,7 @@
 #vKPI .brkdot{display:inline-block;width:20px;height:20px;border-radius:5px;
   margin-right:16px;vertical-align:-2px}
 /* ตารางรายละเอียด Return — ล็อกสัดส่วนคอลัมน์ให้สมดุล ไม่ให้ช่องใดกินพื้นที่ทั้งหมด */
-#vKPI table.dt .mid{text-align:center}
+#vKPI table.dt th.mid,#vKPI table.dt td.mid{text-align:center!important}
 #vKPI table.dt.ret-dt{table-layout:fixed;font-size:38px}
 #vKPI table.dt.ret-dt th{font-size:31px}
 #vKPI table.dt.ret-dt td{overflow-wrap:anywhere;vertical-align:middle;padding:19px 16px}
@@ -2335,18 +2335,24 @@ async function loadRet(gid){
   RET_LOADING[gid]=true;
   try{
     const rows=await smallSheet(S_RET,gid,s=>SHEET_STATE.ret=s);
-    const t=table(rows,/week|สัปดาห์|ออเดอร์|order|ขนส่ง/i);
+    const t=table(rows,/week|สัปดาห์|ออเดอร์|order|ขนส่ง|platform/i);
     if(!t)throw new Error('หาหัวตารางไม่เจอ');
+    /* ค้นหัวคอลัมน์แบบไม่สนตัวพิมพ์เล็ก-ใหญ่ (ชีตเขียน Platform / platform ไม่เหมือนกัน) */
+    const HL=t.H.map(v=>String(v).toLowerCase());
+    const colCI=(...p)=>{
+      for(const x of p){const q=String(x).toLowerCase();
+        const i=HL.findIndex(v=>v.includes(q)); if(i>=0)return i;}
+      return -1;};
     const c={
-      w:  t.col('Week','สัปดาห์'),
-      d:  t.col('วันที่ได้รับ','วันที่รับ','วันที่'),
-      o:  t.col('ออเดอร์','Order','เลขออเดอร์','Reference'),
-      s:  t.col('ขนส่ง','Platform','Carrier','ผู้ให้บริการ','ช่องทาง'),
-      dl: t.col('การจัดส่ง','สถานะการจัดส่ง','Delivery'),
-      st: t.col('สถานะ','Status'),
-      e:  t.col('วันที่สิ้นสุด','วันสิ้นสุด','สิ้นสุด','วันที่จบ','วันที่ปิดเคส','วันที่ปิด','วันที่เสร็จ','แล้วเสร็จ','End'),
-      r:  t.col('สาเหตุ','เหตุผล','Reason'),
-      n:  t.col('หมายเหตุ','โน๊ต','โน้ต','Note','Remark')
+      w:  colCI('Week','สัปดาห์'),
+      d:  colCI('วันที่ได้รับ','วันที่รับ','วันที่'),
+      o:  colCI('ออเดอร์','Order','เลขออเดอร์','Reference'),
+      s:  colCI('ขนส่ง','Platform','แพลตฟอร์ม','Carrier','ผู้ให้บริการ','ช่องทาง'),
+      dl: colCI('การจัดส่ง','สถานะการจัดส่ง','Delivery'),
+      st: colCI('สถานะ','Status'),
+      e:  colCI('วันที่สิ้นสุด','วันสิ้นสุด','สิ้นสุด','วันที่จบ','วันที่ปิดเคส','วันที่ปิด','วันที่เสร็จ','แล้วเสร็จ','End'),
+      r:  colCI('สาเหตุ','เหตุผล','Reason'),
+      n:  colCI('หมายเหตุ','โน๊ต','โน้ต','Note','Remark')
     };
     const g=(r,i)=>i>=0?String(r[i]||'').trim():'';
     const list=t.rows.map(r=>{
@@ -2363,23 +2369,15 @@ async function loadRet(gid){
        คอลัมน์อื่นถ้าค่าซ้ำๆ ไม่เกิน 40 แบบ ถือว่าเป็นหมวดทั้งหมด */
     const used=new Set([c.w,c.d,c.o,c.r,c.n,c.e].filter(i=>i>=0));
     const dims=[];
-    const H_IDX=7;                /* คอลัมน์ H — เอามาเสมอ */
     t.H.forEach((h,i)=>{
-      const forced=(i===H_IDX);
-      if(!forced&&used.has(i))return;
+      if(used.has(i))return;
       const vals=list.map(r=>String(r.raw[i]||'').trim()).filter(Boolean);
       if(!vals.length)return;
       const uniq=new Set(vals);
       if(uniq.size>40)return;                                  /* กระจายเกินไป ทำพายไม่ได้ */
-      if(!forced&&[...uniq].every(v=>/^\d[\d/.\-]{5,}$/.test(v)))return;  /* เป็นวันที่ */
+      if([...uniq].every(v=>/^\d[\d/.\-]{5,}$/.test(v)))return;  /* เป็นวันที่ */
       dims.push({i,h:h||('คอลัมน์ '+colLetter(i)),letter:colLetter(i)});
     });
-    if(t.H.length>H_IDX&&!dims.some(x=>x.i===H_IDX)){
-      const vals=list.map(r=>String(r.raw[H_IDX]||'').trim()).filter(Boolean);
-      if(vals.length&&new Set(vals).size<=40)
-        dims.push({i:H_IDX,h:t.H[H_IDX]||('คอลัมน์ '+colLetter(H_IDX)),letter:colLetter(H_IDX)});
-    }
-    dims.sort((a,b)=>a.i-b.i);
     RET[gid]={list,H:t.H,c,dims,err:''};
     SHEET_STATE.ret=fmt(list.length)+' เคส';
   }catch(e){
@@ -2488,9 +2486,10 @@ function secReturn(){
 
   const tot=list.length;
   const skip=new Set(tab.skip);
-  /* คอลัมน์ H ต้องมีเสมอ ไม่ว่ารายการ skip จะระบุอะไร */
-  const dims=d.dims.filter(x=>x.letter==='H'
-    ||(!skip.has(x.letter)&&!skip.has(x.h)&&![...skip].some(s=>x.h.includes(s))));
+  /* เจ้าของ / ผู้จัดทำ ไม่ต้องทำสัดส่วนทุกหัวข้อ */
+  const NEVER=['เจ้าของ','ผู้จัดทำ','ผู้รับผิดชอบ'];
+  const dims=d.dims.filter(x=>!NEVER.some(k=>x.h.includes(k))
+    &&!skip.has(x.letter)&&!skip.has(x.h)&&![...skip].some(s=>x.h.includes(s)));
 
   const cnt=idx=>{const o={};
     list.forEach(r=>{const v=String(r.raw[idx]||'').trim()||'(ไม่ระบุ)';o[v]=(o[v]||0)+1;});
