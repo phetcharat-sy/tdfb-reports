@@ -249,6 +249,7 @@
 
 /* ---------- หน้า Forecast ---------- */
 #vKPI .cgrid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:6px}
+#vKPI .cgrid2>*{min-width:0}
 @media(max-width:1500px){#vKPI .cgrid2{grid-template-columns:1fr}}
 #vKPI .chname2{font-size:31px;font-weight:bold;color:var(--ink);margin-bottom:12px}
 #vKPI .fnote{background:#F7F8FA;border:1px solid var(--line);border-left:5px solid var(--plum);
@@ -331,6 +332,8 @@ body.cap #vKPI .tscroll{max-height:none!important;overflow:visible}
 #vKPI table.dt.big-rows td{padding:18px 14px}
 #vKPI .pname{font-size:37px}
 #vKPI .pmeta{font-size:29px}
+#vKPI table.dt .pmeta{display:block;font-size:24px;color:var(--mute);
+  font-weight:normal;margin-top:3px}
 #vKPI .why{font-size:29px;line-height:1.45;white-space:normal}
 #vKPI .qty{font-size:34px;padding:3px 14px}
 /* คอลัมน์สัปดาห์ต้องอยู่บรรทัดเดียว ไม่ตัดเป็น "Week" / "1" */
@@ -1193,12 +1196,17 @@ function detailTable(rows,mode){
   sorted.forEach(r=>{ if(!r.key||seen.has(r.key))return; seen.add(r.key); out.push(r); });
   if(!out.length)return '<div class="empty2">ไม่มีรายการที่ตรงกับตัวกรองนี้</div>';
   return `<div class="tscroll"><table class="dt"><thead><tr>
-    <th>Order Ref</th><th>Source</th><th>Product</th><th>สถานะ</th><th>Remark Team</th></tr></thead><tbody>`
+    <th style="width:270px">วันที่ต้องการส่ง</th>
+    <th>Order Ref</th><th>Source</th><th>Product</th>
+    <th>สถานะ</th><th>Remark Team</th></tr></thead><tbody>`
    +out.map(r=>{const c=classify(r.wh);
       const lbl=c==='ontime'?'<span class="good">ส่งในวัน</span>'
               :c==='early' ?'<span style="color:#8a6a2f;font-weight:bold">ก่อนกำหนด</span>'
               :'<span class="bad">ล่าช้า</span>';
-      return `<tr><td><b>${esc(r.ref)}</b></td>
+      return `<tr>
+      <td style="white-space:nowrap"><b>${r.date?showD(r.date):'—'}</b>${
+        r.create?`<span class="pmeta">ลง Odoo ${esc(r.create)}</span>`:''}</td>
+      <td><b>${esc(r.ref)}</b></td>
       <td style="white-space:nowrap">${esc(r.source||'—')}</td>
       <td>${esc(r.product||'—')}</td>
       <td style="white-space:nowrap">${lbl}</td>
@@ -1691,16 +1699,19 @@ const lineLbl={id:'lineLbl',
     const nH=op.histLen||0;
     x.save(); x.textAlign='center'; x.textBaseline='bottom';
     const put=(txt,px,py,fc)=>{
-      x.font=(fc?'italic bold ':'bold ')+cf(fc?25:23)+'px Tahoma';
-      const w=x.measureText(txt).width, h=cf(fc?25:23);
-      const clash=yy=>{const b={x1:px-w/2-4,x2:px+w/2+4,y1:yy-h-3,y2:yy+3};
+      x.font=(fc?'italic bold ':'bold ')+cf(fc?21:19)+'px Tahoma';
+      const w=x.measureText(txt).width, h=cf(fc?21:19);
+      px=Math.max(area.left+w/2+2,Math.min(px,area.right-w/2-2));
+      const clash=yy=>{const b={x1:px-w/2-3,x2:px+w/2+3,y1:yy-h-2,y2:yy+2};
         return {b,hit:boxes.some(o=>!(b.x2<o.x1||b.x1>o.x2||b.y2<o.y1||b.y1>o.y2))};};
-      let y=Math.max(area.top+h+2,py-11), r=clash(y);
-      if(r.hit&&fc){ for(let k=1;k<=14;k++){const up=y-(h+5)*k;
-        if(up<area.top+h+2)break; const t=clash(up); if(!t.hit){y=up;r=t;break;} } }
-      if(r.hit)return;
+      let y=Math.max(area.top+h+2,py-10), r=clash(y);
+      if(r.hit){ /* ไล่ขยับขึ้นหาที่ว่าง */
+        for(let k=1;k<=20;k++){const up=y-(h+4)*k;
+          if(up<area.top+h+2)break; const t=clash(up); if(!t.hit){y=up;r=t;break;} } }
+      if(r.hit&&!fc)return;      /* ยอดจริงชนแล้วข้ามได้ */
+      /* แต่ป้ายพยากรณ์ต้องขึ้นทุกอัน — ชนก็วาดทับไป */
       boxes.push(r.b);
-      x.lineJoin='round'; x.lineWidth=5; x.strokeStyle='rgba(255,255,255,.92)';
+      x.lineJoin='round'; x.lineWidth=4; x.strokeStyle='rgba(255,255,255,.95)';
       x.strokeText(txt,px,y);
       x.fillStyle=fc?C.plumD:'#22252C';
       x.fillText(txt,px,y);
@@ -1708,10 +1719,11 @@ const lineLbl={id:'lineLbl',
     ch.data.datasets.forEach((ds,di)=>{
       const m=ch.getDatasetMeta(di); if(m.hidden)return;
       const isFc=di===1;
+      const step=Math.max(3,Math.ceil(nH/14));   /* ยอดจริงยาวมาก โชว์เว้นระยะ */
       m.data.forEach((pt,i)=>{
         const v=ds.data[i]; if(v==null||Number.isNaN(+v))return;
         if(isFc&&i<nH)return;            /* จุดต่อเส้น ไม่ต้องซ้ำป้าย */
-        if(!isFc&&!(i===nH-1||i%2===0))return;   /* ยอดจริงโชว์สลับจุด กันรก */
+        if(!isFc&&!(i===nH-1||i%step===0))return;
         put(fmt(v),pt.x,pt.y,isFc);
       });
     });
@@ -2135,6 +2147,7 @@ function fcLineChart(id,key,s,unit){
     label:c=>c.raw==null?null:`${c.dataset.label}: ${fmt(c.raw)} ${unit}`};
   o.scales.y.ticks.callback=v=>fmt(v);
   o.plugins.lineLbl={display:true,histLen:nH};
+  o.layout={padding:{top:Math.round(46*CFZ),right:26,left:6}};
   CH[key]=new Chart(el2,{type:'line',
     data:{labels:s.labels,datasets:[
       {label:'ยอดจริง',data:histData,borderColor:C.teal,backgroundColor:'rgba(62,142,140,.12)',
