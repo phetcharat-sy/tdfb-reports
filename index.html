@@ -291,7 +291,18 @@
 #vKPI .stfres:empty{border:0;padding:0;min-height:0}
 
 #vKPI .retnote{display:block;font-size:29px;color:var(--mute);line-height:1.45}
-/* ตารางสัดส่วนในหน้า Return */
+/* ตารางสัดส่วนในหน้า Return
+   ใช้ multi-column แบบ masonry — แผงสูงไม่เท่ากันก็เรียงชิดกันได้ ไม่เหลือช่องว่าง */
+#vKPI .retgrid{column-count:2;column-gap:18px}
+@media(max-width:1500px){#vKPI .retgrid{column-count:1}}
+#vKPI .brkcard{break-inside:avoid;display:inline-block;width:100%;margin:0 0 18px}
+#vKPI .brkrow{display:flex;gap:24px;align-items:center}
+#vKPI .brkpie{position:relative;flex:0 0 260px;height:260px}
+#vKPI .brkrow table.dt.brk{flex:1;min-width:0}
+@media(max-width:900px){
+  #vKPI .brkrow{flex-direction:column}
+  #vKPI .brkpie{flex:none;width:100%;max-width:300px;height:280px}
+}
 #vKPI table.dt.brk{font-size:34px;box-shadow:none;border:0;border-radius:0}
 #vKPI table.dt.brk th{font-size:29px;background:transparent;box-shadow:inset 0 -2px 0 var(--line)}
 #vKPI table.dt.brk td{padding:16px 14px}
@@ -2359,19 +2370,21 @@ function retBreak(id,title,counts,total){
   const es=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
   if(!es.length)return '';
   RET_CTX.push({id,labels:es.map(e=>e[0]),values:es.map(e=>e[1]),total});
-  return `<div class="cpanel">
+  return `<div class="cpanel brkcard">
     <div class="chname2">${esc(title)}</div>
-    <div class="cbox" style="height:340px"><canvas id="${id}"></canvas></div>
-    <table class="dt brk"><thead><tr>
-      <th>${esc(title)}</th><th class="num" style="width:150px">ออเดอร์</th>
-      <th class="num" style="width:130px">%</th></tr></thead><tbody>`
+    <div class="brkrow">
+      <div class="brkpie"><canvas id="${id}"></canvas></div>
+      <table class="dt brk"><thead><tr>
+        <th>${esc(title)}</th><th class="num" style="width:130px">ออเดอร์</th>
+        <th class="num" style="width:120px">%</th></tr></thead><tbody>`
    +es.map(([k,v],i)=>{const p=total?v/total*100:0;
       return `<tr><td><span class="brkdot" style="background:${RET_PAL[i%RET_PAL.length]}"></span>${esc(k)}</td>
         <td class="num"><b>${fmt(v)}</b></td>
         <td class="num"><b>${p.toFixed(1)}%</b></td></tr>`;}).join('')
    +`</tbody><tfoot><tr><td><b>รวม</b></td>
       <td class="num"><b>${fmt(total)}</b></td><td class="num"><b>100%</b></td>
-     </tr></tfoot></table></div>`;
+     </tr></tfoot></table>
+    </div></div>`;
 }
 function drawReturn(){
   /* กราฟแท่งรายสัปดาห์ */
@@ -2447,7 +2460,8 @@ function secReturn(){
   return bars+stBar
    +`<div class="sgrid">
       ${card(tab.t,fmt(tot))}
-      ${card('สัปดาห์ที่มีเคส',wkKeys.length,'teal')}
+      ${card('สัปดาห์ที่มีเคส'+(wkKeys.length?` (W${wkKeys[0]}–W${wkKeys[wkKeys.length-1]})`:''),
+             wkKeys.length,'teal')}
       ${card('หมวดที่แยกสัดส่วนได้',dims.length,'amber')}
       ${card('มีระบุสาเหตุ',fmt(list.filter(r=>r.r).length),'rose')}</div>`
    +(wkKeys.length>1?`
@@ -2458,7 +2472,7 @@ function secReturn(){
      </div>`:'')
 
    +`<h2 class="sec">สัดส่วนตามหมวด <em>${fmt(tot)} ออเดอร์ = 100%</em><span></span></h2>`
-   +(dims.length?`<div class="cgrid2">${dims.map((x,i)=>retBreak('c_ret'+i,x.h,cnt(x.i),tot)).join('')}</div>`
+   +(dims.length?`<div class="retgrid">${dims.map((x,i)=>retBreak('c_ret'+i,x.h,cnt(x.i),tot)).join('')}</div>`
       :`<div class="empty2">ไม่พบคอลัมน์ที่แยกสัดส่วนได้<br>
          <span style="font-size:26px;color:var(--mute)">หัวคอลัมน์ในชีต: ${esc(d.H.filter(Boolean).join(' | '))}</span></div>`)
 
