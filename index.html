@@ -301,6 +301,12 @@
 #vKPI .brkp i{display:block;height:9px;border-radius:5px;background:var(--teal);
   opacity:.35;min-width:3px;max-width:110px;flex:0 0 auto}
 #vKPI .brkp b{font-variant-numeric:tabular-nums;min-width:96px;text-align:right}
+#vKPI .brkdot{display:inline-block;width:16px;height:16px;border-radius:4px;
+  margin-right:12px;vertical-align:-1px}
+/* ตารางรายละเอียด Return — ล็อกสัดส่วนคอลัมน์ให้สมดุล ไม่ให้ช่องใดกินพื้นที่ทั้งหมด */
+#vKPI table.dt.ret-dt{table-layout:fixed}
+#vKPI table.dt.ret-dt td{overflow-wrap:anywhere;vertical-align:middle}
+#vKPI table.dt.ret-dt .mono{white-space:normal}
 
 /* ตารางรายละเอียด Dock to Stock — คอลัมน์เยอะ เลื่อนแนวนอนได้ */
 #vKPI table.dt.dock-dt{font-size:30px}
@@ -2342,22 +2348,44 @@ async function loadRet(gid){
   return RET[gid];
 }
 
-/* ตารางสัดส่วน: ค่า | ออเดอร์ | % ของทั้งหมดที่กรองอยู่ */
-function retBreak(title,counts,total){
+/* สัดส่วนต่อหมวด: กราฟวงกลม + ตารางตัวเลขข้างใต้ */
+const RET_PAL=[C.teal,C.amber,C.plum,C.rose,C.tealD,'#8A5A2E',C.plumD,C.mute,
+               '#7FA8A6','#C9A063','#9A8BC4','#C9765F'];
+let RET_CTX=[];
+function retBreak(id,title,counts,total){
   const es=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
   if(!es.length)return '';
+  RET_CTX.push({id,labels:es.map(e=>e[0]),values:es.map(e=>e[1]),total});
   return `<div class="cpanel">
     <div class="chname2">${esc(title)}</div>
+    <div class="cbox" style="height:340px"><canvas id="${id}"></canvas></div>
     <table class="dt brk"><thead><tr>
       <th>${esc(title)}</th><th class="num" style="width:150px">ออเดอร์</th>
       <th class="num" style="width:130px">%</th></tr></thead><tbody>`
-   +es.map(([k,v])=>{const p=total?v/total*100:0;
-      return `<tr><td>${esc(k)}</td><td class="num"><b>${fmt(v)}</b></td>
-        <td class="num"><span class="brkp"><i style="width:${Math.min(100,p).toFixed(1)}%"></i>
-          <b>${p.toFixed(1)}%</b></span></td></tr>`;}).join('')
+   +es.map(([k,v],i)=>{const p=total?v/total*100:0;
+      return `<tr><td><span class="brkdot" style="background:${RET_PAL[i%RET_PAL.length]}"></span>${esc(k)}</td>
+        <td class="num"><b>${fmt(v)}</b></td>
+        <td class="num"><b>${p.toFixed(1)}%</b></td></tr>`;}).join('')
    +`</tbody><tfoot><tr><td><b>รวม</b></td>
       <td class="num"><b>${fmt(total)}</b></td><td class="num"><b>100%</b></td>
      </tr></tfoot></table></div>`;
+}
+function drawReturn(){
+  RET_CTX.forEach(c=>{
+    const el2=document.getElementById(c.id); if(!el2)return;
+    const key='ret_'+c.id;
+    destroy(key);
+    const cols=c.labels.map((_,i)=>RET_PAL[i%RET_PAL.length]);
+    const pcts=c.values.map(v=>Math.round(v/(c.total||1)*1000)/10);
+    CH[key]=new Chart(el2,{type:'pie',
+      data:{labels:c.labels,datasets:[{data:pcts,backgroundColor:cols,
+        borderColor:'#fff',borderWidth:2}]},
+      options:{responsive:true,maintainAspectRatio:false,layout:{padding:8},
+        plugins:{legend:{display:false},pieLbl:{display:true,minPercent:5},
+          tooltip:{titleFont:{size:cf(22)},bodyFont:{size:cf(21)},padding:12,
+            callbacks:{label:x=>x.label+': '+x.formattedValue+'% ('
+              +fmt(c.values[x.dataIndex])+' ออเดอร์)'}}}}});
+  });
 }
 
 function secReturn(){
@@ -2388,6 +2416,7 @@ function secReturn(){
     return o;};
 
   const hasR=list.some(r=>r.r), hasN=list.some(r=>r.n);
+  RET_CTX=[];
 
   return bars+stBar
    +`<div class="sgrid">
@@ -2397,20 +2426,24 @@ function secReturn(){
       ${card('มีระบุสาเหตุ',fmt(list.filter(r=>r.r).length),'rose')}</div>
 
      <h2 class="sec">สัดส่วนตามหมวด <em>${fmt(tot)} ออเดอร์ = 100%</em><span></span></h2>`
-   +(dims.length?`<div class="cgrid2">${dims.map(x=>retBreak(x.h,cnt(x.i),tot)).join('')}</div>`
+   +(dims.length?`<div class="cgrid2">${dims.map((x,i)=>retBreak('c_ret'+i,x.h,cnt(x.i),tot)).join('')}</div>`
       :`<div class="empty2">ไม่พบคอลัมน์ที่แยกสัดส่วนได้<br>
          <span style="font-size:26px;color:var(--mute)">หัวคอลัมน์ในชีต: ${esc(d.H.filter(Boolean).join(' | '))}</span></div>`)
 
    +`<h2 class="sec">${esc(tab.t)} <em>${fmt(tot)} รายการ · ${esc(tab.d)}</em><span></span></h2>`
-   +(tot?`<div class="tscroll"><table class="dt"><thead><tr>
-       <th style="width:120px">Week</th>
-       <th style="width:230px">วันที่ได้รับ</th>
-       <th style="width:280px">ออเดอร์</th>
-       <th style="width:190px">ขนส่ง</th>
-       <th>การจัดส่ง</th>
-       ${stOpts.length?'<th style="width:230px">สถานะ</th>':''}
-       ${hasR?'<th style="width:300px">สาเหตุ</th>':''}
-       ${hasN?'<th style="width:320px">หมายเหตุ</th>':''}
+   +(tot?(()=>{
+     /* จัดสัดส่วนคอลัมน์ให้สมดุล — แบ่งพื้นที่ที่เหลือให้คอลัมน์ข้อความตามจำนวนที่มีจริง */
+     const flex=1+(stOpts.length?1:0)+(hasR?1:0)+(hasN?1:0);   /* การจัดส่ง + ที่มีจริง */
+     const w=(46/flex).toFixed(1)+'%';
+     return `<div class="tscroll"><table class="dt ret-dt"><thead><tr>
+       <th style="width:9%">Week</th>
+       <th style="width:15%">วันที่ได้รับ</th>
+       <th style="width:19%">ออเดอร์</th>
+       <th style="width:11%">ขนส่ง</th>
+       <th style="width:${w}">การจัดส่ง</th>
+       ${stOpts.length?`<th style="width:${w}">สถานะ</th>`:''}
+       ${hasR?`<th style="width:${w}">สาเหตุ</th>`:''}
+       ${hasN?`<th style="width:${w}">หมายเหตุ</th>`:''}
      </tr></thead><tbody>`
      +list.map(r=>`<tr>
        <td class="c-week"><b>${r.w?'W'+(parseInt(r.w)||r.w):'—'}</b></td>
@@ -2422,7 +2455,7 @@ function secReturn(){
        ${hasR?`<td>${r.r?`<span class="why has">${esc(r.r)}</span>`:'<span class="why">—</span>'}</td>`:''}
        ${hasN?`<td><span class="retnote">${esc(r.n||'—')}</span></td>`:''}
      </tr>`).join('')
-     +'</tbody></table></div>'
+     +'</tbody></table></div>';})()
     :'<div class="empty2">ไม่มีรายการตามตัวกรองนี้</div>');
 }
 
@@ -2601,7 +2634,8 @@ function render(){
     requestAnimationFrame(()=>{
       try{ if(SEC==='ontime')drawOnTime(); else if(SEC==='oos')drawOOS();
            else if(SEC==='diff')drawDiff(); else if(SEC==='dock')drawDock();
-           else if(SEC==='fc')drawForecast(); else drawRepl(); }
+           else if(SEC==='fc')drawForecast();
+           else if(SEC==='ret')drawReturn(); else drawRepl(); }
       catch(e){ console.warn('chart',e); }
     });
   }
