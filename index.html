@@ -295,19 +295,21 @@
    กราฟใหญ่อยู่ซ้าย · ตารางบีบให้พอดีเนื้อหาแล้วชิดขวา ไม่ปล่อยช่องว่างกลาง */
 #vKPI .brkcard{margin:0 0 18px}
 #vKPI .brkcard.wide{width:100%}
-#vKPI .brkrow{display:flex;gap:40px;align-items:center;justify-content:space-between}
-#vKPI .brkpie{position:relative;flex:0 0 560px;height:520px}
-#vKPI .brkcard.wide .brkpie{flex:1 1 auto;min-width:520px;height:680px}
-#vKPI .brkrow table.dt.brk{flex:0 0 auto;width:640px;max-width:52%;margin-left:auto}
-#vKPI .brkcard.wide .brkrow table.dt.brk{width:760px}
+#vKPI .brkrow{display:flex;gap:32px;align-items:center;justify-content:space-between}
+#vKPI .brkpie{position:relative;flex:0 0 430px;height:400px}
+#vKPI .brkcard.wide .brkpie{flex:1 1 auto;min-width:460px;height:560px}
+#vKPI .brkrow table.dt.brk{flex:0 0 auto;width:600px;max-width:58%;margin-left:auto}
+#vKPI .brkcard.wide .brkrow table.dt.brk{width:720px}
+/* ชื่อหมวดต้องอยู่บรรทัดเดียว ไม่ตัดคำ เช่น "admin ยกเลิกแล้ว" */
+#vKPI table.dt.brk td:first-child,#vKPI table.dt.brk th:first-child{white-space:nowrap}
 @media(max-width:1400px){
-  #vKPI .brkpie{flex:0 0 420px;height:420px}
-  #vKPI .brkcard.wide .brkpie{min-width:420px;height:540px}
+  #vKPI .brkpie{flex:0 0 360px;height:360px}
+  #vKPI .brkcard.wide .brkpie{min-width:380px;height:480px}
   #vKPI .brkrow table.dt.brk,#vKPI .brkcard.wide .brkrow table.dt.brk{width:auto;max-width:none;flex:1}
 }
 @media(max-width:1000px){
   #vKPI .brkrow{flex-direction:column}
-  #vKPI .brkpie,#vKPI .brkcard.wide .brkpie{flex:none;width:100%;max-width:460px;height:440px;min-width:0}
+  #vKPI .brkpie,#vKPI .brkcard.wide .brkpie{flex:none;width:100%;max-width:420px;height:400px;min-width:0}
   #vKPI .brkrow table.dt.brk{width:100%;margin:0}
 }
 #vKPI table.dt.brk{font-size:36px;box-shadow:none;border:0;border-radius:0}
@@ -324,11 +326,12 @@
 #vKPI .brkdot{display:inline-block;width:20px;height:20px;border-radius:5px;
   margin-right:16px;vertical-align:-2px}
 /* ตารางรายละเอียด Return — ล็อกสัดส่วนคอลัมน์ให้สมดุล ไม่ให้ช่องใดกินพื้นที่ทั้งหมด */
-#vKPI table.dt.ret-dt{table-layout:fixed;font-size:34px}
-#vKPI table.dt.ret-dt th{font-size:29px}
-#vKPI table.dt.ret-dt td{overflow-wrap:anywhere;vertical-align:middle}
-#vKPI table.dt.ret-dt .mono{white-space:normal;font-size:29px}
-#vKPI table.dt.ret-dt .why{font-size:29px}
+#vKPI table.dt.ret-dt{table-layout:fixed;font-size:38px}
+#vKPI table.dt.ret-dt th{font-size:31px}
+#vKPI table.dt.ret-dt td{overflow-wrap:anywhere;vertical-align:middle;padding:19px 16px}
+#vKPI table.dt.ret-dt .mono{white-space:normal;font-size:33px}
+#vKPI table.dt.ret-dt .why{font-size:32px}
+#vKPI table.dt.ret-dt .retnote{font-size:32px}
 
 /* ตารางรายละเอียด Dock to Stock — คอลัมน์เยอะ เลื่อนแนวนอนได้ */
 #vKPI table.dt.dock-dt{font-size:30px}
@@ -2441,7 +2444,7 @@ function drawReturn(){
       options:{responsive:true,maintainAspectRatio:false,cutout:'30%',
         layout:{padding:14},
         plugins:{legend:{display:false},
-          pieLbl:{display:true,minPercent:3,size:40},
+          pieLbl:{display:true,minPercent:3,size:30},
           tooltip:{titleFont:{size:cf(24)},bodyFont:{size:cf(23)},padding:14,
             callbacks:{label:x=>x.label+': '+x.formattedValue+'% ('
               +fmt(c.values[x.dataIndex])+' ออเดอร์)'}}}}});
