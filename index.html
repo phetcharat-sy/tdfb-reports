@@ -291,6 +291,16 @@
 #vKPI .stfres:empty{border:0;padding:0;min-height:0}
 
 #vKPI .retnote{display:block;font-size:26px;color:var(--mute);line-height:1.45}
+/* ตารางสัดส่วนในหน้า Return */
+#vKPI table.dt.brk{font-size:30px;box-shadow:none;border:0;border-radius:0}
+#vKPI table.dt.brk th{font-size:26px;background:transparent;box-shadow:inset 0 -2px 0 var(--line)}
+#vKPI table.dt.brk td{padding:13px 14px}
+#vKPI table.dt.brk tfoot td{border-top:2px solid var(--line);background:var(--soft)}
+#vKPI .brkp{display:inline-flex;align-items:center;gap:10px;justify-content:flex-end;
+  width:100%;position:relative}
+#vKPI .brkp i{display:block;height:9px;border-radius:5px;background:var(--teal);
+  opacity:.35;min-width:3px;max-width:110px;flex:0 0 auto}
+#vKPI .brkp b{font-variant-numeric:tabular-nums;min-width:96px;text-align:right}
 
 /* ตารางรายละเอียด Dock to Stock — คอลัมน์เยอะ เลื่อนแนวนอนได้ */
 #vKPI table.dt.dock-dt{font-size:30px}
@@ -2277,15 +2287,17 @@ function drawForecast(){
 
 /* ================= Return (Admin) =================
    ชีตต้นทาง: Case Admin (S_RET) · แต่ละหัวข้อคือแท็บ (gid) ของตัวเอง
-   ตอนนี้รู้ gid เดียว หัวข้ออื่นจึงชี้ gid เดิมไว้ก่อน แก้ได้ที่ตาราง RET_TABS */
+   ตอนนี้รู้ gid เดียว หัวข้ออื่นจึงชี้ gid เดิมไว้ก่อน แก้ได้ที่ตาราง RET_TABS
+   skip = คอลัมน์ที่ไม่ต้องเอามาทำสัดส่วน (ระบุเป็นชื่อคอลัมน์ หรือเป็นตัวอักษรคอลัมน์ชีต) */
 const RET_TABS=[
-  ['cancel','ยกเลิกในวัน','ออเดอร์ที่ถูกยกเลิกภายในวัน',G_RET],
-  ['back','งานตีคืน','พัสดุที่ตีคืนกลับมาที่คลัง',G_RET],
-  ['idle','สถานะไม่เคลื่อนไหว','พัสดุที่สถานะค้างไม่ขยับตามกำหนด',G_RET],
-  ['lost','เคสของหาย','เคสพัสดุสูญหายระหว่างขนส่ง',G_RET]
+  {k:'cancel',t:'ยกเลิกในวัน',   d:'ออเดอร์ที่ถูกยกเลิกภายในวัน',    gid:G_RET, skip:[]},
+  {k:'back',  t:'งานตีคืน',      d:'พัสดุที่ตีคืนกลับมาที่คลัง',       gid:G_RET, skip:['J','K']},
+  {k:'idle',  t:'สถานะไม่เคลื่อนไหว',d:'พัสดุที่สถานะค้างไม่ขยับตามกำหนด',gid:G_RET, skip:['ผู้จัดทำ']},
+  {k:'lost',  t:'เคสของหาย',     d:'เคสพัสดุสูญหายระหว่างขนส่ง',      gid:G_RET, skip:[]}
 ];
-const RET={};                  /* cache ต่อ gid */
+const RET={};
 const RET_LOADING={};
+const colLetter=i=>{let s='';i++;while(i>0){const m=(i-1)%26;s=String.fromCharCode(65+m)+s;i=(i-m-1)/26;}return s;};
 
 async function loadRet(gid){
   if(RET[gid]||RET_LOADING[gid])return RET[gid];
@@ -2300,72 +2312,105 @@ async function loadRet(gid){
       o:  t.col('ออเดอร์','Order','เลขออเดอร์','Reference'),
       s:  t.col('ขนส่ง','Carrier','ผู้ให้บริการ'),
       dl: t.col('การจัดส่ง','สถานะการจัดส่ง','Delivery'),
+      st: t.col('สถานะ','Status'),
       r:  t.col('สาเหตุ','เหตุผล','Reason'),
       n:  t.col('หมายเหตุ','โน๊ต','โน้ต','Note','Remark')
     };
     const g=(r,i)=>i>=0?String(r[i]||'').trim():'';
     const list=t.rows.map(r=>({
-      w:g(r,c.w), d:g(r,c.d), o:g(r,c.o), s:g(r,c.s),
-      dl:g(r,c.dl), r:g(r,c.r), n:g(r,c.n)
+      w:g(r,c.w), d:g(r,c.d), o:g(r,c.o), s:g(r,c.s), dl:g(r,c.dl),
+      st:g(r,c.st), r:g(r,c.r), n:g(r,c.n), raw:r
     })).filter(x=>x.o||x.d||x.w);
-    RET[gid]={list,H:t.H,c,err:''};
+
+    /* หาคอลัมน์ที่เหมาะเอามาทำสัดส่วน — ค่าซ้ำๆ ไม่กี่แบบ ไม่ใช่วันที่/เลขออเดอร์ */
+    const used=new Set([c.w,c.d,c.o,c.r,c.n].filter(i=>i>=0));
+    const dims=[];
+    t.H.forEach((h,i)=>{
+      if(!h||used.has(i))return;
+      const vals=list.map(r=>String(r.raw[i]||'').trim()).filter(Boolean);
+      if(!vals.length)return;
+      const uniq=new Set(vals);
+      if(uniq.size>25||uniq.size>vals.length*0.6)return;      /* กระจายเกินไป ไม่ใช่หมวด */
+      if([...uniq].every(v=>/^\d[\d/.\-]{5,}$/.test(v)))return; /* หน้าตาเป็นวันที่/เลข */
+      dims.push({i,h,letter:colLetter(i)});
+    });
+    RET[gid]={list,H:t.H,c,dims,err:''};
     SHEET_STATE.ret=fmt(list.length)+' เคส';
   }catch(e){
-    RET[gid]={list:[],H:[],c:{},err:e.message};
+    RET[gid]={list:[],H:[],c:{},dims:[],err:e.message};
     SHEET_STATE.ret='ผิดพลาด — '+e.message;
   }
   RET_LOADING[gid]=false;
   return RET[gid];
 }
 
+/* ตารางสัดส่วน: ค่า | ออเดอร์ | % ของทั้งหมดที่กรองอยู่ */
+function retBreak(title,counts,total){
+  const es=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  if(!es.length)return '';
+  return `<div class="cpanel">
+    <div class="chname2">${esc(title)}</div>
+    <table class="dt brk"><thead><tr>
+      <th>${esc(title)}</th><th class="num" style="width:150px">ออเดอร์</th>
+      <th class="num" style="width:130px">%</th></tr></thead><tbody>`
+   +es.map(([k,v])=>{const p=total?v/total*100:0;
+      return `<tr><td>${esc(k)}</td><td class="num"><b>${fmt(v)}</b></td>
+        <td class="num"><span class="brkp"><i style="width:${Math.min(100,p).toFixed(1)}%"></i>
+          <b>${p.toFixed(1)}%</b></span></td></tr>`;}).join('')
+   +`</tbody><tfoot><tr><td><b>รวม</b></td>
+      <td class="num"><b>${fmt(total)}</b></td><td class="num"><b>100%</b></td>
+     </tr></tfoot></table></div>`;
+}
+
 function secReturn(){
   const cur=sf('ret_t','cancel');
-  const tab=RET_TABS.find(t=>t[0]===cur)||RET_TABS[0];
-  const gid=tab[3];
-  const bars=chipBar('ret_t','หัวข้อ',RET_TABS.map(t=>[t[0],t[1]]),cur);
-  const d=RET[gid];
+  const tab=RET_TABS.find(t=>t.k===cur)||RET_TABS[0];
+  const bars=chipBar('ret_t','หัวข้อ',RET_TABS.map(t=>[t.k,t.t]),cur);
+  const d=RET[tab.gid];
   if(!d)return bars+'<div class="empty2">กำลังโหลดข้อมูล…</div>';
   if(d.err)return bars+`<div class="empty2">อ่านชีตไม่ได้ — ${esc(d.err)}</div>`;
 
+  /* ตัวกรองสถานะ — ทำแบบเดียวกับ ตรง/ไม่ตรง ของหน้า Stock Diff */
+  const stOpts=[...new Set(d.list.map(r=>r.st).filter(Boolean))].sort();
+  const fSt=sf('ret_s','');
   let list=d.list;
   if(fWeek())list=list.filter(r=>String(parseInt(r.w)||'')===fWeek());
+  if(fSt)list=list.filter(r=>r.st===fSt);
 
-  const byW={};
-  d.list.forEach(r=>{const w=String(parseInt(r.w)||'');if(w)byW[w]=(byW[w]||0)+1;});
-  const wks=Object.keys(byW).sort((a,b)=>a-b);
+  const stBar=stOpts.length?chipBar('ret_s','สถานะ',
+    [['','ทั้งหมด'],...stOpts.map(v=>[v,v])],fSt):'';
 
-  const byS={};
-  list.forEach(r=>{const k=r.s||'—';byS[k]=(byS[k]||0)+1;});
-  const carr=Object.entries(byS).sort((a,b)=>b[1]-a[1]);
-  const fCar=sf('ret_c','');
-  if(fCar)list=list.filter(r=>(r.s||'—')===fCar);
+  const tot=list.length;
+  const skip=new Set(tab.skip);
+  const dims=d.dims.filter(x=>!skip.has(x.letter)&&!skip.has(x.h)
+    &&![...skip].some(s=>x.h.includes(s)));
+
+  const cnt=idx=>{const o={};
+    list.forEach(r=>{const v=String(r.raw[idx]||'').trim()||'(ไม่ระบุ)';o[v]=(o[v]||0)+1;});
+    return o;};
 
   const hasR=list.some(r=>r.r), hasN=list.some(r=>r.n);
-  const miss=[['Week',d.c.w],['วันที่ได้รับ',d.c.d],['ออเดอร์',d.c.o],
-              ['ขนส่ง',d.c.s],['การจัดส่ง',d.c.dl]].filter(e=>e[1]<0).map(e=>e[0]);
 
-  return bars
+  return bars+stBar
    +`<div class="sgrid">
-      ${card(esc(tab[1]),fmt(list.length))}
-      ${card('สัปดาห์ที่มีข้อมูล',wks.length,'teal')}
-      ${card('ขนส่งที่เกี่ยวข้อง',carr.length,'amber')}
-      ${card('มีระบุสาเหตุ',fmt(list.filter(r=>r.r).length),'rose')}</div>`
-   +(miss.length?`<div class="chint" style="color:var(--bad)">
-      อ่านคอลัมน์เหล่านี้จากชีตไม่เจอ: <b>${esc(miss.join(' · '))}</b><br>
-      <span style="color:var(--mute)">หัวคอลัมน์ในชีต: ${esc(d.H.filter(Boolean).join(' | '))}</span></div>`:'')
-   +(wks.length>1?`<div class="fbar"><span class="fl">สัปดาห์</span>`
-      +wks.map(w=>`<button type="button" data-sf="__w" data-v="${w}"
-          class="${fWeek()===w?'on':''}">W${w} <span class="cnt">${byW[w]}</span></button>`).join('')
-      +`</div>`:'')
-   +(carr.length>1?chipBar('ret_c','ขนส่ง',
-      [['','ทั้งหมด'],...carr.map(([k,v])=>[k,`${esc(k)} ${v}`])],fCar):'')
-   +`<h2 class="sec">${esc(tab[1])} <em>${fmt(list.length)} รายการ · ${esc(tab[2])}</em><span></span></h2>`
-   +(list.length?`<div class="tscroll"><table class="dt"><thead><tr>
+      ${card(tab.t,fmt(tot))}
+      ${card('% ของทั้งหัวข้อ',d.list.length?(tot/d.list.length*100).toFixed(1)+'%':'—','teal')}
+      ${card('หมวดที่แยกสัดส่วนได้',dims.length,'amber')}
+      ${card('มีระบุสาเหตุ',fmt(list.filter(r=>r.r).length),'rose')}</div>
+
+     <h2 class="sec">สัดส่วนตามหมวด <em>${fmt(tot)} ออเดอร์ = 100%</em><span></span></h2>`
+   +(dims.length?`<div class="cgrid2">${dims.map(x=>retBreak(x.h,cnt(x.i),tot)).join('')}</div>`
+      :`<div class="empty2">ไม่พบคอลัมน์ที่แยกสัดส่วนได้<br>
+         <span style="font-size:26px;color:var(--mute)">หัวคอลัมน์ในชีต: ${esc(d.H.filter(Boolean).join(' | '))}</span></div>`)
+
+   +`<h2 class="sec">${esc(tab.t)} <em>${fmt(tot)} รายการ · ${esc(tab.d)}</em><span></span></h2>`
+   +(tot?`<div class="tscroll"><table class="dt"><thead><tr>
        <th style="width:120px">Week</th>
        <th style="width:230px">วันที่ได้รับ</th>
        <th style="width:280px">ออเดอร์</th>
        <th style="width:190px">ขนส่ง</th>
        <th>การจัดส่ง</th>
+       ${stOpts.length?'<th style="width:230px">สถานะ</th>':''}
        ${hasR?'<th style="width:300px">สาเหตุ</th>':''}
        ${hasN?'<th style="width:320px">หมายเหตุ</th>':''}
      </tr></thead><tbody>`
@@ -2375,6 +2420,7 @@ function secReturn(){
        <td class="mono">${esc(r.o||'—')}</td>
        <td style="white-space:nowrap">${r.s?`<span class="why has">${esc(r.s)}</span>`:'—'}</td>
        <td>${esc(r.dl||'—')}</td>
+       ${stOpts.length?`<td>${esc(r.st||'—')}</td>`:''}
        ${hasR?`<td>${r.r?`<span class="why has">${esc(r.r)}</span>`:'<span class="why">—</span>'}</td>`:''}
        ${hasN?`<td><span class="retnote">${esc(r.n||'—')}</span></td>`:''}
      </tr>`).join('')
@@ -2516,7 +2562,7 @@ el('detail').addEventListener('click',async e=>{
   }
   SUBF[k]=v;
   if(k==='ret_t'){                     /* เปลี่ยนหัวข้อ = อาจต้องโหลดแท็บใหม่ */
-    const g=(RET_TABS.find(t=>t[0]===v)||RET_TABS[0])[3];
+    const g=(RET_TABS.find(t=>t.k===v)||RET_TABS[0]).gid;
     render();
     if(!RET[g]){ await loadRet(g); render(); }
     return;
@@ -2924,7 +2970,7 @@ window.KPI_SEC=async(sec)=>{
   SEC=sec||'overview';
   render();
   if((SEC==='repl'||SEC==='fc')&&!REPL){ await loadRepl(); render(); }
-  if(SEC==='ret'){ const g=(RET_TABS.find(t=>t[0]===sf('ret_t','cancel'))||RET_TABS[0])[3];
+  if(SEC==='ret'){ const g=(RET_TABS.find(t=>t.k===sf('ret_t','cancel'))||RET_TABS[0]).gid;
     if(!RET[g]){ await loadRet(g); render(); } }
 };
 
