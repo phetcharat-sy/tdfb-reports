@@ -292,28 +292,30 @@
 
 #vKPI .retnote{display:block;font-size:29px;color:var(--mute);line-height:1.45}
 /* ตารางสัดส่วนในหน้า Return
-   ใช้ multi-column แบบ masonry — แผงสูงไม่เท่ากันก็เรียงชิดกันได้ ไม่เหลือช่องว่าง */
-#vKPI .retgrid{column-count:2;column-gap:18px}
-@media(max-width:1500px){#vKPI .retgrid{column-count:1}}
-#vKPI .brkcard{break-inside:avoid;display:inline-block;width:100%;margin:0 0 18px}
-#vKPI .brkrow{display:flex;gap:24px;align-items:center}
-#vKPI .brkpie{position:relative;flex:0 0 260px;height:260px}
+   หมวดที่มีตัวเลือกเยอะกินทั้งบรรทัด · หมวดสั้นจับคู่กัน — ไม่เหลือช่องว่าง */
+#vKPI .brkcard{margin:0 0 18px}
+#vKPI .brkcard.wide{width:100%}
+#vKPI .brkrow{display:flex;gap:34px;align-items:center}
+#vKPI .brkpie{position:relative;flex:0 0 300px;height:300px}
+#vKPI .brkcard.wide .brkpie{flex:0 0 380px;height:380px}
 #vKPI .brkrow table.dt.brk{flex:1;min-width:0}
-@media(max-width:900px){
+@media(max-width:1000px){
   #vKPI .brkrow{flex-direction:column}
-  #vKPI .brkpie{flex:none;width:100%;max-width:300px;height:280px}
+  #vKPI .brkpie,#vKPI .brkcard.wide .brkpie{flex:none;width:100%;max-width:340px;height:320px}
 }
-#vKPI table.dt.brk{font-size:34px;box-shadow:none;border:0;border-radius:0}
-#vKPI table.dt.brk th{font-size:29px;background:transparent;box-shadow:inset 0 -2px 0 var(--line)}
-#vKPI table.dt.brk td{padding:16px 14px}
+#vKPI table.dt.brk{font-size:38px;box-shadow:none;border:0;border-radius:0}
+#vKPI table.dt.brk th{font-size:30px;background:transparent;box-shadow:inset 0 -2px 0 var(--line)}
+#vKPI table.dt.brk td{padding:19px 16px}
+#vKPI .brkcard.wide table.dt.brk{font-size:42px}
+#vKPI .brkcard.wide table.dt.brk td{padding:22px 18px}
 #vKPI table.dt.brk tfoot td{border-top:2px solid var(--line);background:var(--soft)}
 #vKPI .brkp{display:inline-flex;align-items:center;gap:10px;justify-content:flex-end;
   width:100%;position:relative}
 #vKPI .brkp i{display:block;height:9px;border-radius:5px;background:var(--teal);
   opacity:.35;min-width:3px;max-width:110px;flex:0 0 auto}
 #vKPI .brkp b{font-variant-numeric:tabular-nums;min-width:96px;text-align:right}
-#vKPI .brkdot{display:inline-block;width:16px;height:16px;border-radius:4px;
-  margin-right:12px;vertical-align:-1px}
+#vKPI .brkdot{display:inline-block;width:20px;height:20px;border-radius:5px;
+  margin-right:16px;vertical-align:-2px}
 /* ตารางรายละเอียด Return — ล็อกสัดส่วนคอลัมน์ให้สมดุล ไม่ให้ช่องใดกินพื้นที่ทั้งหมด */
 #vKPI table.dt.ret-dt{table-layout:fixed;font-size:34px}
 #vKPI table.dt.ret-dt th{font-size:29px}
@@ -2366,17 +2368,17 @@ const RET_PAL=[C.teal,C.amber,C.plum,C.rose,C.tealD,'#8A5A2E',C.plumD,C.mute,
                '#7FA8A6','#C9A063','#9A8BC4','#C9765F'];
 let RET_CTX=[];
 let RET_WK=null;
-function retBreak(id,title,counts,total){
+function retBreak(id,title,counts,total,wide){
   const es=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
   if(!es.length)return '';
   RET_CTX.push({id,labels:es.map(e=>e[0]),values:es.map(e=>e[1]),total});
-  return `<div class="cpanel brkcard">
+  return `<div class="cpanel brkcard${wide?' wide':''}">
     <div class="chname2">${esc(title)}</div>
     <div class="brkrow">
       <div class="brkpie"><canvas id="${id}"></canvas></div>
       <table class="dt brk"><thead><tr>
-        <th>${esc(title)}</th><th class="num" style="width:130px">ออเดอร์</th>
-        <th class="num" style="width:120px">%</th></tr></thead><tbody>`
+        <th>${esc(title)}</th><th class="num" style="width:170px">ออเดอร์</th>
+        <th class="num" style="width:150px">%</th></tr></thead><tbody>`
    +es.map(([k,v],i)=>{const p=total?v/total*100:0;
       return `<tr><td><span class="brkdot" style="background:${RET_PAL[i%RET_PAL.length]}"></span>${esc(k)}</td>
         <td class="num"><b>${fmt(v)}</b></td>
@@ -2472,7 +2474,15 @@ function secReturn(){
      </div>`:'')
 
    +`<h2 class="sec">สัดส่วนตามหมวด <em>${fmt(tot)} ออเดอร์ = 100%</em><span></span></h2>`
-   +(dims.length?`<div class="retgrid">${dims.map((x,i)=>retBreak('c_ret'+i,x.h,cnt(x.i),tot)).join('')}</div>`
+   +(dims.length?(()=>{
+      /* หมวดที่มีตัวเลือกเยอะ (>=5) กินทั้งบรรทัด · หมวดสั้นจับคู่กันสองช่อง
+         ตารางจึงไม่เหลือช่องว่างและตัวหนังสือใหญ่เต็มพื้นที่ */
+      const items=dims.map((x,i)=>({...x,id:'c_ret'+i,c:cnt(x.i)}));
+      const big=items.filter(x=>Object.keys(x.c).length>=5);
+      const small=items.filter(x=>Object.keys(x.c).length<5);
+      return big.map(x=>retBreak(x.id,x.h,x.c,tot,true)).join('')
+        +(small.length?`<div class="cgrid2">${small.map(x=>retBreak(x.id,x.h,x.c,tot,false)).join('')}</div>`:'');
+    })()
       :`<div class="empty2">ไม่พบคอลัมน์ที่แยกสัดส่วนได้<br>
          <span style="font-size:26px;color:var(--mute)">หัวคอลัมน์ในชีต: ${esc(d.H.filter(Boolean).join(' | '))}</span></div>`)
 
