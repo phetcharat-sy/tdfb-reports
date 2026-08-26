@@ -2365,18 +2365,22 @@ async function loadRet(gid){
     }).filter(x=>x.o||x.d||x.w);
 
     /* หาคอลัมน์ที่เหมาะเอามาทำสัดส่วน
-       กันออกแค่ Week / วันที่ / เลขออเดอร์ / สาเหตุ / หมายเหตุ
-       คอลัมน์อื่นถ้าค่าซ้ำๆ ไม่เกิน 40 แบบ ถือว่าเป็นหมวดทั้งหมด */
-    const used=new Set([c.w,c.d,c.o,c.r,c.n,c.e].filter(i=>i>=0));
+       กันออกแค่ Week / วันที่ / วันที่สิ้นสุด / เลขออเดอร์ / หมายเหตุ
+       "สาเหตุ" (คอลัมน์ H ของงานตีคืน) ต้องเอามาทำสัดส่วนด้วย จึงไม่กันออก */
+    const used=new Set([c.w,c.d,c.o,c.n,c.e].filter(i=>i>=0));
     const dims=[];
     t.H.forEach((h,i)=>{
       if(used.has(i))return;
+      const name=String(h||'').trim();
+      if(/^คอลัมน์\s*\d*$/.test(name))return;      /* คอลัมน์ที่ชีตตั้งชื่ออัตโนมัติ = ช่องขยะ */
       const vals=list.map(r=>String(r.raw[i]||'').trim()).filter(Boolean);
       if(!vals.length)return;
+      if(vals.length<list.length*0.3)return;       /* ส่วนใหญ่ว่าง ไม่ใช่หมวด */
       const uniq=new Set(vals);
       if(uniq.size>40)return;                                  /* กระจายเกินไป ทำพายไม่ได้ */
       if([...uniq].every(v=>/^\d[\d/.\-]{5,}$/.test(v)))return;  /* เป็นวันที่ */
-      dims.push({i,h:h||('คอลัมน์ '+colLetter(i)),letter:colLetter(i)});
+      if([...uniq].every(v=>/^#(REF|N\/A|VALUE|NAME|DIV)/i.test(v)))return; /* สูตรพัง */
+      dims.push({i,h:name||('คอลัมน์ '+colLetter(i)),letter:colLetter(i)});
     });
     RET[gid]={list,H:t.H,c,dims,err:''};
     SHEET_STATE.ret=fmt(list.length)+' เคส';
@@ -2412,6 +2416,8 @@ let RET_WK=null;
 function retBreak(id,title,counts,total,wide){
   const es=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
   if(!es.length)return '';
+  /* % คิดจากจำนวนที่นับได้จริง เผื่อมีแถวที่ข้ามไป (เช่นเซลล์สูตรพัง) */
+  total=es.reduce((s,e)=>s+e[1],0)||total;
   RET_CTX.push({id,labels:es.map(e=>e[0]),values:es.map(e=>e[1]),total});
   return `<div class="cpanel brkcard${wide?' wide':''}">
     <div class="chname2">${esc(title)}</div>
@@ -2486,13 +2492,14 @@ function secReturn(){
 
   const tot=list.length;
   const skip=new Set(tab.skip);
-  /* เจ้าของ / ผู้จัดทำ ไม่ต้องทำสัดส่วนทุกหัวข้อ */
-  const NEVER=['เจ้าของ','ผู้จัดทำ','ผู้รับผิดชอบ'];
-  const dims=d.dims.filter(x=>!NEVER.some(k=>x.h.includes(k))
-    &&!skip.has(x.letter)&&!skip.has(x.h)&&![...skip].some(s=>x.h.includes(s)));
+  const dims=d.dims.filter(x=>!skip.has(x.letter)&&!skip.has(x.h)
+    &&![...skip].some(s=>x.h.includes(s)));
 
   const cnt=idx=>{const o={};
-    list.forEach(r=>{const v=String(r.raw[idx]||'').trim()||'(ไม่ระบุ)';o[v]=(o[v]||0)+1;});
+    list.forEach(r=>{let v=String(r.raw[idx]||'').trim();
+      if(/^#(REF|N\/A|VALUE|NAME|DIV)/i.test(v))return;   /* สูตรพังในชีต ไม่นับ */
+      if(!v)v='(ไม่ระบุ)';
+      o[v]=(o[v]||0)+1;});
     return o;};
 
   const hasR=list.some(r=>r.r), hasN=list.some(r=>r.n);
