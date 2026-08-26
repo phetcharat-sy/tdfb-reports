@@ -252,6 +252,20 @@
 #vKPI .cgrid2>*{min-width:0}
 @media(max-width:1500px){#vKPI .cgrid2{grid-template-columns:1fr}}
 #vKPI .chname2{font-size:31px;font-weight:bold;color:var(--ink);margin-bottom:12px}
+/* แถบค่าพยากรณ์ใต้กราฟ */
+#vKPI .fcstrip{display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+  margin-top:16px;padding-top:16px;border-top:1px dashed var(--line)}
+#vKPI .fcs-l{font-size:24px;color:var(--plum-d);font-weight:bold;
+  letter-spacing:.08em;text-transform:uppercase;margin-right:2px}
+#vKPI .fcs-i{display:inline-flex;align-items:baseline;gap:9px;
+  background:#F3EFFA;border:1px solid #DDD5EE;border-radius:10px;padding:7px 15px;
+  font-style:normal;white-space:nowrap}
+#vKPI .fcs-i b{font-size:23px;color:var(--plum-d);font-weight:bold}
+#vKPI .fcs-i i{font-size:30px;color:var(--ink);font-weight:bold;font-style:normal;
+  font-variant-numeric:tabular-nums}
+#vKPI .fcs-i.dd{background:#FBF1E8;border-color:#EBD9BF}
+#vKPI .fcs-i.dd b{color:#8a6a2f}
+#vKPI .fcs-u{font-size:24px;color:var(--mute)}
 #vKPI .fnote{background:#F7F8FA;border:1px solid var(--line);border-left:5px solid var(--plum);
   border-radius:14px;padding:22px 26px;margin:0 0 18px;font-size:28px;line-height:1.65;color:var(--ink)}
 #vKPI .fnote>div{margin-top:6px;color:var(--ink)}
@@ -1718,13 +1732,12 @@ const lineLbl={id:'lineLbl',
     };
     ch.data.datasets.forEach((ds,di)=>{
       const m=ch.getDatasetMeta(di); if(m.hidden)return;
-      const isFc=di===1;
+      if(di===1)return;      /* ค่าพยากรณ์ย้ายไปแสดงเป็นแถบใต้กราฟ จะได้ไม่ซ้อนกัน */
       const step=Math.max(3,Math.ceil(nH/14));   /* ยอดจริงยาวมาก โชว์เว้นระยะ */
       m.data.forEach((pt,i)=>{
         const v=ds.data[i]; if(v==null||Number.isNaN(+v))return;
-        if(isFc&&i<nH)return;            /* จุดต่อเส้น ไม่ต้องซ้ำป้าย */
-        if(!isFc&&!(i===nH-1||i%step===0))return;
-        put(fmt(v),pt.x,pt.y,isFc);
+        if(!(i===nH-1||i%step===0))return;
+        put(fmt(v),pt.x,pt.y,false);
       });
     });
     x.restore();
@@ -2020,9 +2033,11 @@ function secForecast(){
     </div>
     <div class="cgrid2">
       <div class="cpanel"><div class="chname2">จำนวนออเดอร์ / สัปดาห์</div>
-        <div class="cbox" style="height:420px"><canvas id="c_fcwo"></canvas></div></div>
+        <div class="cbox" style="height:420px"><canvas id="c_fcwo"></canvas></div>
+        ${fcStrip(wOrd,'ออเดอร์')}</div>
       <div class="cpanel"><div class="chname2">จำนวนสินค้า (ชิ้น) / สัปดาห์</div>
-        <div class="cbox" style="height:420px"><canvas id="c_fcwq"></canvas></div></div>
+        <div class="cbox" style="height:420px"><canvas id="c_fcwq"></canvas></div>
+        ${fcStrip(wQty,'ชิ้น')}</div>
     </div>
 
     <h2 class="sec">พยากรณ์รายวัน <em>ยอดจริง + ประมาณการ 7 วันข้างหน้า</em><span></span></h2>
@@ -2038,9 +2053,11 @@ function secForecast(){
     </div>
     <div class="cgrid2">
       <div class="cpanel"><div class="chname2">จำนวนออเดอร์ / วัน</div>
-        <div class="cbox" style="height:420px"><canvas id="c_fcdo"></canvas></div></div>
+        <div class="cbox" style="height:420px"><canvas id="c_fcdo"></canvas></div>
+        ${fcStrip(dOrd,'ออเดอร์')}</div>
       <div class="cpanel"><div class="chname2">จำนวนสินค้า (ชิ้น) / วัน</div>
-        <div class="cbox" style="height:420px"><canvas id="c_fcdq"></canvas></div></div>
+        <div class="cbox" style="height:420px"><canvas id="c_fcdq"></canvas></div>
+        ${fcStrip(dQty,'ชิ้น')}</div>
     </div>`:'<div class="empty2">ข้อมูลรายวันไม่พอสำหรับพยากรณ์ (ต้องมีอย่างน้อย 7 วัน)</div>'}
 
     ${staff.length?`<h2 class="sec">พยากรณ์อัตรากำลังคน <em>7 วันข้างหน้า · แถวไฮไลท์ = Double Day</em><span></span></h2>
@@ -2123,7 +2140,19 @@ function secForecast(){
     :'<div class="empty2">ยังไม่มีข้อมูล Replenishment สำหรับคำนวณ Stock Depletion</div>'}`;
 }
 
-/* จับคู่ stock กับ demand ที่คาดไว้ n สัปดาห์ · เอา 14 อันดับ demand สูงสุด */
+/* แถบค่าพยากรณ์ใต้กราฟ — อ่านง่ายกว่าเบียดกันบนเส้น และครบทุกค่าเสมอ */
+function fcStrip(s,unit){
+  if(!s||!s.fc||!s.fc.length)return '';
+  const nH=s.hist.length;
+  return `<div class="fcstrip"><span class="fcs-l">พยากรณ์</span>`
+    +s.fc.map((v,i)=>{
+      const lbl=String(s.labels[nH+i]||'').replace(/\*$/,'');
+      const dd=(s.fcDD&&s.fcDD[i])||(s.ddCount&&s.ddCount[i]>0);
+      const rg=s.ranges&&s.ranges[nH+i]?String(s.ranges[nH+i]).replace(' (คาด)',''):'';
+      return `<span class="fcs-i${dd?' dd':''}"${rg?` title="${esc(rg)}"`:''}>
+        <b>${esc(lbl)}</b><i>${fmt(v)}</i></span>`;}).join('')
+    +`<span class="fcs-u">${esc(unit)}</span></div>`;
+}
 function depItems(dep,weeks){
   return dep.filter(r=>r.demand>0).map(r=>{
     const need=Math.round(r.demand*weeks);
@@ -2153,7 +2182,8 @@ function fcLineChart(id,key,s,unit){
       {label:'ยอดจริง',data:histData,borderColor:C.teal,backgroundColor:'rgba(62,142,140,.12)',
        borderWidth:3,tension:.32,fill:true,pointRadius:3,pointBackgroundColor:C.teal,spanGaps:false},
       {label:'พยากรณ์',data:fcData,borderColor:C.plum,borderDash:[8,5],
-       borderWidth:3,tension:.32,fill:false,pointRadius:5,
+       borderWidth:3,tension:.32,fill:false,pointRadius:s.labels.map((_,i)=>i<nH-1?0:7),
+       pointHoverRadius:9,pointBorderColor:'#fff',pointBorderWidth:2.5,
        pointBackgroundColor:s.labels.map((_,i)=>{
          const j=i-nH;
          return (j>=0&&s.fcDD&&s.fcDD[j])||(j>=0&&s.ddCount&&s.ddCount[j]>0)?C.amber:C.plum;}),
