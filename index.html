@@ -327,6 +327,7 @@
 #vKPI .brkdot{display:inline-block;width:20px;height:20px;border-radius:5px;
   margin-right:16px;vertical-align:-2px}
 /* ตารางรายละเอียด Return — ล็อกสัดส่วนคอลัมน์ให้สมดุล ไม่ให้ช่องใดกินพื้นที่ทั้งหมด */
+#vKPI table.dt .mid{text-align:center}
 #vKPI table.dt.ret-dt{table-layout:fixed;font-size:38px}
 #vKPI table.dt.ret-dt th{font-size:31px}
 #vKPI table.dt.ret-dt td{overflow-wrap:anywhere;vertical-align:middle;padding:19px 16px}
@@ -2340,7 +2341,7 @@ async function loadRet(gid){
       w:  t.col('Week','สัปดาห์'),
       d:  t.col('วันที่ได้รับ','วันที่รับ','วันที่'),
       o:  t.col('ออเดอร์','Order','เลขออเดอร์','Reference'),
-      s:  t.col('ขนส่ง','Carrier','ผู้ให้บริการ'),
+      s:  t.col('ขนส่ง','Platform','Carrier','ผู้ให้บริการ','ช่องทาง'),
       dl: t.col('การจัดส่ง','สถานะการจัดส่ง','Delivery'),
       st: t.col('สถานะ','Status'),
       e:  t.col('วันที่สิ้นสุด','วันสิ้นสุด','สิ้นสุด','วันที่จบ','วันที่ปิดเคส','วันที่ปิด','วันที่เสร็จ','แล้วเสร็จ','End'),
@@ -2357,27 +2358,25 @@ async function loadRet(gid){
       return o;
     }).filter(x=>x.o||x.d||x.w);
 
-    /* หาคอลัมน์ที่เหมาะเอามาทำสัดส่วน — ค่าซ้ำๆ ไม่กี่แบบ ไม่ใช่วันที่/เลขออเดอร์ */
+    /* หาคอลัมน์ที่เหมาะเอามาทำสัดส่วน
+       กันออกแค่ Week / วันที่ / เลขออเดอร์ / สาเหตุ / หมายเหตุ
+       คอลัมน์อื่นถ้าค่าซ้ำๆ ไม่เกิน 40 แบบ ถือว่าเป็นหมวดทั้งหมด */
     const used=new Set([c.w,c.d,c.o,c.r,c.n,c.e].filter(i=>i>=0));
     const dims=[];
-    const H_IDX=7;                /* คอลัมน์ H */
+    const H_IDX=7;                /* คอลัมน์ H — เอามาเสมอ */
     t.H.forEach((h,i)=>{
-      const forced=(i===H_IDX);   /* คอลัมน์ H — เอามาทำสัดส่วนเสมอ
-                                     ต้องเช็คก่อน used/ชื่อว่าง ไม่งั้นถูกตัดทิ้งตั้งแต่ต้น */
-      if(!forced&&(!h||used.has(i)))return;
+      const forced=(i===H_IDX);
+      if(!forced&&used.has(i))return;
       const vals=list.map(r=>String(r.raw[i]||'').trim()).filter(Boolean);
       if(!vals.length)return;
       const uniq=new Set(vals);
-      if(!forced&&(uniq.size>25||uniq.size>vals.length*0.6))return;
-      if(!forced&&[...uniq].every(v=>/^\d[\d/.\-]{5,}$/.test(v)))return;
-      if(forced&&uniq.size>40)return;
+      if(uniq.size>40)return;                                  /* กระจายเกินไป ทำพายไม่ได้ */
+      if(!forced&&[...uniq].every(v=>/^\d[\d/.\-]{5,}$/.test(v)))return;  /* เป็นวันที่ */
       dims.push({i,h:h||('คอลัมน์ '+colLetter(i)),letter:colLetter(i)});
     });
-    /* กัน H ซ้ำ ถ้า loop ไม่ถึง (ชีตมีคอลัมน์น้อยกว่า H) */
     if(t.H.length>H_IDX&&!dims.some(x=>x.i===H_IDX)){
       const vals=list.map(r=>String(r.raw[H_IDX]||'').trim()).filter(Boolean);
-      const uniq=new Set(vals);
-      if(vals.length&&uniq.size<=40)
+      if(vals.length&&new Set(vals).size<=40)
         dims.push({i:H_IDX,h:t.H[H_IDX]||('คอลัมน์ '+colLetter(H_IDX)),letter:colLetter(H_IDX)});
     }
     dims.sort((a,b)=>a.i-b.i);
@@ -2550,11 +2549,11 @@ function secReturn(){
      /* จัดสัดส่วนคอลัมน์ให้สมดุล — แบ่งพื้นที่ที่เหลือให้คอลัมน์ข้อความตามจำนวนที่มีจริง */
      const hasD=list.some(r=>r.days!=null);
      const flex=1+(stOpts.length?1:0)+(hasR?1:0)+(hasN?1:0);   /* การจัดส่ง + ที่มีจริง */
-     const w=((hasD?31:46)/flex).toFixed(1)+'%';
+     const w=((hasD?29:46)/flex).toFixed(1)+'%';
      return `<div class="tscroll"><table class="dt ret-dt"><thead><tr>
        <th style="width:8%">Week</th>
        <th style="width:13%">วันที่ได้รับ</th>
-       ${hasD?'<th style="width:13%">วันที่สิ้นสุด</th><th class="num" style="width:9%">ใช้เวลา (วัน)</th>':''}
+       ${hasD?'<th style="width:13%">วันที่สิ้นสุด</th><th class="mid" style="width:11%">ใช้เวลา (วัน)</th>':''}
        <th style="width:16%">ออเดอร์</th>
        <th style="width:10%">ขนส่ง</th>
        <th style="width:${w}">การจัดส่ง</th>
@@ -2566,7 +2565,7 @@ function secReturn(){
        <td class="c-week"><b>${r.w?'W'+(parseInt(r.w)||r.w):'—'}</b></td>
        <td style="white-space:nowrap">${esc(r.d||'—')}</td>
        ${hasD?`<td style="white-space:nowrap">${esc(r.end||'—')}</td>
-       <td class="num">${r.days==null?'—'
+       <td class="mid">${r.days==null?'—'
          :`<span class="qty ${r.days<=2?'down':'up'}">${r.days}</span>`}</td>`:''}
        <td class="mono">${esc(r.o||'—')}</td>
        <td style="white-space:nowrap">${r.s?`<span class="why has">${esc(r.s)}</span>`:'—'}</td>
