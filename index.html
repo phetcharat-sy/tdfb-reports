@@ -297,15 +297,15 @@
 #vKPI .brkcard.wide{width:100%}
 #vKPI .brkrow{display:flex;gap:32px;align-items:center;justify-content:space-between}
 /* ให้กล่องกราฟกินพื้นที่ตามสัดส่วน กราฟจะถูกวาดกลางกล่อง ไม่ชิดขอบซ้าย */
-#vKPI .brkpie{position:relative;flex:1 1 42%;min-width:340px;height:400px}
-#vKPI .brkcard.wide .brkpie{flex:1 1 auto;min-width:460px;height:560px}
+#vKPI .brkpie{position:relative;flex:1 1 42%;min-width:340px;height:460px}
+#vKPI .brkcard.wide .brkpie{flex:1 1 auto;min-width:460px;height:720px}
 #vKPI .brkrow table.dt.brk{flex:0 0 auto;width:600px;max-width:58%;margin-left:auto}
 #vKPI .brkcard.wide .brkrow table.dt.brk{width:720px}
 /* ชื่อหมวดต้องอยู่บรรทัดเดียว ไม่ตัดคำ เช่น "admin ยกเลิกแล้ว" */
 #vKPI table.dt.brk td:first-child,#vKPI table.dt.brk th:first-child{white-space:nowrap}
 @media(max-width:1400px){
-  #vKPI .brkpie{flex:1 1 40%;min-width:300px;height:360px}
-  #vKPI .brkcard.wide .brkpie{min-width:380px;height:480px}
+  #vKPI .brkpie{flex:1 1 40%;min-width:300px;height:400px}
+  #vKPI .brkcard.wide .brkpie{min-width:380px;height:580px}
   #vKPI .brkrow table.dt.brk,#vKPI .brkcard.wide .brkrow table.dt.brk{width:auto;max-width:none;flex:1}
 }
 @media(max-width:1000px){
@@ -2450,7 +2450,7 @@ function drawReturn(){
       data:{labels:c.labels,datasets:[{data:pcts,backgroundColor:cols,
         borderColor:'#fff',borderWidth:4,hoverOffset:14}]},
       options:{responsive:true,maintainAspectRatio:false,cutout:'30%',
-        layout:{padding:14},
+        layout:{padding:6},
         plugins:{legend:{display:false},
           pieLbl:{display:true,minPercent:3,size:30},
           tooltip:{titleFont:{size:cf(24)},bodyFont:{size:cf(23)},padding:14,
@@ -2538,12 +2538,12 @@ function secReturn(){
      /* จัดสัดส่วนคอลัมน์ให้สมดุล — แบ่งพื้นที่ที่เหลือให้คอลัมน์ข้อความตามจำนวนที่มีจริง */
      const hasD=list.some(r=>r.days!=null);
      const flex=1+(stOpts.length?1:0)+(hasR?1:0)+(hasN?1:0);   /* การจัดส่ง + ที่มีจริง */
-     const w=((hasD?38:46)/flex).toFixed(1)+'%';
+     const w=((hasD?31:46)/flex).toFixed(1)+'%';
      return `<div class="tscroll"><table class="dt ret-dt"><thead><tr>
        <th style="width:8%">Week</th>
-       <th style="width:14%">วันที่ได้รับ</th>
-       ${hasD?'<th style="width:13%">วันที่สิ้นสุด</th>':''}
-       <th style="width:17%">ออเดอร์</th>
+       <th style="width:13%">วันที่ได้รับ</th>
+       ${hasD?'<th style="width:13%">วันที่สิ้นสุด</th><th class="num" style="width:9%">ใช้เวลา (วัน)</th>':''}
+       <th style="width:16%">ออเดอร์</th>
        <th style="width:10%">ขนส่ง</th>
        <th style="width:${w}">การจัดส่ง</th>
        ${stOpts.length?`<th style="width:${w}">สถานะ</th>`:''}
@@ -2553,8 +2553,9 @@ function secReturn(){
      +list.map(r=>`<tr>
        <td class="c-week"><b>${r.w?'W'+(parseInt(r.w)||r.w):'—'}</b></td>
        <td style="white-space:nowrap">${esc(r.d||'—')}</td>
-       ${hasD?`<td style="white-space:nowrap">${esc(r.end||'—')}${
-         r.days!=null?`<span class="retnote">ใช้ ${r.days} วัน</span>`:''}</td>`:''}
+       ${hasD?`<td style="white-space:nowrap">${esc(r.end||'—')}</td>
+       <td class="num">${r.days==null?'—'
+         :`<span class="qty ${r.days<=2?'down':'up'}">${r.days}</span>`}</td>`:''}
        <td class="mono">${esc(r.o||'—')}</td>
        <td style="white-space:nowrap">${r.s?`<span class="why has">${esc(r.s)}</span>`:'—'}</td>
        <td>${esc(r.dl||'—')}</td>
