@@ -292,22 +292,26 @@
 
 #vKPI .retnote{display:block;font-size:29px;color:var(--mute);line-height:1.45}
 /* ตารางสัดส่วนในหน้า Return
-   หมวดที่มีตัวเลือกเยอะกินทั้งบรรทัด · หมวดสั้นจับคู่กัน — ไม่เหลือช่องว่าง */
+   เน้นกราฟวงกลมเป็นพระเอก — พายใหญ่อยู่ซ้าย ตารางเป็นตัวประกอบอยู่ขวา */
 #vKPI .brkcard{margin:0 0 18px}
 #vKPI .brkcard.wide{width:100%}
-#vKPI .brkrow{display:flex;gap:34px;align-items:center}
-#vKPI .brkpie{position:relative;flex:0 0 300px;height:300px}
-#vKPI .brkcard.wide .brkpie{flex:0 0 380px;height:380px}
+#vKPI .brkrow{display:flex;gap:44px;align-items:center}
+#vKPI .brkpie{position:relative;flex:0 0 460px;height:460px}
+#vKPI .brkcard.wide .brkpie{flex:0 0 600px;height:600px}
 #vKPI .brkrow table.dt.brk{flex:1;min-width:0}
+@media(max-width:1400px){
+  #vKPI .brkpie{flex:0 0 380px;height:380px}
+  #vKPI .brkcard.wide .brkpie{flex:0 0 460px;height:460px}
+}
 @media(max-width:1000px){
   #vKPI .brkrow{flex-direction:column}
-  #vKPI .brkpie,#vKPI .brkcard.wide .brkpie{flex:none;width:100%;max-width:340px;height:320px}
+  #vKPI .brkpie,#vKPI .brkcard.wide .brkpie{flex:none;width:100%;max-width:440px;height:420px}
 }
-#vKPI table.dt.brk{font-size:38px;box-shadow:none;border:0;border-radius:0}
-#vKPI table.dt.brk th{font-size:30px;background:transparent;box-shadow:inset 0 -2px 0 var(--line)}
-#vKPI table.dt.brk td{padding:19px 16px}
-#vKPI .brkcard.wide table.dt.brk{font-size:42px}
-#vKPI .brkcard.wide table.dt.brk td{padding:22px 18px}
+#vKPI table.dt.brk{font-size:36px;box-shadow:none;border:0;border-radius:0}
+#vKPI table.dt.brk th{font-size:29px;background:transparent;box-shadow:inset 0 -2px 0 var(--line)}
+#vKPI table.dt.brk td{padding:17px 16px}
+#vKPI .brkcard.wide table.dt.brk{font-size:38px}
+#vKPI .brkcard.wide table.dt.brk td{padding:19px 18px}
 #vKPI table.dt.brk tfoot td{border-top:2px solid var(--line);background:var(--soft)}
 #vKPI .brkp{display:inline-flex;align-items:center;gap:10px;justify-content:flex-end;
   width:100%;position:relative}
@@ -1177,7 +1181,7 @@ const pieLbl={id:'pieLbl',
     const ds=ch.data.datasets[0]; if(!ds)return;
     const m=ch.getDatasetMeta(0), x=ch.ctx;
     x.save();
-    x.font='bold '+cf(30)+'px Tahoma'; x.textAlign='center'; x.textBaseline='middle';
+    x.font='bold '+cf(op.size||30)+'px Tahoma'; x.textAlign='center'; x.textBaseline='middle';
     m.data.forEach((arc,i)=>{
       const v=Number(ds.data[i]);
       if(!Number.isFinite(v)||v<min||arc.hidden)return;
@@ -2363,6 +2367,22 @@ async function loadRet(gid){
   return RET[gid];
 }
 
+/* ตัวเลขรวมกลางโดนัท */
+const donutMid={id:'donutMid',
+  afterDatasetsDraw(ch,a,op){
+    if(!op||!op.display)return;
+    const m=ch.getDatasetMeta(0); if(!m||!m.data||!m.data.length)return;
+    const el0=m.data[0], cx=el0.x, cy=el0.y;
+    const x=ch.ctx; x.save(); x.textAlign='center';
+    x.fillStyle='#22252C'; x.textBaseline='alphabetic';
+    x.font='bold '+cf(52)+'px Tahoma';
+    x.fillText(op.top,cx,cy+cf(8));
+    x.fillStyle=C.mute; x.font=cf(24)+'px Tahoma';
+    x.fillText(op.bot||'',cx,cy+cf(42));
+    x.restore();
+  }};
+if(window.Chart&&!Chart.registry.plugins.get('donutMid'))Chart.register(donutMid);
+
 /* สัดส่วนต่อหมวด: กราฟวงกลม + ตารางตัวเลขข้างใต้ */
 const RET_PAL=[C.teal,C.amber,C.plum,C.rose,C.tealD,'#8A5A2E',C.plumD,C.mute,
                '#7FA8A6','#C9A063','#9A8BC4','#C9765F'];
@@ -2412,12 +2432,15 @@ function drawReturn(){
     destroy(key);
     const cols=c.labels.map((_,i)=>RET_PAL[i%RET_PAL.length]);
     const pcts=c.values.map(v=>Math.round(v/(c.total||1)*1000)/10);
-    CH[key]=new Chart(el2,{type:'pie',
+    CH[key]=new Chart(el2,{type:'doughnut',
       data:{labels:c.labels,datasets:[{data:pcts,backgroundColor:cols,
-        borderColor:'#fff',borderWidth:2}]},
-      options:{responsive:true,maintainAspectRatio:false,layout:{padding:8},
-        plugins:{legend:{display:false},pieLbl:{display:true,minPercent:5},
-          tooltip:{titleFont:{size:cf(22)},bodyFont:{size:cf(21)},padding:12,
+        borderColor:'#fff',borderWidth:4,hoverOffset:14}]},
+      options:{responsive:true,maintainAspectRatio:false,cutout:'46%',
+        layout:{padding:14},
+        plugins:{legend:{display:false},
+          pieLbl:{display:true,minPercent:3,size:38},
+          donutMid:{display:true,top:fmt(c.total),bot:'ออเดอร์'},
+          tooltip:{titleFont:{size:cf(24)},bodyFont:{size:cf(23)},padding:14,
             callbacks:{label:x=>x.label+': '+x.formattedValue+'% ('
               +fmt(c.values[x.dataIndex])+' ออเดอร์)'}}}}});
   });
