@@ -642,8 +642,7 @@ body.present #vKPI .tscroll{max-height:none}
 const S_OTP='1WkCx6lRNm-4LyX8CY9EEPSb2NuZPxZV0YE_z3ayu8ys';   /* KPI On-Time / Out of Stock */
 const S_DIFF='1PW5l0CVt2uIGBXWOHeDjyyTil2o5O0IsseBR_2drrm4'; /* Stock Diff */
 const S_DOCK='1wE-ElRc3EtMshE54wnK_B2xBtD_cKyo-k5hWTy3zOrY'; /* Dock to Stock */
-const S_RET='12C-YRzItKvcZ0ThZkY25F50s663zItob27ByEsH3U3c'; /* Return / Case Admin */
-const G_RET='34728630';
+const S_RET='12C-YRzItKvcZ0ThZkY25F50s663zItob27ByEsH3U3c'; /* Return / Case Admin — gid ของแต่ละหัวข้ออยู่ใน RET_TABS */
 const G_DOCK='1625574187';
 
 const el=id=>document.getElementById(id);
@@ -2286,14 +2285,13 @@ function drawForecast(){
 }
 
 /* ================= Return (Admin) =================
-   ชีตต้นทาง: Case Admin (S_RET) · แต่ละหัวข้อคือแท็บ (gid) ของตัวเอง
-   ตอนนี้รู้ gid เดียว หัวข้ออื่นจึงชี้ gid เดิมไว้ก่อน แก้ได้ที่ตาราง RET_TABS
-   skip = คอลัมน์ที่ไม่ต้องเอามาทำสัดส่วน (ระบุเป็นชื่อคอลัมน์ หรือเป็นตัวอักษรคอลัมน์ชีต) */
+   ชีตต้นทาง: Case Admin (S_RET) · แต่ละหัวข้อเป็นแท็บของตัวเอง (gid แยกกัน)
+   skip = คอลัมน์ที่ไม่ต้องเอามาทำสัดส่วน (ระบุเป็นชื่อคอลัมน์ หรือตัวอักษรคอลัมน์ชีต) */
 const RET_TABS=[
-  {k:'cancel',t:'ยกเลิกในวัน',   d:'ออเดอร์ที่ถูกยกเลิกภายในวัน',    gid:G_RET, skip:[]},
-  {k:'back',  t:'งานตีคืน',      d:'พัสดุที่ตีคืนกลับมาที่คลัง',       gid:G_RET, skip:['J','K']},
-  {k:'idle',  t:'สถานะไม่เคลื่อนไหว',d:'พัสดุที่สถานะค้างไม่ขยับตามกำหนด',gid:G_RET, skip:['ผู้จัดทำ']},
-  {k:'lost',  t:'เคสของหาย',     d:'เคสพัสดุสูญหายระหว่างขนส่ง',      gid:G_RET, skip:[]}
+  {k:'cancel',t:'ยกเลิกในวัน',   d:'ออเดอร์ที่ถูกยกเลิกภายในวัน',    gid:'34728630',  skip:[]},
+  {k:'back',  t:'งานตีคืน',      d:'พัสดุที่ตีคืนกลับมาที่คลัง',       gid:'64747860',  skip:['J','K']},
+  {k:'idle',  t:'สถานะไม่เคลื่อนไหว',d:'พัสดุที่สถานะค้างไม่ขยับตามกำหนด',gid:'1668452287',skip:['ผู้จัดทำ']},
+  {k:'lost',  t:'เคสของหาย',     d:'เคสพัสดุสูญหายระหว่างขนส่ง',      gid:'1212673143',skip:[]}
 ];
 const RET={};
 const RET_LOADING={};
@@ -2976,7 +2974,7 @@ window.KPI_SEC=async(sec)=>{
 
 /* ให้หน้า Replenishment เริ่มโหลดชีตของตัวเองทันที ไม่ต้องรอชีต On-Time ที่ใหญ่กว่ามาก */
 if(/^#kpi-(repl|fc)/.test(location.hash||'')) loadRepl().then(()=>{ if(SEC==='repl'||SEC==='fc')render(); });
-if(/^#kpi-ret/.test(location.hash||'')) loadRet(G_RET).then(()=>{ if(SEC==='ret')render(); });
+if(/^#kpi-ret/.test(location.hash||'')) loadRet(RET_TABS[0].gid).then(()=>{ if(SEC==='ret')render(); });
 
 boot();
 
