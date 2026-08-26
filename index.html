@@ -2343,25 +2343,32 @@ async function loadRet(gid){
       s:  t.col('ขนส่ง','Carrier','ผู้ให้บริการ'),
       dl: t.col('การจัดส่ง','สถานะการจัดส่ง','Delivery'),
       st: t.col('สถานะ','Status'),
+      e:  t.col('วันที่สิ้นสุด','วันสิ้นสุด','สิ้นสุด','วันที่จบ','วันที่ปิดเคส','วันที่ปิด','วันที่เสร็จ','แล้วเสร็จ','End'),
       r:  t.col('สาเหตุ','เหตุผล','Reason'),
       n:  t.col('หมายเหตุ','โน๊ต','โน้ต','Note','Remark')
     };
     const g=(r,i)=>i>=0?String(r[i]||'').trim():'';
-    const list=t.rows.map(r=>({
-      w:g(r,c.w), d:g(r,c.d), o:g(r,c.o), s:g(r,c.s), dl:g(r,c.dl),
-      st:g(r,c.st), r:g(r,c.r), n:g(r,c.n), raw:r
-    })).filter(x=>x.o||x.d||x.w);
+    const list=t.rows.map(r=>{
+      const o={w:g(r,c.w), d:g(r,c.d), o:g(r,c.o), s:g(r,c.s), dl:g(r,c.dl),
+               st:g(r,c.st), end:g(r,c.e), r:g(r,c.r), n:g(r,c.n), raw:r};
+      /* จำนวนวันที่ใช้ปิดเคส = วันที่สิ้นสุด − วันที่ได้รับ */
+      const a=dparse(o.d), b=dparse(o.end);
+      o.days=(!isNaN(a)&&!isNaN(b))?Math.round((b-a)/86400000):null;
+      return o;
+    }).filter(x=>x.o||x.d||x.w);
 
     /* หาคอลัมน์ที่เหมาะเอามาทำสัดส่วน — ค่าซ้ำๆ ไม่กี่แบบ ไม่ใช่วันที่/เลขออเดอร์ */
-    const used=new Set([c.w,c.d,c.o,c.r,c.n].filter(i=>i>=0));
+    const used=new Set([c.w,c.d,c.o,c.r,c.n,c.e].filter(i=>i>=0));
     const dims=[];
     t.H.forEach((h,i)=>{
       if(!h||used.has(i))return;
       const vals=list.map(r=>String(r.raw[i]||'').trim()).filter(Boolean);
       if(!vals.length)return;
       const uniq=new Set(vals);
-      if(uniq.size>25||uniq.size>vals.length*0.6)return;      /* กระจายเกินไป ไม่ใช่หมวด */
-      if([...uniq].every(v=>/^\d[\d/.\-]{5,}$/.test(v)))return; /* หน้าตาเป็นวันที่/เลข */
+      const forced=(i===7);       /* คอลัมน์ H — เอามาทำสัดส่วนเสมอ */
+      if(!forced&&(uniq.size>25||uniq.size>vals.length*0.6))return;
+      if(!forced&&[...uniq].every(v=>/^\d[\d/.\-]{5,}$/.test(v)))return;
+      if(forced&&uniq.size>40)return;
       dims.push({i,h,letter:colLetter(i)});
     });
     RET[gid]={list,H:t.H,c,dims,err:''};
@@ -2488,13 +2495,24 @@ function secReturn(){
   const wkKeys=Object.keys(byWk).map(Number).sort((a,b)=>a-b);
   RET_WK={labels:wkKeys.map(w=>'W'+w),values:wkKeys.map(w=>byWk[w]),name:tab.t};
 
+  /* ระยะเวลาปิดเคส: วันที่ได้รับ → วันที่สิ้นสุด */
+  const dl2=list.map(r=>r.days).filter(v=>v!=null&&v>=0);
+  const avgD=dl2.length?dl2.reduce((s,v)=>s+v,0)/dl2.length:null;
+  const maxD=dl2.length?Math.max(...dl2):null;
+
   return bars+stBar
    +`<div class="sgrid">
       ${card(tab.t,fmt(tot))}
       ${card('สัปดาห์ที่มีเคส'+(wkKeys.length?` (W${wkKeys[0]}–W${wkKeys[wkKeys.length-1]})`:''),
              wkKeys.length,'teal')}
-      ${card('หมวดที่แยกสัดส่วนได้',dims.length,'amber')}
+      ${card(avgD==null?'เฉลี่ยจบเคส (วัน)'
+             :`เฉลี่ยจบเคส (วัน) · นานสุด ${maxD}`,
+             avgD==null?'—':avgD.toFixed(1),'amber')}
       ${card('มีระบุสาเหตุ',fmt(list.filter(r=>r.r).length),'rose')}</div>`
+   +(avgD==null?`<div class="chint">หาคอลัมน์ "วันที่สิ้นสุด" ในชีตไม่เจอ จึงยังคำนวณระยะเวลาปิดเคสไม่ได้<br>
+      <span style="color:var(--mute)">หัวคอลัมน์ในชีต: ${esc(d.H.filter(Boolean).join(' | '))}</span></div>`
+     :`<div class="chint">ระยะเวลาปิดเคสคิดจาก <b>วันที่สิ้นสุด − วันที่ได้รับ</b> ·
+        คำนวณได้ ${fmt(dl2.length)} จาก ${fmt(tot)} เคส</div>`)
    +(wkKeys.length>1?`
      <h2 class="sec">รายสัปดาห์ <em>${esc(tab.t)} · จำนวนออเดอร์ต่อสัปดาห์</em><span></span></h2>
      <div class="cpanel">
@@ -2518,13 +2536,15 @@ function secReturn(){
    +`<h2 class="sec">${esc(tab.t)} <em>${fmt(tot)} รายการ · ${esc(tab.d)}</em><span></span></h2>`
    +(tot?(()=>{
      /* จัดสัดส่วนคอลัมน์ให้สมดุล — แบ่งพื้นที่ที่เหลือให้คอลัมน์ข้อความตามจำนวนที่มีจริง */
+     const hasD=list.some(r=>r.days!=null);
      const flex=1+(stOpts.length?1:0)+(hasR?1:0)+(hasN?1:0);   /* การจัดส่ง + ที่มีจริง */
-     const w=(46/flex).toFixed(1)+'%';
+     const w=((hasD?38:46)/flex).toFixed(1)+'%';
      return `<div class="tscroll"><table class="dt ret-dt"><thead><tr>
-       <th style="width:9%">Week</th>
-       <th style="width:15%">วันที่ได้รับ</th>
-       <th style="width:19%">ออเดอร์</th>
-       <th style="width:11%">ขนส่ง</th>
+       <th style="width:8%">Week</th>
+       <th style="width:14%">วันที่ได้รับ</th>
+       ${hasD?'<th style="width:13%">วันที่สิ้นสุด</th>':''}
+       <th style="width:17%">ออเดอร์</th>
+       <th style="width:10%">ขนส่ง</th>
        <th style="width:${w}">การจัดส่ง</th>
        ${stOpts.length?`<th style="width:${w}">สถานะ</th>`:''}
        ${hasR?`<th style="width:${w}">สาเหตุ</th>`:''}
@@ -2533,6 +2553,8 @@ function secReturn(){
      +list.map(r=>`<tr>
        <td class="c-week"><b>${r.w?'W'+(parseInt(r.w)||r.w):'—'}</b></td>
        <td style="white-space:nowrap">${esc(r.d||'—')}</td>
+       ${hasD?`<td style="white-space:nowrap">${esc(r.end||'—')}${
+         r.days!=null?`<span class="retnote">ใช้ ${r.days} วัน</span>`:''}</td>`:''}
        <td class="mono">${esc(r.o||'—')}</td>
        <td style="white-space:nowrap">${r.s?`<span class="why has">${esc(r.s)}</span>`:'—'}</td>
        <td>${esc(r.dl||'—')}</td>
