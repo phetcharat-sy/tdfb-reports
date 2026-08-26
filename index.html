@@ -1704,7 +1704,7 @@ function drawDock(){
 const lineLbl={id:'lineLbl',
   beforeLayout(ch,a,op){ if(!op||!op.display)return;
     const p=ch.options.layout&&ch.options.layout.padding;
-    const need=Math.round(46*CFZ);
+    const need=Math.round(96*CFZ);
     if(typeof p==='object'&&p){ if((p.top||0)<need)p.top=need; }
     else ch.options.layout={padding:{top:need}}; },
   afterDatasetsDraw(ch,a,op){
@@ -1732,7 +1732,7 @@ const lineLbl={id:'lineLbl',
     };
     ch.data.datasets.forEach((ds,di)=>{
       const m=ch.getDatasetMeta(di); if(m.hidden)return;
-      if(di===1)return;      /* ค่าพยากรณ์ย้ายไปแสดงเป็นแถบใต้กราฟ จะได้ไม่ซ้อนกัน */
+      if(di===1)return;      /* ป้ายพยากรณ์วาดแยกด้านล่าง จะได้จัดชั้นไม่ให้ทับกัน */
       const step=Math.max(3,Math.ceil(nH/14));   /* ยอดจริงยาวมาก โชว์เว้นระยะ */
       m.data.forEach((pt,i)=>{
         const v=ds.data[i]; if(v==null||Number.isNaN(+v))return;
@@ -1740,6 +1740,42 @@ const lineLbl={id:'lineLbl',
         put(fmt(v),pt.x,pt.y,false);
       });
     });
+
+    /* ป้ายพยากรณ์ — จุดอยู่ชิดกันมาก จึงจัดเป็นชั้นสลับขึ้นลง (zigzag)
+       พร้อมเส้นบางๆ โยงจากจุดขึ้นไปหาป้าย จะได้รู้ว่าเลขไหนของจุดไหน */
+    const mf=ch.getDatasetMeta(1);
+    if(mf&&!mf.hidden){
+      const ds=ch.data.datasets[1];
+      const pts=[];
+      mf.data.forEach((pt,i)=>{
+        if(i<nH)return;
+        const v=ds.data[i];
+        if(v!=null&&!Number.isNaN(+v))pts.push({pt,txt:fmt(v)});
+      });
+      if(pts.length){
+        x.font='italic bold '+cf(21)+'px Tahoma';
+        const wMax=Math.max(...pts.map(o=>x.measureText(o.txt).width));
+        const gap=pts.length>1?Math.abs(pts[1].pt.x-pts[0].pt.x):999;
+        const tiers=Math.max(1,Math.min(3,Math.ceil((wMax+10)/Math.max(gap,1))));
+        const h=cf(21);
+        pts.forEach((o,i)=>{
+          const tier=tiers>1?(i%tiers):0;
+          const w=x.measureText(o.txt).width;
+          const px=Math.max(area.left+w/2+2,Math.min(o.pt.x,area.right-w/2-2));
+          let y=o.pt.y-14-tier*(h+7);
+          if(y<area.top+h+2)y=area.top+h+2;
+          /* เส้นโยง */
+          x.save();
+          x.strokeStyle='rgba(107,92,165,.45)'; x.lineWidth=1.5;
+          x.beginPath(); x.moveTo(o.pt.x,o.pt.y-9); x.lineTo(o.pt.x,y+3); x.stroke();
+          x.restore();
+          x.lineJoin='round'; x.lineWidth=4; x.strokeStyle='rgba(255,255,255,.95)';
+          x.strokeText(o.txt,px,y);
+          x.fillStyle=C.plumD;
+          x.fillText(o.txt,px,y);
+        });
+      }
+    }
     x.restore();
   }};
 if(window.Chart&&!Chart.registry.plugins.get('lineLbl'))Chart.register(lineLbl);
@@ -2176,7 +2212,7 @@ function fcLineChart(id,key,s,unit){
     label:c=>c.raw==null?null:`${c.dataset.label}: ${fmt(c.raw)} ${unit}`};
   o.scales.y.ticks.callback=v=>fmt(v);
   o.plugins.lineLbl={display:true,histLen:nH};
-  o.layout={padding:{top:Math.round(46*CFZ),right:26,left:6}};
+  o.layout={padding:{top:Math.round(96*CFZ),right:26,left:6}};
   CH[key]=new Chart(el2,{type:'line',
     data:{labels:s.labels,datasets:[
       {label:'ยอดจริง',data:histData,borderColor:C.teal,backgroundColor:'rgba(62,142,140,.12)',
