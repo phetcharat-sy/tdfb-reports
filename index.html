@@ -2360,17 +2360,27 @@ async function loadRet(gid){
     /* หาคอลัมน์ที่เหมาะเอามาทำสัดส่วน — ค่าซ้ำๆ ไม่กี่แบบ ไม่ใช่วันที่/เลขออเดอร์ */
     const used=new Set([c.w,c.d,c.o,c.r,c.n,c.e].filter(i=>i>=0));
     const dims=[];
+    const H_IDX=7;                /* คอลัมน์ H */
     t.H.forEach((h,i)=>{
-      if(!h||used.has(i))return;
+      const forced=(i===H_IDX);   /* คอลัมน์ H — เอามาทำสัดส่วนเสมอ
+                                     ต้องเช็คก่อน used/ชื่อว่าง ไม่งั้นถูกตัดทิ้งตั้งแต่ต้น */
+      if(!forced&&(!h||used.has(i)))return;
       const vals=list.map(r=>String(r.raw[i]||'').trim()).filter(Boolean);
       if(!vals.length)return;
       const uniq=new Set(vals);
-      const forced=(i===7);       /* คอลัมน์ H — เอามาทำสัดส่วนเสมอ */
       if(!forced&&(uniq.size>25||uniq.size>vals.length*0.6))return;
       if(!forced&&[...uniq].every(v=>/^\d[\d/.\-]{5,}$/.test(v)))return;
       if(forced&&uniq.size>40)return;
-      dims.push({i,h,letter:colLetter(i)});
+      dims.push({i,h:h||('คอลัมน์ '+colLetter(i)),letter:colLetter(i)});
     });
+    /* กัน H ซ้ำ ถ้า loop ไม่ถึง (ชีตมีคอลัมน์น้อยกว่า H) */
+    if(t.H.length>H_IDX&&!dims.some(x=>x.i===H_IDX)){
+      const vals=list.map(r=>String(r.raw[H_IDX]||'').trim()).filter(Boolean);
+      const uniq=new Set(vals);
+      if(vals.length&&uniq.size<=40)
+        dims.push({i:H_IDX,h:t.H[H_IDX]||('คอลัมน์ '+colLetter(H_IDX)),letter:colLetter(H_IDX)});
+    }
+    dims.sort((a,b)=>a.i-b.i);
     RET[gid]={list,H:t.H,c,dims,err:''};
     SHEET_STATE.ret=fmt(list.length)+' เคส';
   }catch(e){
@@ -2479,8 +2489,9 @@ function secReturn(){
 
   const tot=list.length;
   const skip=new Set(tab.skip);
-  const dims=d.dims.filter(x=>!skip.has(x.letter)&&!skip.has(x.h)
-    &&![...skip].some(s=>x.h.includes(s)));
+  /* คอลัมน์ H ต้องมีเสมอ ไม่ว่ารายการ skip จะระบุอะไร */
+  const dims=d.dims.filter(x=>x.letter==='H'
+    ||(!skip.has(x.letter)&&!skip.has(x.h)&&![...skip].some(s=>x.h.includes(s))));
 
   const cnt=idx=>{const o={};
     list.forEach(r=>{const v=String(r.raw[idx]||'').trim()||'(ไม่ระบุ)';o[v]=(o[v]||0)+1;});
@@ -2520,7 +2531,8 @@ function secReturn(){
          <canvas id="c_retwk"></canvas></div></div>
      </div>`:'')
 
-   +`<h2 class="sec">สัดส่วนตามหมวด <em>${fmt(tot)} ออเดอร์ = 100%</em><span></span></h2>`
+   +`<h2 class="sec">สัดส่วนตามหมวด <em>${fmt(tot)} ออเดอร์ = 100% · จากคอลัมน์ ${
+        dims.length?esc(dims.map(x=>x.letter).join(', ')):'—'}</em><span></span></h2>`
    +(dims.length?(()=>{
       /* หมวดที่มีตัวเลือกเยอะ (>=5) กินทั้งบรรทัด · หมวดสั้นจับคู่กันสองช่อง
          ตารางจึงไม่เหลือช่องว่างและตัวหนังสือใหญ่เต็มพื้นที่ */
