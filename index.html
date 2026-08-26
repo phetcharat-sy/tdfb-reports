@@ -251,7 +251,7 @@
 #vKPI .cgrid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:6px}
 #vKPI .cgrid2>*{min-width:0}
 @media(max-width:1500px){#vKPI .cgrid2{grid-template-columns:1fr}}
-#vKPI .chname2{font-size:31px;font-weight:bold;color:var(--ink);margin-bottom:12px}
+#vKPI .chname2{font-size:34px;font-weight:bold;color:var(--ink);margin-bottom:12px}
 /* แถบค่าพยากรณ์ใต้กราฟ */
 #vKPI .fcstrip{display:flex;flex-wrap:wrap;gap:10px;align-items:center;
   margin-top:16px;padding-top:16px;border-top:1px dashed var(--line)}
@@ -290,11 +290,11 @@
   border-top:1px dashed var(--line);padding-top:12px;min-height:6px}
 #vKPI .stfres:empty{border:0;padding:0;min-height:0}
 
-#vKPI .retnote{display:block;font-size:26px;color:var(--mute);line-height:1.45}
+#vKPI .retnote{display:block;font-size:29px;color:var(--mute);line-height:1.45}
 /* ตารางสัดส่วนในหน้า Return */
-#vKPI table.dt.brk{font-size:30px;box-shadow:none;border:0;border-radius:0}
-#vKPI table.dt.brk th{font-size:26px;background:transparent;box-shadow:inset 0 -2px 0 var(--line)}
-#vKPI table.dt.brk td{padding:13px 14px}
+#vKPI table.dt.brk{font-size:34px;box-shadow:none;border:0;border-radius:0}
+#vKPI table.dt.brk th{font-size:29px;background:transparent;box-shadow:inset 0 -2px 0 var(--line)}
+#vKPI table.dt.brk td{padding:16px 14px}
 #vKPI table.dt.brk tfoot td{border-top:2px solid var(--line);background:var(--soft)}
 #vKPI .brkp{display:inline-flex;align-items:center;gap:10px;justify-content:flex-end;
   width:100%;position:relative}
@@ -304,9 +304,11 @@
 #vKPI .brkdot{display:inline-block;width:16px;height:16px;border-radius:4px;
   margin-right:12px;vertical-align:-1px}
 /* ตารางรายละเอียด Return — ล็อกสัดส่วนคอลัมน์ให้สมดุล ไม่ให้ช่องใดกินพื้นที่ทั้งหมด */
-#vKPI table.dt.ret-dt{table-layout:fixed}
+#vKPI table.dt.ret-dt{table-layout:fixed;font-size:34px}
+#vKPI table.dt.ret-dt th{font-size:29px}
 #vKPI table.dt.ret-dt td{overflow-wrap:anywhere;vertical-align:middle}
-#vKPI table.dt.ret-dt .mono{white-space:normal}
+#vKPI table.dt.ret-dt .mono{white-space:normal;font-size:29px}
+#vKPI table.dt.ret-dt .why{font-size:29px}
 
 /* ตารางรายละเอียด Dock to Stock — คอลัมน์เยอะ เลื่อนแนวนอนได้ */
 #vKPI table.dt.dock-dt{font-size:30px}
@@ -2352,6 +2354,7 @@ async function loadRet(gid){
 const RET_PAL=[C.teal,C.amber,C.plum,C.rose,C.tealD,'#8A5A2E',C.plumD,C.mute,
                '#7FA8A6','#C9A063','#9A8BC4','#C9765F'];
 let RET_CTX=[];
+let RET_WK=null;
 function retBreak(id,title,counts,total){
   const es=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
   if(!es.length)return '';
@@ -2371,6 +2374,23 @@ function retBreak(id,title,counts,total){
      </tr></tfoot></table></div>`;
 }
 function drawReturn(){
+  /* กราฟแท่งรายสัปดาห์ */
+  const wkEl=document.getElementById('c_retwk');
+  if(wkEl&&RET_WK&&RET_WK.values.length){
+    destroy('retwk');
+    const o=baseOpts(false); o.layout={padding:{top:34}};
+    o.plugins.barPct={display:true,raw:true};
+    o.scales.x.ticks.font={size:cf(26)};
+    o.scales.y.ticks.font={size:cf(26)};
+    o.scales.y.ticks.callback=v=>fmt(v);
+    o.plugins.tooltip.callbacks={
+      label:c=>`${RET_WK.name} ${fmt(c.raw)} ออเดอร์`};
+    const mx=Math.max(...RET_WK.values);
+    CH.retwk=new Chart(wkEl,{type:'bar',
+      data:{labels:RET_WK.labels,datasets:[{data:RET_WK.values,
+        backgroundColor:RET_WK.values.map(v=>v>=mx?C.rose:C.teal),
+        borderRadius:6,maxBarThickness:70,minBarLength:2}]},options:o});
+  }
   RET_CTX.forEach(c=>{
     const el2=document.getElementById(c.id); if(!el2)return;
     const key='ret_'+c.id;
@@ -2418,14 +2438,26 @@ function secReturn(){
   const hasR=list.some(r=>r.r), hasN=list.some(r=>r.n);
   RET_CTX=[];
 
+  /* ยอดรายสัปดาห์ สำหรับกราฟแท่ง */
+  const byWk={};
+  list.forEach(r=>{const w=parseInt(r.w);if(w)byWk[w]=(byWk[w]||0)+1;});
+  const wkKeys=Object.keys(byWk).map(Number).sort((a,b)=>a-b);
+  RET_WK={labels:wkKeys.map(w=>'W'+w),values:wkKeys.map(w=>byWk[w]),name:tab.t};
+
   return bars+stBar
    +`<div class="sgrid">
       ${card(tab.t,fmt(tot))}
-      ${card('% ของทั้งหัวข้อ',d.list.length?(tot/d.list.length*100).toFixed(1)+'%':'—','teal')}
+      ${card('สัปดาห์ที่มีเคส',wkKeys.length,'teal')}
       ${card('หมวดที่แยกสัดส่วนได้',dims.length,'amber')}
-      ${card('มีระบุสาเหตุ',fmt(list.filter(r=>r.r).length),'rose')}</div>
+      ${card('มีระบุสาเหตุ',fmt(list.filter(r=>r.r).length),'rose')}</div>`
+   +(wkKeys.length>1?`
+     <h2 class="sec">รายสัปดาห์ <em>${esc(tab.t)} · จำนวนออเดอร์ต่อสัปดาห์</em><span></span></h2>
+     <div class="cpanel">
+       <div class="cscroll"><div class="cbox" style="height:480px;min-width:${Math.max(900,wkKeys.length*112)}px">
+         <canvas id="c_retwk"></canvas></div></div>
+     </div>`:'')
 
-     <h2 class="sec">สัดส่วนตามหมวด <em>${fmt(tot)} ออเดอร์ = 100%</em><span></span></h2>`
+   +`<h2 class="sec">สัดส่วนตามหมวด <em>${fmt(tot)} ออเดอร์ = 100%</em><span></span></h2>`
    +(dims.length?`<div class="cgrid2">${dims.map((x,i)=>retBreak('c_ret'+i,x.h,cnt(x.i),tot)).join('')}</div>`
       :`<div class="empty2">ไม่พบคอลัมน์ที่แยกสัดส่วนได้<br>
          <span style="font-size:26px;color:var(--mute)">หัวคอลัมน์ในชีต: ${esc(d.H.filter(Boolean).join(' | '))}</span></div>`)
