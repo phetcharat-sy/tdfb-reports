@@ -490,6 +490,7 @@ body.present #vKPI .tscroll{max-height:none}
 
       <div class="grp">Admin</div>
       <button data-view="report" data-team="admin">รายงานประจำวัน</button>
+      <button data-view="kpi" data-sec="ret">Return</button>
 
       <div class="nav-sep"></div>
       <button data-view="kpi" data-sec="fc">Forecast</button>
@@ -629,6 +630,8 @@ body.present #vKPI .tscroll{max-height:none}
 const S_OTP='1WkCx6lRNm-4LyX8CY9EEPSb2NuZPxZV0YE_z3ayu8ys';   /* KPI On-Time / Out of Stock */
 const S_DIFF='1PW5l0CVt2uIGBXWOHeDjyyTil2o5O0IsseBR_2drrm4'; /* Stock Diff */
 const S_DOCK='1wE-ElRc3EtMshE54wnK_B2xBtD_cKyo-k5hWTy3zOrY'; /* Dock to Stock */
+const S_RET='12C-YRzItKvcZ0ThZkY25F50s663zItob27ByEsH3U3c'; /* Return / Case Admin */
+const G_RET='34728630';
 const G_DOCK='1625574187';
 
 const el=id=>document.getElementById(id);
@@ -2270,6 +2273,29 @@ function drawForecast(){
   recalcStaff();
 }
 
+/* ================= Return (Admin) =================
+   โครงหน้าเปล่าไว้ก่อน — หัวข้อย่อยกดสลับได้ ยังไม่ดึงตัวเลขจากชีต
+   ชีตต้นทาง: S_RET / G_RET (Case Admin) */
+const RET_TABS=[
+  ['cancel','ยกเลิกในวัน','ออเดอร์ที่ถูกยกเลิกภายในวัน แยกก่อน/หลังแพ็ค'],
+  ['back','งานตีคืน','พัสดุที่ตีคืนกลับมาที่คลัง'],
+  ['idle','สถานะไม่เคลื่อนไหว','พัสดุที่สถานะค้างไม่ขยับตามกำหนด'],
+  ['lost','เคสของหาย','เคสพัสดุสูญหายระหว่างขนส่ง']
+];
+function secReturn(){
+  const cur=sf('ret_t','cancel');
+  const t=RET_TABS.find(t=>t[0]===cur)||RET_TABS[0];
+  return chipBar('ret_t','หัวข้อ',RET_TABS.map(t=>[t[0],t[1]]),cur)
+   +`<h2 class="sec">${esc(t[1])} <em>${esc(t[2])}</em><span></span></h2>
+     <div class="cpanel" style="text-align:center;padding:70px 40px">
+       <div style="font-size:36px;font-weight:bold;color:var(--ink);margin-bottom:12px">
+         ${esc(t[1])}</div>
+       <div style="font-size:29px;color:var(--mute);line-height:1.6">
+         ยังไม่ได้ต่อข้อมูล — รอกำหนดว่าจะดึงคอลัมน์ไหนจากชีต Case Admin<br>
+         <span style="font-size:25px;opacity:.8">gid ${esc(G_RET)}</span></div>
+     </div>`;
+}
+
 /* ================= Replenishment ================= */
 const BLOCKED=['ไม่มีโควต้า','ไม่มีโควตา','ไม่มี raw material','ไม่มีraw material'];
 const isBlocked=r=>{const s=(r.remark||'').toLowerCase();return !!s&&BLOCKED.some(k=>s.includes(k));};
@@ -2420,14 +2446,16 @@ function render(){
                diff:['Stock Diff','Warehouse · ความแม่นยำสต็อก · รายการที่นับไม่ตรง'],
                dock:['Dock To Stock Time','Warehouse · GR → Putaway · รับเข้าและจัดเก็บตามเกณฑ์'],
                repl:['Replenishment','Warehouse · รายการที่ต้องเติมสต็อก'],
-               fc:['Forecast','Warehouse · พยากรณ์ยอดขาย สต็อก และอัตรากำลังคน']};
+               fc:['Forecast','Warehouse · พยากรณ์ยอดขาย สต็อก และอัตรากำลังคน'],
+               ret:['Return','Admin · งานตีคืน ยกเลิก และเคสค้าง']};
   const tt=TITLE[SEC]||TITLE.overview;
   el('kTitle').textContent=tt[0];
   el('kSub').textContent=tt[1];
   if(!isOv){
     el('detail').innerHTML = SEC==='ontime'?secOnTime() : SEC==='oos'?secOOS()
                            : SEC==='diff'?secDiff() : SEC==='dock'?secDock()
-                           : SEC==='fc'?secForecast() : secRepl();
+                           : SEC==='fc'?secForecast()
+                           : SEC==='ret'?secReturn() : secRepl();
     fitScrolls();
     /* กราฟต้องวาดหลัง canvas เข้า DOM แล้ว */
     requestAnimationFrame(()=>{
