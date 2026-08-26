@@ -290,6 +290,8 @@
   border-top:1px dashed var(--line);padding-top:12px;min-height:6px}
 #vKPI .stfres:empty{border:0;padding:0;min-height:0}
 
+#vKPI .retnote{display:block;font-size:26px;color:var(--mute);line-height:1.45}
+
 /* ตารางรายละเอียด Dock to Stock — คอลัมน์เยอะ เลื่อนแนวนอนได้ */
 #vKPI table.dt.dock-dt{font-size:30px}
 #vKPI table.dt.dock-dt th{font-size:27px;white-space:nowrap}
@@ -758,7 +760,7 @@ function parseDMY(s){
 /* dashboard เดิมโหลดทั้งชีตด้วย /export?format=csv แล้วคำนวณในเบราว์เซอร์
    ทำแบบเดียวกันเป๊ะ จะได้ตัวเลขตรงกันทุกตัว ไม่ต้องพึ่งการกรองวันที่ฝั่ง Google */
 let RAW=[], COLS=null, NO_DATE=0, SEC='overview', REPL=null, REPL_ERR='';
-const SHEET_STATE={otp:'รอโหลด',diff:'รอโหลด',dock:'รอโหลด',repl:'ยังไม่เปิด'};
+const SHEET_STATE={otp:'รอโหลด',diff:'รอโหลด',dock:'รอโหลด',repl:'ยังไม่เปิด',ret:'ยังไม่เปิด'};
 
 /* ดาวน์โหลดตรงๆ ด้วย r.text() — วิธีเดียวกับ dashboard เดิมที่ใช้งานได้จริง
    (เคยลองอ่านทีละก้อนเพื่อโชว์ MB แล้วทำให้ช้าจนเหมือนค้าง จึงถอยกลับมา) */
@@ -2274,26 +2276,110 @@ function drawForecast(){
 }
 
 /* ================= Return (Admin) =================
-   โครงหน้าเปล่าไว้ก่อน — หัวข้อย่อยกดสลับได้ ยังไม่ดึงตัวเลขจากชีต
-   ชีตต้นทาง: S_RET / G_RET (Case Admin) */
+   ชีตต้นทาง: Case Admin (S_RET) · แต่ละหัวข้อคือแท็บ (gid) ของตัวเอง
+   ตอนนี้รู้ gid เดียว หัวข้ออื่นจึงชี้ gid เดิมไว้ก่อน แก้ได้ที่ตาราง RET_TABS */
 const RET_TABS=[
-  ['cancel','ยกเลิกในวัน','ออเดอร์ที่ถูกยกเลิกภายในวัน แยกก่อน/หลังแพ็ค'],
-  ['back','งานตีคืน','พัสดุที่ตีคืนกลับมาที่คลัง'],
-  ['idle','สถานะไม่เคลื่อนไหว','พัสดุที่สถานะค้างไม่ขยับตามกำหนด'],
-  ['lost','เคสของหาย','เคสพัสดุสูญหายระหว่างขนส่ง']
+  ['cancel','ยกเลิกในวัน','ออเดอร์ที่ถูกยกเลิกภายในวัน',G_RET],
+  ['back','งานตีคืน','พัสดุที่ตีคืนกลับมาที่คลัง',G_RET],
+  ['idle','สถานะไม่เคลื่อนไหว','พัสดุที่สถานะค้างไม่ขยับตามกำหนด',G_RET],
+  ['lost','เคสของหาย','เคสพัสดุสูญหายระหว่างขนส่ง',G_RET]
 ];
+const RET={};                  /* cache ต่อ gid */
+const RET_LOADING={};
+
+async function loadRet(gid){
+  if(RET[gid]||RET_LOADING[gid])return RET[gid];
+  RET_LOADING[gid]=true;
+  try{
+    const rows=await smallSheet(S_RET,gid,s=>SHEET_STATE.ret=s);
+    const t=table(rows,/week|สัปดาห์|ออเดอร์|order|ขนส่ง/i);
+    if(!t)throw new Error('หาหัวตารางไม่เจอ');
+    const c={
+      w:  t.col('Week','สัปดาห์'),
+      d:  t.col('วันที่ได้รับ','วันที่รับ','วันที่'),
+      o:  t.col('ออเดอร์','Order','เลขออเดอร์','Reference'),
+      s:  t.col('ขนส่ง','Carrier','ผู้ให้บริการ'),
+      dl: t.col('การจัดส่ง','สถานะการจัดส่ง','Delivery'),
+      r:  t.col('สาเหตุ','เหตุผล','Reason'),
+      n:  t.col('หมายเหตุ','โน๊ต','โน้ต','Note','Remark')
+    };
+    const g=(r,i)=>i>=0?String(r[i]||'').trim():'';
+    const list=t.rows.map(r=>({
+      w:g(r,c.w), d:g(r,c.d), o:g(r,c.o), s:g(r,c.s),
+      dl:g(r,c.dl), r:g(r,c.r), n:g(r,c.n)
+    })).filter(x=>x.o||x.d||x.w);
+    RET[gid]={list,H:t.H,c,err:''};
+    SHEET_STATE.ret=fmt(list.length)+' เคส';
+  }catch(e){
+    RET[gid]={list:[],H:[],c:{},err:e.message};
+    SHEET_STATE.ret='ผิดพลาด — '+e.message;
+  }
+  RET_LOADING[gid]=false;
+  return RET[gid];
+}
+
 function secReturn(){
   const cur=sf('ret_t','cancel');
-  const t=RET_TABS.find(t=>t[0]===cur)||RET_TABS[0];
-  return chipBar('ret_t','หัวข้อ',RET_TABS.map(t=>[t[0],t[1]]),cur)
-   +`<h2 class="sec">${esc(t[1])} <em>${esc(t[2])}</em><span></span></h2>
-     <div class="cpanel" style="text-align:center;padding:70px 40px">
-       <div style="font-size:36px;font-weight:bold;color:var(--ink);margin-bottom:12px">
-         ${esc(t[1])}</div>
-       <div style="font-size:29px;color:var(--mute);line-height:1.6">
-         ยังไม่ได้ต่อข้อมูล — รอกำหนดว่าจะดึงคอลัมน์ไหนจากชีต Case Admin<br>
-         <span style="font-size:25px;opacity:.8">gid ${esc(G_RET)}</span></div>
-     </div>`;
+  const tab=RET_TABS.find(t=>t[0]===cur)||RET_TABS[0];
+  const gid=tab[3];
+  const bars=chipBar('ret_t','หัวข้อ',RET_TABS.map(t=>[t[0],t[1]]),cur);
+  const d=RET[gid];
+  if(!d)return bars+'<div class="empty2">กำลังโหลดข้อมูล…</div>';
+  if(d.err)return bars+`<div class="empty2">อ่านชีตไม่ได้ — ${esc(d.err)}</div>`;
+
+  let list=d.list;
+  if(fWeek())list=list.filter(r=>String(parseInt(r.w)||'')===fWeek());
+
+  const byW={};
+  d.list.forEach(r=>{const w=String(parseInt(r.w)||'');if(w)byW[w]=(byW[w]||0)+1;});
+  const wks=Object.keys(byW).sort((a,b)=>a-b);
+
+  const byS={};
+  list.forEach(r=>{const k=r.s||'—';byS[k]=(byS[k]||0)+1;});
+  const carr=Object.entries(byS).sort((a,b)=>b[1]-a[1]);
+  const fCar=sf('ret_c','');
+  if(fCar)list=list.filter(r=>(r.s||'—')===fCar);
+
+  const hasR=list.some(r=>r.r), hasN=list.some(r=>r.n);
+  const miss=[['Week',d.c.w],['วันที่ได้รับ',d.c.d],['ออเดอร์',d.c.o],
+              ['ขนส่ง',d.c.s],['การจัดส่ง',d.c.dl]].filter(e=>e[1]<0).map(e=>e[0]);
+
+  return bars
+   +`<div class="sgrid">
+      ${card(esc(tab[1]),fmt(list.length))}
+      ${card('สัปดาห์ที่มีข้อมูล',wks.length,'teal')}
+      ${card('ขนส่งที่เกี่ยวข้อง',carr.length,'amber')}
+      ${card('มีระบุสาเหตุ',fmt(list.filter(r=>r.r).length),'rose')}</div>`
+   +(miss.length?`<div class="chint" style="color:var(--bad)">
+      อ่านคอลัมน์เหล่านี้จากชีตไม่เจอ: <b>${esc(miss.join(' · '))}</b><br>
+      <span style="color:var(--mute)">หัวคอลัมน์ในชีต: ${esc(d.H.filter(Boolean).join(' | '))}</span></div>`:'')
+   +(wks.length>1?`<div class="fbar"><span class="fl">สัปดาห์</span>`
+      +wks.map(w=>`<button type="button" data-sf="__w" data-v="${w}"
+          class="${fWeek()===w?'on':''}">W${w} <span class="cnt">${byW[w]}</span></button>`).join('')
+      +`</div>`:'')
+   +(carr.length>1?chipBar('ret_c','ขนส่ง',
+      [['','ทั้งหมด'],...carr.map(([k,v])=>[k,`${esc(k)} ${v}`])],fCar):'')
+   +`<h2 class="sec">${esc(tab[1])} <em>${fmt(list.length)} รายการ · ${esc(tab[2])}</em><span></span></h2>`
+   +(list.length?`<div class="tscroll"><table class="dt"><thead><tr>
+       <th style="width:120px">Week</th>
+       <th style="width:230px">วันที่ได้รับ</th>
+       <th style="width:280px">ออเดอร์</th>
+       <th style="width:190px">ขนส่ง</th>
+       <th>การจัดส่ง</th>
+       ${hasR?'<th style="width:300px">สาเหตุ</th>':''}
+       ${hasN?'<th style="width:320px">หมายเหตุ</th>':''}
+     </tr></thead><tbody>`
+     +list.map(r=>`<tr>
+       <td class="c-week"><b>${r.w?'W'+(parseInt(r.w)||r.w):'—'}</b></td>
+       <td style="white-space:nowrap">${esc(r.d||'—')}</td>
+       <td class="mono">${esc(r.o||'—')}</td>
+       <td style="white-space:nowrap">${r.s?`<span class="why has">${esc(r.s)}</span>`:'—'}</td>
+       <td>${esc(r.dl||'—')}</td>
+       ${hasR?`<td>${r.r?`<span class="why has">${esc(r.r)}</span>`:'<span class="why">—</span>'}</td>`:''}
+       ${hasN?`<td><span class="retnote">${esc(r.n||'—')}</span></td>`:''}
+     </tr>`).join('')
+     +'</tbody></table></div>'
+    :'<div class="empty2">ไม่มีรายการตามตัวกรองนี้</div>');
 }
 
 /* ================= Replenishment ================= */
@@ -2421,10 +2507,20 @@ el('detail').addEventListener('change',e=>{
 });
 
 /* กดชิปตัวกรองย่อย หรือคลิกแถวใน legend ของกราฟวงกลม */
-el('detail').addEventListener('click',e=>{
+el('detail').addEventListener('click',async e=>{
   const b=e.target.closest('[data-sf]'); if(!b)return;
   const k=b.dataset.sf, v=b.dataset.v;
+  if(k==='__w'){                       /* ชิปสัปดาห์ในหน้า Return — กดซ้ำเพื่อยกเลิก */
+    el('kW').value=(fWeek()===v?'':v);
+    DAYSEL=''; calYM=null; fillFilters(); render(); return;
+  }
   SUBF[k]=v;
+  if(k==='ret_t'){                     /* เปลี่ยนหัวข้อ = อาจต้องโหลดแท็บใหม่ */
+    const g=(RET_TABS.find(t=>t[0]===v)||RET_TABS[0])[3];
+    render();
+    if(!RET[g]){ await loadRet(g); render(); }
+    return;
+  }
   render();
 });
 
@@ -2592,7 +2688,8 @@ function render(){
   el('src').innerHTML='ชีต: On-Time/Out of Stock <b>'+SHEET_STATE.otp+'</b>'
     +' · Stock Diff <b>'+SHEET_STATE.diff+'</b>'
     +' · Dock to Stock <b>'+SHEET_STATE.dock+'</b>'
-    +' · Replenishment <b>'+SHEET_STATE.repl+'</b>';
+    +' · Replenishment <b>'+SHEET_STATE.repl+'</b>'
+    +' · Return <b>'+SHEET_STATE.ret+'</b>';
   const now=new Date();
   el('kTs').textContent=`ข้อมูล ณ ${now.getDate()} ${MONTHS[now.getMonth()]} ${now.getFullYear()} `
     +`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')} น.`;
@@ -2827,10 +2924,13 @@ window.KPI_SEC=async(sec)=>{
   SEC=sec||'overview';
   render();
   if((SEC==='repl'||SEC==='fc')&&!REPL){ await loadRepl(); render(); }
+  if(SEC==='ret'){ const g=(RET_TABS.find(t=>t[0]===sf('ret_t','cancel'))||RET_TABS[0])[3];
+    if(!RET[g]){ await loadRet(g); render(); } }
 };
 
 /* ให้หน้า Replenishment เริ่มโหลดชีตของตัวเองทันที ไม่ต้องรอชีต On-Time ที่ใหญ่กว่ามาก */
 if(/^#kpi-(repl|fc)/.test(location.hash||'')) loadRepl().then(()=>{ if(SEC==='repl'||SEC==='fc')render(); });
+if(/^#kpi-ret/.test(location.hash||'')) loadRet(G_RET).then(()=>{ if(SEC==='ret')render(); });
 
 boot();
 
