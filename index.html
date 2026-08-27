@@ -2446,6 +2446,7 @@ const RET_PAL=[C.teal,C.amber,C.plum,C.rose,C.tealD,'#8A5A2E',C.plumD,C.mute,
                '#7FA8A6','#C9A063','#9A8BC4','#C9765F'];
 let RET_CTX=[];
 let RET_WK=null;
+let RET_HR=null;
 function retBreak(id,title,counts,total,wide){
   const es=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
   if(!es.length)return '';
@@ -2469,6 +2470,30 @@ function retBreak(id,title,counts,total,wide){
     </div></div>`;
 }
 function drawReturn(){
+  /* กราฟแท่งเคสตามชั่วโมงของวัน */
+  const hrEl=document.getElementById('c_rethr');
+  if(hrEl&&RET_HR){
+    destroy('rethr');
+    const hs=[...new Set([...Object.keys(RET_HR.pk),...Object.keys(RET_HR.cx)])]
+      .map(Number).sort((a,b)=>a-b);
+    if(hs.length){
+      const lo=hs[0], hi=hs[hs.length-1], labels=[], pk=[], cx=[];
+      for(let h=lo;h<=hi;h++){
+        labels.push(String(h).padStart(2,'0')+':00');
+        pk.push(RET_HR.pk[h]||0); cx.push(RET_HR.cx[h]||0);
+      }
+      const o=baseOpts(true); o.layout={padding:{top:34}};
+      o.plugins.barPct={display:true,raw:true};
+      o.scales.x.ticks.font={size:cf(24)};
+      o.scales.y.ticks.font={size:cf(24)};
+      o.scales.y.ticks.callback=v=>fmt(v);
+      CH.rethr=new Chart(hrEl,{type:'bar',
+        data:{labels,datasets:[
+          {label:'หยิบเสร็จ',data:pk,backgroundColor:C.teal,borderRadius:6,maxBarThickness:54},
+          {label:'ลูกค้ายกเลิก',data:cx,backgroundColor:C.rose,borderRadius:6,maxBarThickness:54}]},
+        options:o});
+    }
+  }
   /* กราฟแท่งรายสัปดาห์ */
   const wkEl=document.getElementById('c_retwk');
   if(wkEl&&RET_WK&&RET_WK.values.length){
@@ -2551,17 +2576,27 @@ function secReturn(){
   const avgD=dl2.length?dl2.reduce((s,v)=>s+v,0)/dl2.length:null;
   const maxD=dl2.length?Math.max(...dl2):null;
 
-  /* ช่วงเวลาของวันที่มักเกิดเหตุการณ์ — เฉลี่ยแยกกัน ไม่เอามาลบกัน
-     คิดเฉพาะแถวที่มีเวลา แถวว่างข้ามไป */
+  /* ช่วงเวลาของวันที่มักเกิดเหตุการณ์
+     ไม่ใช้ค่าเฉลี่ยเลขคณิต เพราะถ้างานกระจุกสองช่วง (เช่น 9 โมง กับ บ่าย 2)
+     ค่าเฉลี่ยจะไปตกกลางๆ ที่ไม่มีเคสเกิดจริงเลย
+     ใช้ "ชั่วโมงที่พบบ่อยสุด" เป็นตัวหลัก และมีค่ากลาง (median) กำกับ */
   const pkL=list.map(r=>r.pkMin).filter(v=>v!=null);
   const cxL=list.map(r=>r.cxMin).filter(v=>v!=null);
-  const avgMin=a=>a.length?a.reduce((s,v)=>s+v,0)/a.length:null;
-  const avgPk=avgMin(pkL), avgCx=avgMin(cxL);
-  const hasTime=(avgPk!=null||avgCx!=null);
+  const median=a=>{if(!a.length)return null;const b=[...a].sort((x,y)=>x-y);
+    const i=b.length>>1; return b.length%2?b[i]:(b[i-1]+b[i])/2;};
+  const byHour=a=>{const o={};a.forEach(v=>{const h=Math.floor(v/60);o[h]=(o[h]||0)+1;});return o;};
+  const peak=a=>{const o=byHour(a);let bh=null,bn=-1;
+    Object.entries(o).forEach(([h,n])=>{if(n>bn){bn=n;bh=+h;}});
+    return bh==null?null:{h:bh,n:bn};};
+  const pkPeak=peak(pkL), cxPeak=peak(cxL);
+  const hasTime=(pkL.length||cxL.length);
+  const hourLbl=p=>p==null?'—'
+    :String(p.h).padStart(2,'0')+':00–'+String(p.h).padStart(2,'0')+':59';
+  RET_HR=hasTime?{pk:byHour(pkL),cx:byHour(cxL)}:null;
 
   const timeCards=hasTime
-    ? card('เฉลี่ยเวลาหยิบเสร็จ',avgPk==null?'—':minToClock(avgPk),'teal')
-      +card('เฉลี่ยเวลาลูกค้ายกเลิก',avgCx==null?'—':minToClock(avgCx),'rose')
+    ? card('หยิบเสร็จบ่อยสุด'+(pkPeak?` · ${pkPeak.n} เคส`:''),hourLbl(pkPeak),'teal')
+      +card('ลูกค้ายกเลิกบ่อยสุด'+(cxPeak?` · ${cxPeak.n} เคส`:''),hourLbl(cxPeak),'rose')
     : card(avgD==null?'เฉลี่ยจบเคส (วัน)':`เฉลี่ยจบเคส (วัน) · นานสุด ${maxD}`,
            avgD==null?'—':avgD.toFixed(1),'amber');
 
@@ -2573,9 +2608,15 @@ function secReturn(){
       ${timeCards}
       ${card('มีระบุสาเหตุ',fmt(list.filter(r=>r.r).length),'rose')}</div>`
    +(hasTime
-     ?`<div class="chint">ค่าเฉลี่ยช่วงเวลาของวัน คิดเฉพาะแถวที่มีเวลาจริง ·
-        หยิบเสร็จ ${fmt(pkL.length)} เคส · ลูกค้ายกเลิก ${fmt(cxL.length)} เคส
-        <span style="color:var(--mute)">(จากทั้งหมด ${fmt(tot)} เคส · แถวที่ไม่มีเวลาข้ามไป)</span></div>`
+     ?`<div class="chint">ตัวเลขคือ<b>ชั่วโมงที่มีเคสมากสุด</b> ไม่ใช่ค่าเฉลี่ย
+        (ค่าเฉลี่ยจะตกไปอยู่ช่วงที่ไม่มีเคสเกิดจริง ถ้างานกระจุกหลายช่วง) ·
+        ค่ากลาง: หยิบเสร็จ ${pkL.length?minToClock(median(pkL)):'—'} ·
+        ลูกค้ายกเลิก ${cxL.length?minToClock(median(cxL)):'—'} ·
+        <span style="color:var(--mute)">คิดจาก ${fmt(pkL.length)} / ${fmt(cxL.length)} เคสที่มีเวลา จากทั้งหมด ${fmt(tot)}</span></div>
+      <div class="cpanel">
+        <div class="chname2">เคสตามช่วงเวลาของวัน</div>
+        <div class="cbox" style="height:420px"><canvas id="c_rethr"></canvas></div>
+      </div>`
      :avgD==null?`<div class="chint">หาคอลัมน์ "วันที่สิ้นสุด" ในชีตไม่เจอ จึงยังคำนวณระยะเวลาปิดเคสไม่ได้<br>
       <span style="color:var(--mute)">หัวคอลัมน์ในชีต: ${esc(d.H.filter(Boolean).join(' | '))}</span></div>`
      :`<div class="chint">ระยะเวลาปิดเคสคิดจาก <b>วันที่สิ้นสุด − วันที่ได้รับ</b> ·
