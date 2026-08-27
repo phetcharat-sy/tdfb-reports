@@ -2574,8 +2574,10 @@ function secReturn(){
     :String(p.h).padStart(2,'0')+':00–'+String(p.h).padStart(2,'0')+':59';
 
   const timeCards=hasTime
-    ? card(`ชั่วโมงที่${esc(d.hPk)}บ่อยสุด`+(pkPeak?` · ${pkPeak.n} เคส`:''),hourLbl(pkPeak),'teal')
-      +card(`ชั่วโมงที่${esc(d.hCx)}บ่อยสุด`+(cxPeak?` · ${cxPeak.n} เคส`:''),hourLbl(cxPeak),'rose')
+    ? (pkL.length?card(`ชั่วโมงที่${esc(d.hPk)}บ่อยสุด`+(pkPeak?` · ${pkPeak.n} เคส`:''),
+                       hourLbl(pkPeak),'teal'):'')
+      +(cxL.length?card(`ชั่วโมงที่${esc(d.hCx)}บ่อยสุด`+(cxPeak?` · ${cxPeak.n} เคส`:''),
+                       hourLbl(cxPeak),'rose'):'')
     : card(avgD==null?'เฉลี่ยจบเคส (วัน)':`เฉลี่ยจบเคส (วัน) · นานสุด ${maxD}`,
            avgD==null?'—':avgD.toFixed(1),'amber');
 
@@ -2589,9 +2591,9 @@ function secReturn(){
    +(hasTime
      ?`<div class="chint">ตัวเลขคือ<b>ชั่วโมงที่มีเคสมากสุด</b> ไม่ใช่ค่าเฉลี่ย
         (ค่าเฉลี่ยจะตกไปอยู่ช่วงที่ไม่มีเคสเกิดจริง ถ้างานกระจุกหลายช่วง) ·
-        ค่ากลาง: ${esc(d.hPk)} ${pkL.length?minToClock(median(pkL)):'—'} ·
-        ${esc(d.hCx)} ${cxL.length?minToClock(median(cxL)):'—'} ·
-        <span style="color:var(--mute)">คิดจาก ${fmt(pkL.length)} / ${fmt(cxL.length)} เคสที่มีเวลา จากทั้งหมด ${fmt(tot)}</span></div>`
+        ค่ากลาง: ${[pkL.length?esc(d.hPk)+' '+minToClock(median(pkL)):'',
+                    cxL.length?esc(d.hCx)+' '+minToClock(median(cxL)):''].filter(Boolean).join(' · ')} ·
+        <span style="color:var(--mute)">คิดจากเคสที่มีเวลาจริง ${fmt(Math.max(pkL.length,cxL.length))} จาก ${fmt(tot)} เคส</span></div>`
      :avgD==null?`<div class="chint">หาคอลัมน์ "วันที่สิ้นสุด" ในชีตไม่เจอ จึงยังคำนวณระยะเวลาปิดเคสไม่ได้<br>
       <span style="color:var(--mute)">หัวคอลัมน์ในชีต: ${esc(d.H.filter(Boolean).join(' | '))}</span></div>`
      :`<div class="chint">ระยะเวลาปิดเคสคิดจาก <b>วันที่สิ้นสุด − วันที่ได้รับ</b> ·
