@@ -333,7 +333,8 @@
 #vKPI table.dt.ret-dt td{overflow-wrap:anywhere;vertical-align:middle;padding:19px 16px}
 #vKPI table.dt.ret-dt .mono{white-space:normal;font-size:33px}
 #vKPI table.dt.ret-dt .why{font-size:32px}
-#vKPI table.dt.ret-dt .retnote{font-size:32px}
+#vKPI table.dt.ret-dt .retnote{font-size:32px;line-height:1.4;
+  display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
 
 /* ตารางรายละเอียด Dock to Stock — คอลัมน์เยอะ เลื่อนแนวนอนได้ */
 #vKPI table.dt.dock-dt{font-size:30px}
@@ -2323,7 +2324,7 @@ function drawForecast(){
 const RET_TABS=[
   {k:'cancel',t:'ยกเลิกในวัน',   d:'ออเดอร์ที่ถูกยกเลิกภายในวัน',    gid:'34728630',  skip:['K']},
   {k:'back',  t:'งานตีคืน',      d:'พัสดุที่ตีคืนกลับมาที่คลัง',       gid:'64747860',  skip:['J','K','เจ้าของ']},
-  {k:'idle',  t:'สถานะไม่เคลื่อนไหว',d:'พัสดุที่สถานะค้างไม่ขยับตามกำหนด',gid:'1668452287',skip:['ผู้จัดทำ']},
+  {k:'idle',  t:'สถานะไม่เคลื่อนไหว',d:'พัสดุที่สถานะค้างไม่ขยับตามกำหนด',gid:'1668452287',skip:['ผู้จัดทำ','เลขคำร้อง','การแก้ไข']},
   {k:'lost',  t:'เคสของหาย',     d:'เคสพัสดุสูญหายระหว่างขนส่ง',      gid:'1212673143',skip:[]}
 ];
 const RET={};
@@ -2352,12 +2353,15 @@ async function loadRet(gid){
       st: colCI('สถานะ','Status'),
       e:  colCI('วันที่สิ้นสุด','วันสิ้นสุด','สิ้นสุด','วันที่จบ','วันที่ปิดเคส','วันที่ปิด','วันที่เสร็จ','แล้วเสร็จ','End'),
       r:  colCI('สาเหตุ','เหตุผล','Reason'),
+      fx: colCI('การแก้ไข','การดำเนินการ','แก้ไข','ผลการดำเนินการ'),
+      cl: colCI('เลขคำร้อง','รหัสคำร้อง','คำร้อง'),
       n:  colCI('หมายเหตุ','โน๊ต','โน้ต','Note','Remark')
     };
     const g=(r,i)=>i>=0?String(r[i]||'').trim():'';
     const list=t.rows.map(r=>{
       const o={w:g(r,c.w), d:g(r,c.d), o:g(r,c.o), s:g(r,c.s), dl:g(r,c.dl),
-               st:g(r,c.st), end:g(r,c.e), r:g(r,c.r), n:g(r,c.n), raw:r};
+               st:g(r,c.st), end:g(r,c.e), r:g(r,c.r), n:g(r,c.n),
+               fx:g(r,c.fx), cl:g(r,c.cl), raw:r};
       /* จำนวนวันที่ใช้ปิดเคส = วันที่สิ้นสุด − วันที่ได้รับ */
       const a=dparse(o.d), b=dparse(o.end);
       o.days=(!isNaN(a)&&!isNaN(b))?Math.round((b-a)/86400000):null;
@@ -2367,7 +2371,7 @@ async function loadRet(gid){
     /* หาคอลัมน์ที่เหมาะเอามาทำสัดส่วน
        กันออกแค่ Week / วันที่ / วันที่สิ้นสุด / เลขออเดอร์ / หมายเหตุ
        "สาเหตุ" (คอลัมน์ H ของงานตีคืน) ต้องเอามาทำสัดส่วนด้วย จึงไม่กันออก */
-    const used=new Set([c.w,c.d,c.o,c.n,c.e].filter(i=>i>=0));
+    const used=new Set([c.w,c.d,c.o,c.n,c.e,c.fx,c.cl].filter(i=>i>=0));
     const dims=[];
     t.H.forEach((h,i)=>{
       if(used.has(i))return;
@@ -2380,6 +2384,9 @@ async function loadRet(gid){
       if(!name&&vals.every(v=>/^-?\d+(\.\d+)?$/.test(v)))return;
       const uniq=new Set(vals);
       if(uniq.size>40)return;                                  /* กระจายเกินไป ทำพายไม่ได้ */
+      /* ข้อความยาวๆ (บันทึกการดำเนินการ) ไม่ใช่หมวด — ทำพายแล้วอ่านไม่ออก */
+      const avgLen=vals.reduce((s,v)=>s+v.length,0)/vals.length;
+      if(avgLen>40)return;
       if([...uniq].every(v=>/^\d[\d/.\-]{5,}$/.test(v)))return;  /* เป็นวันที่ */
       if([...uniq].every(v=>/^#(REF|N\/A|VALUE|NAME|DIV)/i.test(v)))return; /* สูตรพัง */
       dims.push({i,h:name||('คอลัมน์ '+colLetter(i)),letter:colLetter(i)});
@@ -2505,6 +2512,7 @@ function secReturn(){
     return o;};
 
   const hasR=list.some(r=>r.r), hasN=list.some(r=>r.n);
+  const hasFx=list.some(r=>r.fx), hasCl=list.some(r=>r.cl);
   RET_CTX=[];
 
   /* ยอดรายสัปดาห์ สำหรับกราฟแท่ง */
@@ -2556,7 +2564,7 @@ function secReturn(){
    +(tot?(()=>{
      /* จัดสัดส่วนคอลัมน์ให้สมดุล — แบ่งพื้นที่ที่เหลือให้คอลัมน์ข้อความตามจำนวนที่มีจริง */
      const hasD=list.some(r=>r.days!=null);
-     const flex=1+(stOpts.length?1:0)+(hasR?1:0)+(hasN?1:0);   /* การจัดส่ง + ที่มีจริง */
+     const flex=1+(stOpts.length?1:0)+(hasR?1:0)+(hasN?1:0)+(hasFx?2:0)+(hasCl?1:0);
      const w=((hasD?29:46)/flex).toFixed(1)+'%';
      return `<div class="tscroll"><table class="dt ret-dt"><thead><tr>
        <th style="width:8%">Week</th>
@@ -2566,7 +2574,9 @@ function secReturn(){
        <th style="width:10%">ขนส่ง</th>
        <th style="width:${w}">การจัดส่ง</th>
        ${stOpts.length?`<th style="width:${w}">สถานะ</th>`:''}
+       ${hasCl?`<th style="width:${w}">เลขคำร้อง</th>`:''}
        ${hasR?`<th style="width:${w}">สาเหตุ</th>`:''}
+       ${hasFx?`<th style="width:${(2*Number(w.replace('%','')))+'%'}">การแก้ไข</th>`:''}
        ${hasN?`<th style="width:${w}">หมายเหตุ</th>`:''}
      </tr></thead><tbody>`
      +list.map(r=>`<tr>
@@ -2579,7 +2589,9 @@ function secReturn(){
        <td style="white-space:nowrap">${r.s?`<span class="why has">${esc(r.s)}</span>`:'—'}</td>
        <td>${esc(r.dl||'—')}</td>
        ${stOpts.length?`<td>${esc(r.st||'—')}</td>`:''}
+       ${hasCl?`<td class="mono">${esc(r.cl||'—')}</td>`:''}
        ${hasR?`<td>${r.r?`<span class="why has">${esc(r.r)}</span>`:'<span class="why">—</span>'}</td>`:''}
+       ${hasFx?`<td><span class="retnote">${esc(r.fx||'—')}</span></td>`:''}
        ${hasN?`<td><span class="retnote">${esc(r.n||'—')}</span></td>`:''}
      </tr>`).join('')
      +'</tbody></table></div>';})()
