@@ -328,13 +328,18 @@
   margin-right:16px;vertical-align:-2px}
 /* ตารางรายละเอียด Return — ล็อกสัดส่วนคอลัมน์ให้สมดุล ไม่ให้ช่องใดกินพื้นที่ทั้งหมด */
 #vKPI table.dt th.mid,#vKPI table.dt td.mid{text-align:center!important}
-#vKPI table.dt.ret-dt{table-layout:fixed;font-size:38px}
-#vKPI table.dt.ret-dt th{font-size:31px}
-#vKPI table.dt.ret-dt td{overflow-wrap:anywhere;vertical-align:middle;padding:19px 16px}
-#vKPI table.dt.ret-dt .mono{white-space:normal;font-size:33px}
-#vKPI table.dt.ret-dt .why{font-size:32px}
-#vKPI table.dt.ret-dt .retnote{font-size:32px;line-height:1.4;
-  display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+/* ตารางรายละเอียด Return — ความกว้างยืดตามเนื้อหา เลื่อนแนวนอนได้
+   คอลัมน์สั้นบังคับบรรทัดเดียว · คอลัมน์ข้อความยาวจำกัดความกว้างแล้วตัดบรรทัด */
+#vKPI table.dt.ret-dt{font-size:36px;width:100%}
+#vKPI table.dt.ret-dt th{font-size:30px;white-space:nowrap}
+#vKPI table.dt.ret-dt td{vertical-align:middle;padding:18px 18px;white-space:nowrap}
+#vKPI table.dt.ret-dt .mono{white-space:nowrap;font-size:32px}
+#vKPI table.dt.ret-dt .why{font-size:31px;white-space:normal}
+#vKPI table.dt.ret-dt th.wide-col,#vKPI table.dt.ret-dt td.wide-col{
+  white-space:normal;min-width:420px;max-width:560px}
+#vKPI table.dt.ret-dt td.wide-col .retnote{font-size:30px;line-height:1.4;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+#vKPI table.dt.ret-dt td.wrapcell{white-space:normal;max-width:420px}
 
 /* ตารางรายละเอียด Dock to Stock — คอลัมน์เยอะ เลื่อนแนวนอนได้ */
 #vKPI table.dt.dock-dt{font-size:30px}
@@ -920,25 +925,28 @@ const dparse=s=>{const m=String(s==null?'':s).match(/^(\d{1,2})\/(\d{1,2})\/(\d{
 
 let STATIC_ERR={diff:'',dock:''};
 
-/* ชีตเล็ก: ลอง gviz ก่อน ถ้าไม่ได้ค่อยใช้ /export?format=csv
+/* ชีตเล็ก: ใช้ /export?format=csv เป็นหลัก (ได้ทุกแถวเสมอ) ถ้าไม่ได้ค่อยถอยไป gviz
    ทั้งสองทางต้องมี timeout ไม่งั้นถ้าค้างจะรอไม่รู้จบ (เคยเป็นแบบนั้นมาแล้ว) */
 async function smallSheet(id,gid,onState){
+  /* ใช้ export?format=csv เป็นทางหลัก เพราะคืนข้อมูล "ทุกแถว" เสมอ
+     ไม่สนว่ามีใครตั้งฟิลเตอร์หรือซ่อนแถวไว้ในชีต (gviz จะคืนเฉพาะแถวที่มองเห็น)
+     ถ้า CSV ล้มเหลวค่อยถอยไปใช้ gviz */
   let err1='';
   try{
-    onState&&onState('กำลังโหลด (gviz)…');
-    const rows=await gviz(id,gid,null,40000,true);
+    onState&&onState('กำลังโหลด (csv)…');
+    const url=`https://docs.google.com/spreadsheets/d/${id}/export?format=csv&gid=${gid}&_=${Date.now()}`;
+    const t=await fetchBig(url,60000);
+    if(t.trim().startsWith('<'))throw new Error('ชีตยังไม่ได้แชร์เป็น “ทุกคนที่มีลิงก์”');
+    const rows=(typeof Papa!=='undefined')?Papa.parse(t,{skipEmptyLines:true}).data:parseCSV(t);
     if(rows&&rows.length>1)return rows;
     err1='ได้ข้อมูลว่าง';
   }catch(e){ err1=e.message; }
 
-  onState&&onState('กำลังโหลด (csv)…');
-  const url=`https://docs.google.com/spreadsheets/d/${id}/export?format=csv&gid=${gid}&_=${Date.now()}`;
-  let t;
-  try{ t=await fetchBig(url,60000); }
-  catch(e){ throw new Error(`${e.message} · gviz: ${err1}`); }
-  if(t.trim().startsWith('<'))throw new Error('ชีตยังไม่ได้แชร์เป็น “ทุกคนที่มีลิงก์”');
-  const rows=(typeof Papa!=='undefined')?Papa.parse(t,{skipEmptyLines:true}).data:parseCSV(t);
-  if(!rows||rows.length<2)throw new Error('ชีตว่าง');
+  onState&&onState('กำลังโหลด (gviz)…');
+  let rows;
+  try{ rows=await gviz(id,gid,null,40000,true); }
+  catch(e){ throw new Error(`${e.message} · csv: ${err1}`); }
+  if(!rows||rows.length<2)throw new Error(`ชีตว่าง · csv: ${err1}`);
   return rows;
 }
 
@@ -2525,7 +2533,9 @@ function secReturn(){
   if(fWeek())list=list.filter(r=>String(parseInt(r.w)||'')===fWeek());
   if(fSt)list=list.filter(r=>r.st===fSt);
 
-  const stBar=stOpts.length?chipBar('ret_s','สถานะ',
+  /* โชว์ชิปสถานะเฉพาะเมื่อเป็นหมวดจริงๆ (ไม่เกิน 12 ค่า)
+     บางแท็บคอลัมน์นี้เก็บเลขออเดอร์ ชิปจะยาวเป็นพรืด */
+  const stBar=(stOpts.length&&stOpts.length<=12)?chipBar('ret_s','สถานะ',
     [['','ทั้งหมด'],...stOpts.map(v=>[v,v])],fSt):'';
 
   const tot=list.length;
@@ -2623,22 +2633,22 @@ function secReturn(){
    +(tot?(()=>{
      /* จัดสัดส่วนคอลัมน์ให้สมดุล — แบ่งพื้นที่ที่เหลือให้คอลัมน์ข้อความตามจำนวนที่มีจริง */
      const hasD=list.some(r=>r.days!=null);
-     const flex=1+(stOpts.length?1:0)+(hasR?1:0)+(hasN?1:0)+(hasFx?2:0)+(hasCl?1:0)+(hasG?2:0);
-     const w=((hasD?29:46)/flex).toFixed(1)+'%';
-     return `<div class="tscroll"><table class="dt ret-dt"><thead><tr>
-       <th style="width:8%">Week</th>
-       <th style="width:13%">วันที่ได้รับ</th>
-       ${hasD?'<th style="width:13%">วันที่สิ้นสุด</th><th class="mid" style="width:11%">ใช้เวลา (วัน)</th>':''}
-       <th style="width:16%">ออเดอร์</th>
-       <th style="width:10%">ขนส่ง</th>
-       <th style="width:${w}">การจัดส่ง</th>
-       ${stOpts.length?`<th style="width:${w}">สถานะ</th>`:''}
-       ${hasG?`<th class="mid" style="width:${w}">${esc(d.hPk)}</th>
-       <th class="mid" style="width:${w}">${esc(d.hCx)}</th>`:''}
-       ${hasCl?`<th style="width:${w}">เลขคำร้อง</th>`:''}
-       ${hasR?`<th style="width:${w}">สาเหตุ</th>`:''}
-       ${hasFx?`<th style="width:${(2*Number(w.replace('%','')))+'%'}">การแก้ไข</th>`:''}
-       ${hasN?`<th style="width:${w}">หมายเหตุ</th>`:''}
+     /* ปล่อยให้ความกว้างคอลัมน์ยืดตามเนื้อหาจริง แล้วเลื่อนแนวนอนถ้าไม่พอ
+        ดีกว่าล็อกเป็น % ที่ทำให้ช่องซ้ายโหว่และช่องขวาอัดจนตัดบรรทัด */
+     return `<div class="tscroll" style="overflow-x:auto"><table class="dt ret-dt"><thead><tr>
+       <th>Week</th>
+       <th>วันที่ได้รับ</th>
+       ${hasD?'<th>วันที่สิ้นสุด</th><th class="mid">ใช้เวลา (วัน)</th>':''}
+       <th>ออเดอร์</th>
+       <th>ขนส่ง</th>
+       <th>การจัดส่ง</th>
+       ${stOpts.length?`<th>สถานะ</th>`:''}
+       ${hasG?`<th class="mid">${esc(d.hPk)}</th>
+       <th class="mid">${esc(d.hCx)}</th>`:''}
+       ${hasCl?`<th>เลขคำร้อง</th>`:''}
+       ${hasR?`<th>สาเหตุ</th>`:''}
+       ${hasFx?`<th class="wide-col">การแก้ไข</th>`:''}
+       ${hasN?`<th class="wide-col">หมายเหตุ</th>`:''}
      </tr></thead><tbody>`
      +list.map(r=>`<tr>
        <td class="c-week"><b>${r.w?'W'+(parseInt(r.w)||r.w):'—'}</b></td>
@@ -2653,9 +2663,9 @@ function secReturn(){
        ${hasG?`<td class="mid">${r.pkMin==null?'—':minToClock(r.pkMin)}</td>
        <td class="mid">${r.cxMin==null?'—':minToClock(r.cxMin)}</td>`:''}
        ${hasCl?`<td class="mono">${esc(r.cl||'—')}</td>`:''}
-       ${hasR?`<td>${r.r?`<span class="why has">${esc(r.r)}</span>`:'<span class="why">—</span>'}</td>`:''}
-       ${hasFx?`<td><span class="retnote">${esc(r.fx||'—')}</span></td>`:''}
-       ${hasN?`<td><span class="retnote">${esc(r.n||'—')}</span></td>`:''}
+       ${hasR?`<td class="wrapcell">${r.r?`<span class="why has">${esc(r.r)}</span>`:'<span class="why">—</span>'}</td>`:''}
+       ${hasFx?`<td class="wide-col"><span class="retnote">${esc(r.fx||'—')}</span></td>`:''}
+       ${hasN?`<td class="wide-col"><span class="retnote">${esc(r.n||'—')}</span></td>`:''}
      </tr>`).join('')
      +'</tbody></table></div>';})()
     :'<div class="empty2">ไม่มีรายการตามตัวกรองนี้</div>');
