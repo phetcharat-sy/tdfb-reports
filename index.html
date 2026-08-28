@@ -333,18 +333,25 @@
   margin-right:16px;vertical-align:-2px}
 /* ตารางรายละเอียด Return — ล็อกสัดส่วนคอลัมน์ให้สมดุล ไม่ให้ช่องใดกินพื้นที่ทั้งหมด */
 #vKPI table.dt th.mid,#vKPI table.dt td.mid{text-align:center!important}
-/* ตารางรายละเอียด Return — ความกว้างยืดตามเนื้อหา เลื่อนแนวนอนได้
-   คอลัมน์สั้นบังคับบรรทัดเดียว · คอลัมน์ข้อความยาวจำกัดความกว้างแล้วตัดบรรทัด */
-#vKPI table.dt.ret-dt{font-size:36px;width:100%}
-#vKPI table.dt.ret-dt th{font-size:30px;white-space:nowrap}
-#vKPI table.dt.ret-dt td{vertical-align:middle;padding:18px 18px;white-space:nowrap}
-#vKPI table.dt.ret-dt .mono{white-space:nowrap;font-size:32px}
-#vKPI table.dt.ret-dt .why{font-size:31px;white-space:normal}
-#vKPI table.dt.ret-dt th.wide-col,#vKPI table.dt.ret-dt td.wide-col{
+/* ตารางรายละเอียด Return — ค่าเริ่มต้นล็อกสัดส่วนคอลัมน์ (ของเดิม)
+   เฉพาะหัวข้อที่มีคอลัมน์ข้อความยาวจะใช้ .auto-w ให้ยืดตามเนื้อหาแล้วเลื่อนแนวนอน */
+#vKPI table.dt.ret-dt{table-layout:fixed;font-size:38px;width:100%}
+#vKPI table.dt.ret-dt th{font-size:31px}
+#vKPI table.dt.ret-dt td{overflow-wrap:anywhere;vertical-align:middle;padding:19px 16px}
+#vKPI table.dt.ret-dt .mono{white-space:normal;font-size:33px}
+#vKPI table.dt.ret-dt .why{font-size:32px}
+#vKPI table.dt.ret-dt .retnote{font-size:32px;line-height:1.4;
+  display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+
+#vKPI table.dt.ret-dt.auto-w{table-layout:auto;font-size:36px}
+#vKPI table.dt.ret-dt.auto-w th{font-size:30px;white-space:nowrap}
+#vKPI table.dt.ret-dt.auto-w td{white-space:nowrap;padding:18px 18px}
+#vKPI table.dt.ret-dt.auto-w .mono{white-space:nowrap;font-size:32px}
+#vKPI table.dt.ret-dt.auto-w .why{font-size:31px;white-space:normal}
+#vKPI table.dt.ret-dt.auto-w th.wide-col,#vKPI table.dt.ret-dt.auto-w td.wide-col{
   white-space:normal;min-width:420px;max-width:560px}
-#vKPI table.dt.ret-dt td.wide-col .retnote{font-size:30px;line-height:1.4;
-  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-#vKPI table.dt.ret-dt td.wrapcell{white-space:normal;max-width:420px}
+#vKPI table.dt.ret-dt.auto-w td.wide-col .retnote{font-size:30px;-webkit-line-clamp:3}
+#vKPI table.dt.ret-dt.auto-w td.wrapcell{white-space:normal;max-width:420px}
 
 /* ตารางรายละเอียด Dock to Stock — คอลัมน์เยอะ เลื่อนแนวนอนได้ */
 #vKPI table.dt.dock-dt{font-size:30px}
@@ -2578,9 +2585,9 @@ function secReturn(){
   if(fWeek())list=list.filter(r=>String(parseInt(r.w)||'')===fWeek());
   if(fSt)list=list.filter(r=>r.st===fSt);
 
-  /* โชว์ชิปสถานะเฉพาะเมื่อเป็นหมวดจริงๆ (ไม่เกิน 12 ค่า)
-     บางแท็บคอลัมน์นี้เก็บเลขออเดอร์ ชิปจะยาวเป็นพรืด */
-  const stBar=(stOpts.length&&stOpts.length<=12)?chipBar('ret_s','สถานะ',
+  /* ชิปสถานะแสดงตามปกติทุกหัวข้อ
+     ยกเว้นหัวข้อ "สถานะไม่เคลื่อนไหว" ที่คอลัมน์นี้เก็บเลขออเดอร์ ชิปจะยาวเป็นพรืด */
+  const stBar=(stOpts.length&&!(cur==='idle'&&stOpts.length>12))?chipBar('ret_s','สถานะ',
     [['','ทั้งหมด'],...stOpts.map(v=>[v,v])],fSt):'';
 
   const tot=list.length;
@@ -2680,22 +2687,28 @@ function secReturn(){
    +(tot?(()=>{
      /* จัดสัดส่วนคอลัมน์ให้สมดุล — แบ่งพื้นที่ที่เหลือให้คอลัมน์ข้อความตามจำนวนที่มีจริง */
      const hasD=list.some(r=>r.days!=null);
-     /* ปล่อยให้ความกว้างคอลัมน์ยืดตามเนื้อหาจริง แล้วเลื่อนแนวนอนถ้าไม่พอ
-        ดีกว่าล็อกเป็น % ที่ทำให้ช่องซ้ายโหว่และช่องขวาอัดจนตัดบรรทัด */
-     return `<div class="tscroll" style="overflow-x:auto"><table class="dt ret-dt"><thead><tr>
-       <th>Week</th>
-       <th>วันที่ได้รับ</th>
-       ${hasD?'<th>วันที่สิ้นสุด</th><th class="mid">ใช้เวลา (วัน)</th>':''}
-       <th>ออเดอร์</th>
-       <th>ขนส่ง</th>
-       <th>การจัดส่ง</th>
-       ${stOpts.length?`<th>สถานะ</th>`:''}
-       ${hasG?`<th class="mid">${esc(d.hPk)}</th>
-       <th class="mid">${esc(d.hCx)}</th>`:''}
-       ${hasCl?`<th>เลขคำร้อง</th>`:''}
-       ${hasR?`<th>สาเหตุ</th>`:''}
+     /* ความกว้างคอลัมน์แบบสัดส่วน (ของเดิม) — ใช้กับทุกหัวข้อ
+        ยกเว้นหัวข้อที่มีคอลัมน์ข้อความยาว (การแก้ไข / หมายเหตุ)
+        ที่ปล่อยให้ยืดตามเนื้อหาแล้วเลื่อนแนวนอนแทน ไม่งั้นจะอัดจนตัดบรรทัด */
+     const auto=hasFx;
+     const flex=1+(stOpts.length?1:0)+(hasR?1:0)+(hasN?1:0)+(hasFx?2:0)+(hasCl?1:0)+(hasG?2:0);
+     const w=((hasD?29:46)/flex).toFixed(1)+'%';
+     const W=v=>auto?'':` style="width:${v}"`;
+     return `<div class="tscroll"${auto?' style="overflow-x:auto"':''}>
+       <table class="dt ret-dt${auto?' auto-w':''}"><thead><tr>
+       <th${W('8%')}>Week</th>
+       <th${W('13%')}>วันที่ได้รับ</th>
+       ${hasD?`<th${W('13%')}>วันที่สิ้นสุด</th><th class="mid"${W('11%')}>ใช้เวลา (วัน)</th>`:''}
+       <th${W('16%')}>ออเดอร์</th>
+       <th${W('10%')}>ขนส่ง</th>
+       <th${W(w)}>การจัดส่ง</th>
+       ${stOpts.length?`<th${W(w)}>สถานะ</th>`:''}
+       ${hasG?`<th class="mid"${W(w)}>${esc(d.hPk)}</th>
+       <th class="mid"${W(w)}>${esc(d.hCx)}</th>`:''}
+       ${hasCl?`<th${W(w)}>เลขคำร้อง</th>`:''}
+       ${hasR?`<th${W(w)}>สาเหตุ</th>`:''}
        ${hasFx?`<th class="wide-col">การแก้ไข</th>`:''}
-       ${hasN?`<th class="wide-col">หมายเหตุ</th>`:''}
+       ${hasN?`<th class="${auto?'wide-col':''}"${W(w)}>หมายเหตุ</th>`:''}
      </tr></thead><tbody>`
      +list.map(r=>`<tr>
        <td class="c-week"><b>${r.w?'W'+(parseInt(r.w)||r.w):'—'}</b></td>
