@@ -301,6 +301,11 @@
 #vKPI .brkcard.wide .brkpie{flex:1 1 auto;min-width:460px;height:720px}
 #vKPI .brkrow table.dt.brk{flex:0 0 auto;width:600px;max-width:58%;margin-left:auto}
 #vKPI .brkcard.wide .brkrow table.dt.brk{width:720px}
+/* แผงที่ใช้แท่งนอน — กราฟกินพื้นที่มากกว่า เพราะต้องมีที่โชว์ชื่อหมวดกับป้ายท้ายแท่ง */
+#vKPI .brkrow.bar{align-items:flex-start}
+#vKPI .brkrow.bar .brkpie{flex:1 1 60%;min-width:560px;height:auto}
+#vKPI .brkrow.bar table.dt.brk,
+#vKPI .brkcard.wide .brkrow.bar table.dt.brk{flex:0 0 auto;width:520px;max-width:40%}
 /* ชื่อหมวดต้องอยู่บรรทัดเดียว ไม่ตัดคำ เช่น "admin ยกเลิกแล้ว" */
 #vKPI table.dt.brk td:first-child,#vKPI table.dt.brk th:first-child{white-space:nowrap}
 @media(max-width:1400px){
@@ -2454,21 +2459,39 @@ const donutMid={id:'donutMid',
   }};
 if(window.Chart&&!Chart.registry.plugins.get('donutMid'))Chart.register(donutMid);
 
+/* ป้ายท้ายแท่งนอน: จำนวน + % */
+const barEnd={id:'barEnd',
+  afterDatasetsDraw(ch,a,op){
+    if(!op||!op.display)return;
+    const x=ch.ctx, m=ch.getDatasetMeta(0);
+    x.save(); x.textAlign='left'; x.textBaseline='middle';
+    x.font='bold '+cf(24)+'px Tahoma';
+    m.data.forEach((bar,i)=>{
+      const t=fmt(op.vals[i])+'  ·  '+op.pcts[i]+'%';
+      x.fillStyle='#22252C';
+      x.fillText(t,bar.x+12,bar.y);
+    });
+    x.restore();
+  }};
+if(window.Chart&&!Chart.registry.plugins.get('barEnd'))Chart.register(barEnd);
+
 /* สัดส่วนต่อหมวด: กราฟวงกลม + ตารางตัวเลขข้างใต้ */
 const RET_PAL=[C.teal,C.amber,C.plum,C.rose,C.tealD,'#8A5A2E',C.plumD,C.mute,
                '#7FA8A6','#C9A063','#9A8BC4','#C9765F'];
 let RET_CTX=[];
 let RET_WK=null;
-function retBreak(id,title,counts,total,wide){
+function retBreak(id,title,counts,total,wide,kind){
   const es=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
   if(!es.length)return '';
   /* % คิดจากจำนวนที่นับได้จริง เผื่อมีแถวที่ข้ามไป (เช่นเซลล์สูตรพัง) */
   total=es.reduce((s,e)=>s+e[1],0)||total;
-  RET_CTX.push({id,labels:es.map(e=>e[0]),values:es.map(e=>e[1]),total});
+  RET_CTX.push({id,labels:es.map(e=>e[0]),values:es.map(e=>e[1]),total,kind});
+  const isBar=kind==='bar';
+  const boxStyle=isBar?`height:${Math.max(300,es.length*64+70)}px`:'';
   return `<div class="cpanel brkcard${wide?' wide':''}">
     <div class="chname2">${esc(title)}</div>
-    <div class="brkrow">
-      <div class="brkpie"><canvas id="${id}"></canvas></div>
+    <div class="brkrow${isBar?' bar':''}">
+      <div class="brkpie" style="${boxStyle}"><canvas id="${id}"></canvas></div>
       <table class="dt brk"><thead><tr>
         <th>${esc(title)}</th><th class="num" style="width:170px">ออเดอร์</th>
         <th class="num" style="width:150px">%</th></tr></thead><tbody>`
@@ -2505,6 +2528,28 @@ function drawReturn(){
     destroy(key);
     const cols=c.labels.map((_,i)=>RET_PAL[i%RET_PAL.length]);
     const pcts=c.values.map(v=>Math.round(v/(c.total||1)*1000)/10);
+
+    if(c.kind==='bar'){
+      /* แท่งนอน — ป้ายอยู่นอกแท่ง ไม่มีทางทับกัน อ่านชื่อหมวดยาวๆ ได้ด้วย */
+      const o=baseOpts(false);
+      o.indexAxis='y';
+      o.layout={padding:{right:120}};
+      o.scales.x={beginAtZero:true,grid:{color:'rgba(34,37,44,.06)'},
+        ticks:{color:C.mute,font:{size:cf(22)},precision:0}};
+      o.scales.y={grid:{display:false},
+        ticks:{color:'#22252C',font:{size:cf(24)},
+          callback(v){const s=String(this.getLabelForValue(v));
+            return s.length>34?s.slice(0,32)+'…':s;}}};
+      o.plugins.tooltip.callbacks={
+        title:x=>c.labels[x[0].dataIndex],
+        label:x=>`${fmt(c.values[x.dataIndex])} ออเดอร์ · ${pcts[x.dataIndex]}%`};
+      o.plugins.barEnd={display:true,vals:c.values,pcts};
+      CH[key]=new Chart(el2,{type:'bar',
+        data:{labels:c.labels,datasets:[{data:c.values,backgroundColor:cols,
+          borderRadius:6,maxBarThickness:34}]},options:o});
+      return;
+    }
+
     CH[key]=new Chart(el2,{type:'doughnut',
       data:{labels:c.labels,datasets:[{data:pcts,backgroundColor:cols,
         borderColor:'#fff',borderWidth:4,hoverOffset:14}]},
@@ -2623,8 +2668,10 @@ function secReturn(){
       const items=dims.map((x,i)=>({...x,id:'c_ret'+i,c:cnt(x.i)}));
       const big=items.filter(x=>Object.keys(x.c).length>=5);
       const small=items.filter(x=>Object.keys(x.c).length<5);
-      return big.map(x=>retBreak(x.id,x.h,x.c,tot,true)).join('')
-        +(small.length?`<div class="cgrid2">${small.map(x=>retBreak(x.id,x.h,x.c,tot,false)).join('')}</div>`:'');
+      /* หน้าเคสของหายใช้แท่งนอนแทนพาย — หมวดเยอะและชื่อยาว ตัวเลขบนพายจะทับกัน */
+      const kind=(cur==='lost')?'bar':'pie';
+      return big.map(x=>retBreak(x.id,x.h,x.c,tot,true,kind)).join('')
+        +(small.length?`<div class="cgrid2">${small.map(x=>retBreak(x.id,x.h,x.c,tot,false,kind)).join('')}</div>`:'');
     })()
       :`<div class="empty2">ไม่พบคอลัมน์ที่แยกสัดส่วนได้<br>
          <span style="font-size:26px;color:var(--mute)">หัวคอลัมน์ในชีต: ${esc(d.H.filter(Boolean).join(' | '))}</span></div>`)
