@@ -2468,7 +2468,9 @@ function secPick(){
         </div></div>`:'');
   }
 
-  const all0=PICK.list.filter(r=>!fYear()||(r.date||'').slice(0,4)===fYear());
+  /* ตัดแถวที่ไม่มีชื่อพนักงานออก (ช่องว่าง / "-" / ไม่ระบุ) — ไม่รู้ว่าเป็นของใคร */
+  const noName=v=>!v||/^[-–—]$/.test(v)||v==='ไม่ระบุ';
+  const all0=PICK.list.filter(r=>!noName(r.who)&&(!fYear()||(r.date||'').slice(0,4)===fYear()));
   const people=[...new Set(all0.map(r=>r.who))].sort();
   const fWho=sf('pk_who','');
   const bar=people.length>1?chipBar('pk_who','พนักงาน',
@@ -2509,8 +2511,9 @@ function secPick(){
      <div class="cgrid2">
        <div class="cpanel"><div class="chname2">อัตราการหยิบรายคน (ชิ้น / ชั่วโมง)</div>
          <div class="cbox" style="height:460px"><canvas id="c_pkrate"></canvas></div></div>
-       <div class="cpanel"><div class="chname2">สัดส่วนแบทช์รายคน</div>
-         <div class="cbox" style="height:460px"><canvas id="c_pkbat"></canvas></div></div>
+       <div class="cpanel"><div class="chname2">จำนวนแบทช์รายคน</div>
+         <div class="cbox" style="height:${Math.max(360,per.length*64+60)}px">
+           <canvas id="c_pkbat"></canvas></div></div>
      </div>
 
      <h2 class="sec">แนวโน้มการหยิบในแต่ละวัน <em>จำนวนชิ้นต่อวัน แยกตามคน</em><span></span></h2>
@@ -2520,7 +2523,7 @@ function secPick(){
 
      <h2 class="sec">ช่วงเวลาที่หยิบหนาแน่น <em>จำนวนชิ้นตามชั่วโมง</em><span></span></h2>
      <div class="cpanel"><div class="cscroll">
-       <div class="cbox" style="height:460px;min-width:${Math.max(900,hrs.length*130)}px">
+       <div class="cbox" style="height:520px;min-width:${Math.max(900,hrs.length*175)}px">
          <canvas id="c_pkhr"></canvas></div></div></div>
 
      <h2 class="sec">สรุปรายคน <em>${fmt(per.length)} คน</em><span></span></h2>
@@ -2546,40 +2549,50 @@ function drawPick(){
   if(!PICK_CTX)return;
   const {per,days,dayBy,hrs,hrBy}=PICK_CTX;
   const cols=per.map((_,i)=>PICK_PAL[i%PICK_PAL.length]);
+  const colOf={}; per.forEach((p,i)=>colOf[p.who]=cols[i]);
 
-  /* อัตราการหยิบรายคน */
+  /* อัตราการหยิบรายคน — เรียงมาก → น้อย */
   const el1=document.getElementById('c_pkrate');
   if(el1){
     destroy('pkrate');
+    const rk=[...per].filter(p=>p.rate!=null).sort((a,b)=>b.rate-a.rate);
     const o=baseOpts(false); o.layout={padding:{top:34}};
     o.plugins.barPct={display:true,raw:true};
-    o.scales.x.ticks.font={size:cf(24)};
+    o.scales.x.ticks.font={size:cf(23)};
     o.scales.y.ticks.font={size:cf(24)};
     o.scales.y.ticks.callback=v=>fmt(v);
     o.plugins.tooltip.callbacks={label:c=>fmt(c.raw)+' ชิ้น/ชม.'};
     CH.pkrate=new Chart(el1,{type:'bar',
-      data:{labels:per.map(p=>p.who),
-        datasets:[{data:per.map(p=>p.rate==null?0:Math.round(p.rate)),
-          backgroundColor:cols,borderRadius:8,maxBarThickness:96}]},options:o});
+      data:{labels:rk.map(p=>p.who),
+        datasets:[{data:rk.map(p=>Math.round(p.rate)),
+          backgroundColor:rk.map(p=>colOf[p.who]),borderRadius:8,maxBarThickness:96}]},
+      options:o});
   }
 
-  /* สัดส่วนแบทช์รายคน */
+  /* จำนวนแบทช์รายคน — แท่งนอน เห็นตัวเลขครบทุกคน */
   const el2=document.getElementById('c_pkbat');
   if(el2){
     destroy('pkbat');
-    const tb=per.reduce((s,p)=>s+p.batches,0)||1;
-    CH.pkbat=new Chart(el2,{type:'doughnut',
-      data:{labels:per.map(p=>p.who),
-        datasets:[{data:per.map(p=>Math.round(p.batches/tb*1000)/10),
-          backgroundColor:cols,borderColor:'#fff',borderWidth:4,hoverOffset:12}]},
-      options:{responsive:true,maintainAspectRatio:false,cutout:'55%',layout:{padding:8},
-        plugins:{legend:{position:'right',labels:{font:{size:cf(24)},boxWidth:24,padding:16}},
-          pieLbl:{display:true,minPercent:4,size:30},
-          tooltip:{titleFont:{size:cf(23)},bodyFont:{size:cf(22)},padding:12,
-            callbacks:{label:x=>x.formattedValue+'% ('+fmt(per[x.dataIndex].batches)+' batch)'}}}}});
+    const bk=[...per].sort((a,b)=>b.batches-a.batches);
+    const tb=bk.reduce((s,p)=>s+p.batches,0)||1;
+    const o=baseOpts(false);
+    o.indexAxis='y';
+    o.layout={padding:{right:150}};
+    o.scales.x={beginAtZero:true,grid:{color:'rgba(34,37,44,.06)'},
+      ticks:{color:C.mute,font:{size:cf(22)},precision:0}};
+    o.scales.y={grid:{display:false},ticks:{color:'#22252C',font:{size:cf(24)}}};
+    o.plugins.tooltip.callbacks={
+      label:c=>`${fmt(c.raw)} batch · ${(c.raw/tb*100).toFixed(1)}%`};
+    o.plugins.barEnd={display:true,vals:bk.map(p=>p.batches),
+      pcts:bk.map(p=>Math.round(p.batches/tb*1000)/10)};
+    CH.pkbat=new Chart(el2,{type:'bar',
+      data:{labels:bk.map(p=>p.who),
+        datasets:[{data:bk.map(p=>p.batches),
+          backgroundColor:bk.map(p=>colOf[p.who]),borderRadius:6,maxBarThickness:34}]},
+      options:o});
   }
 
-  /* แนวโน้มรายวัน */
+  /* แนวโน้มรายวัน — เส้นแยกตามคน */
   const el3=document.getElementById('c_pkday');
   if(el3&&days.length){
     destroy('pkday');
@@ -2593,23 +2606,29 @@ function drawPick(){
       data:{labels:days.map(d=>shortD(d)),
         datasets:per.map((p,i)=>({label:p.who,data:dayBy[p.who],
           borderColor:cols[i],backgroundColor:cols[i],borderWidth:3,
-          tension:.3,pointRadius:4,fill:false}))},options:o});
+          tension:.35,pointRadius:3,pointBackgroundColor:cols[i],
+          spanGaps:true,fill:false}))},options:o});
   }
 
-  /* ช่วงเวลาหนาแน่น */
+  /* ช่วงเวลาที่หยิบหนาแน่น — เส้นโค้งมีพื้นที่ใต้กราฟ แยกตามคน */
   const el4=document.getElementById('c_pkhr');
   if(el4&&hrs.length){
     destroy('pkhr');
     const o=baseOpts(true);
-    o.scales.x.stacked=true; o.scales.y.stacked=true;
+    o.interaction={mode:'index',intersect:false};
     o.scales.x.ticks.font={size:cf(23)};
     o.scales.y.ticks.font={size:cf(23)};
     o.scales.y.ticks.callback=v=>fmt(v);
     o.plugins.tooltip.callbacks={label:c=>`${c.dataset.label}: ${fmt(c.raw)} ชิ้น`};
-    CH.pkhr=new Chart(el4,{type:'bar',
-      data:{labels:hrs.map(h=>String(h).padStart(2,'0')+':00'),
+    const rgba=(hex,a)=>{const n=parseInt(hex.slice(1),16);
+      return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`;};
+    CH.pkhr=new Chart(el4,{type:'line',
+      data:{labels:hrs.map(h=>String(h).padStart(2,'0')+':00 - '
+              +String(h+1).padStart(2,'0')+':00'),
         datasets:per.map((p,i)=>({label:p.who,data:hrBy[p.who],
-          backgroundColor:cols[i],borderRadius:4,maxBarThickness:70}))},options:o});
+          borderColor:cols[i],backgroundColor:rgba(cols[i],.18),
+          borderWidth:3,tension:.45,pointRadius:4,
+          pointBackgroundColor:cols[i],fill:true}))},options:o});
   }
 }
 
