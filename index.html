@@ -378,11 +378,26 @@
   min-width:260px;max-height:420px;overflow:auto;background:#fff;
   border:1px solid var(--line);border-radius:12px;padding:8px;
   box-shadow:0 14px 36px rgba(20,24,40,.18)}
-#vKPI .wsel-p button{display:block;width:100%;text-align:left;background:none;border:0;
-  font-family:inherit;font-size:30px;color:var(--ink);padding:10px 16px;
-  border-radius:9px;cursor:pointer;white-space:nowrap}
+#vKPI .wsel-p button{display:flex;align-items:center;width:100%;text-align:left;
+  background:none;border:0;font-family:inherit;font-size:30px;color:var(--ink);
+  padding:10px 14px;border-radius:9px;cursor:pointer;white-space:nowrap;gap:4px}
 #vKPI .wsel-p button:hover{background:#EDF3F3}
-#vKPI .wsel-p button.on{background:var(--teal);color:#fff;font-weight:bold}
+#vKPI .wsel-p button.on{background:#EAF2F1;color:var(--ink);font-weight:bold}
+#vKPI .wsel-p button .cnt{margin-left:auto;font-size:26px;color:var(--mute);font-weight:normal;
+  font-variant-numeric:tabular-nums}
+#vKPI .wsel-p button.on .cnt{color:var(--teal)}
+#vKPI .wsel-p .ck{display:inline-flex;align-items:center;justify-content:center;
+  width:26px;height:26px;margin-right:12px;flex:0 0 auto;
+  border:2px solid var(--line);border-radius:6px;background:#fff;
+  font-style:normal;font-size:19px;line-height:1;color:var(--teal);font-weight:bold}
+#vKPI .wsel-p .ck.on{border-color:var(--teal)}
+#vKPI .wsel-h{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:6px 14px 10px;font-size:24px;color:var(--mute);
+  border-bottom:1px solid var(--line);margin-bottom:6px}
+#vKPI .wsel-h button{display:inline;width:auto;padding:4px 10px;font-size:25px;
+  color:var(--teal);font-weight:bold}
+#vKPI .wsel-f{padding:10px 14px 4px;font-size:23px;color:var(--mute);
+  border-top:1px solid var(--line);margin-top:6px}
 #vKPI .wsel-p::-webkit-scrollbar{width:12px}
 #vKPI .wsel-p::-webkit-scrollbar-thumb{background:#C6CCD6;border-radius:6px;border:3px solid #fff}
 #vKPI #kWBtn[data-on="1"]{background:var(--teal);color:#fff;border-color:var(--teal);font-weight:bold}
@@ -580,7 +595,6 @@ body.present #vKPI .tscroll{max-height:none}
     <div class="wsel">
       <button class="btn ghost" id="kWBtn" aria-haspopup="listbox" aria-expanded="false">All</button>
       <div class="wsel-p" id="kWPop" role="listbox" hidden></div>
-      <select id="kW" autocomplete="off" hidden><option value="">All</option></select>
     </div></div>
   <div class="kf"><label>DAY</label>
     <div class="kcal">
@@ -1538,7 +1552,7 @@ function secDiff(){
     if(!r.date)return false;
     if(fYear()&&r.date.slice(0,4)!==fYear())return false;
     if(DAYSEL)return r.date===DAYSEL;
-    if(fWeek()&&r.week!==fWeek())return false;
+    if(!weekOK(r.week))return false;
     if(fMonth()&&midx(r.date)!==MONTH_ORDER.indexOf(fMonth()))return false;
     return true;
   });
@@ -1695,7 +1709,7 @@ function secDock(){
   if(!DOCK)return `<div class="empty2">${STATIC_ERR.dock?'อ่านชีตไม่ได้ — '+STATIC_ERR.dock:'กำลังโหลดข้อมูล…'}</div>`;
 
   /* ตัวกรอง WEEK ใช้ร่วมกับหน้าอื่น · ชีตนี้ไม่มีวันที่รายแถวจึงกรองได้แค่ระดับสัปดาห์ */
-  const rows=(DOCK_ROWS||[]).filter(r=>!fWeek()||r.week===fWeek());
+  const rows=(DOCK_ROWS||[]).filter(r=>weekOK(r.week));
   if(!rows.length)return '<div class="empty2">ไม่มีข้อมูล Dock to Stock ในสัปดาห์ที่เลือก</div>';
 
   const n=rows.length;
@@ -1732,7 +1746,7 @@ function secDock(){
    +ringHTML(allP,90,
       `<span>ON-TIME ${esc(vName)}</span>`
      +`<span>เป้าหมาย ไม่ผ่านเกณฑ์ <b>&lt; 10%</b> · ตอนนี้ <b>${pct1(100-allP)}</b></span>`
-     +`<span style="opacity:.8">${fmt(n)} รายการ · ${wk.length} สัปดาห์${fWeek()?` · Week ${fWeek()}`:''}</span>`)
+     +`<span style="opacity:.8">${fmt(n)} รายการ · ${wk.length} สัปดาห์${fWeekLabel()?` · ${fWeekLabel()}`:''}</span>`)
    +`<div class="sgrid">${card('รับเข้าตรงเวลา',pct1(inP),inP>=90?'teal':'rose')}
       ${card('จัดเก็บตรงเวลา',pct1(stP),stP>=90?'teal':'rose')}
       ${card('ระยะเวลาเฉลี่ย (วัน)',avg==null?'—':avg.toFixed(1),'amber')}
@@ -2901,7 +2915,7 @@ function secReturn(){
   const stOpts=[...new Set(d.list.map(r=>r.st).filter(Boolean))].sort();
   const stSel=String(sf('ret_s','')).split('|').filter(Boolean);
   let list=d.list;
-  if(fWeek())list=list.filter(r=>String(parseInt(r.w)||'')===fWeek());
+  if(WKSEL.length)list=list.filter(r=>weekOK(r.w));
   if(stSel.length)list=list.filter(r=>stSel.includes(r.st));
 
   /* ชิปสถานะแสดงตามปกติทุกหัวข้อ
@@ -3184,7 +3198,7 @@ el('detail').addEventListener('click',async e=>{
     render(); return;
   }
   if(k==='__w'){                       /* ชิปสัปดาห์ในหน้า Return — กดซ้ำเพื่อยกเลิก */
-    el('kW').value=(fWeek()===v?'':v);
+    WKSEL=WKSEL.includes(v)?WKSEL.filter(x=>x!==v):[...WKSEL,v];
     DAYSEL=''; calYM=null; fillFilters(); render(); return;
   }
   SUBF[k]=v;
@@ -3253,7 +3267,7 @@ function render(){
   const bits=[];
   if(fYear())bits.push(fYear());
   if(fMonth())bits.push(MONTH_EN[MONTH_ORDER.indexOf(fMonth())]);
-  if(fWeek())bits.push('Week '+fWeek());
+  if(fWeekLabel())bits.push(fWeekLabel());
   if(DAYSEL)bits.push(showD(DAYSEL));
   el('kChip').style.display=bits.length?'inline-block':'none';
   el('kChip').textContent=bits.join(' · ');
@@ -3273,7 +3287,7 @@ function render(){
     if(fYear()&&r.date.slice(0,4)!==fYear())return false;
     if(dayOverride!==undefined)return r.date===dayOverride;
     if(DAYSEL)return r.date===DAYSEL;
-    if(fWeek()&&r.week!==fWeek())return false;
+    if(!weekOK(r.week))return false;
     if(fMonth()&&monthIdxOf(r.date)!==MONTH_ORDER.indexOf(fMonth()))return false;
     return true;
   }
@@ -3304,7 +3318,7 @@ function render(){
 
   /* ไม่ได้กรอง → ใช้สัปดาห์ล่าสุดที่มีข้อมูลในชีต Dock to Stock */
   const dockWeeks=DOCK?Object.keys(DOCK).map(Number).filter(n=>n).sort((a,b)=>a-b):[];
-  const wkSel = fWeek()
+  const wkSel = (WKSEL.length===1?WKSEL[0]:'')
     || (DAYSEL ? String(isoWeek(DAYSEL))
        : (dockWeeks.length ? String(dockWeeks[dockWeeks.length-1]) : ''));
   const kNow=DOCK?DOCK[wkSel]:null, kPrev=DOCK?DOCK[String(+wkSel-1)]:null;
@@ -3388,13 +3402,21 @@ const MONTH_EN=['January','February','March','April','May','June',
 let DAYSEL='', calYM=null, CAL_DAYS=new Set();
 
 /* ตัวกรอง YEAR / MONTH / WEEK / DAY — ว่างทั้งหมด = ดูข้อมูลทั้งชุด */
-const fMonth=()=>el('kM').value, fWeek=()=>el('kW').value;
+const fMonth=()=>el('kM').value;
+/* ตัวกรอง WEEK เลือกได้หลายสัปดาห์ — เก็บเป็นอาเรย์ · ว่าง = แสดงทั้งหมด */
+let WKSEL=[];
+const weekOK=w=>{if(!WKSEL.length)return true;
+  const n=String(parseInt(w)||''); return n?WKSEL.includes(n):false;};
+/* ใช้ตอนต้องการค่าเดียว (ป้ายกำกับ / ชื่อไฟล์) — เลือกหลายอันจะคืนค่าว่าง */
+const fWeek=()=>WKSEL.length===1?WKSEL[0]:'';
+const fWeekLabel=()=>!WKSEL.length?''
+  :WKSEL.length===1?'Week '+WKSEL[0]:WKSEL.length+' สัปดาห์';
 const fYear=()=>{const e=el('kY');return e?e.value:'';};
 const yrOf=r=>String(r&&r.date||'').slice(0,4);
 function matchRow(r){
   if(fYear() && yrOf(r)!==fYear()) return false;
   if(DAYSEL) return r.date===DAYSEL;   /* แถวที่วันที่อ่านไม่ออกจะไม่เข้าเมื่อกรองรายวัน */
-  if(fWeek() && String(r.week)!==fWeek()) return false;
+  if(!weekOK(r.week)) return false;
   if(fMonth() && r.month!==fMonth()) return false;
   return true;
 }
@@ -3421,34 +3443,44 @@ function opts(sel,list,label,all){
   sel.disabled=!list.length;
 }
 /* ---------- ตัวเลือก WEEK แบบเลื่อนได้ ----------
-   <select id="kW"> ยังเป็นตัวเก็บค่าจริงเหมือนเดิม ปุ่มนี้แค่เปลี่ยนค่าให้แล้วยิง change
-   โค้ดส่วนอื่น (fWeek, Clear filters ฯลฯ) จึงไม่ต้องแก้เลย */
+   ค่าที่เลือกเก็บใน WKSEL (อาเรย์) · ว่าง = แสดงทั้งหมด */
 function openWeekPop(on){
   const p=el('kWPop'); if(!p)return;
   p.hidden=!on;
   el('kWBtn').setAttribute('aria-expanded',on?'true':'false');
   if(on){ const cur=p.querySelector('button.on'); if(cur)cur.scrollIntoView({block:'center'}); }
 }
+let WK_OPTS=[];       /* [[week, count], ...] ของสัปดาห์ที่มีข้อมูล */
 function buildWeekPop(){
-  const sel=el('kW'), pop=el('kWPop'), btn=el('kWBtn');
-  if(!sel||!pop||!btn)return;
-  pop.innerHTML=[...sel.options].map(o=>
-    `<button type="button" data-v="${o.value}" class="${o.value===sel.value?'on':''}">${o.textContent}</button>`
-  ).join('');
-  const cur=[...sel.options].find(o=>o.value===sel.value);
-  btn.textContent=cur?cur.textContent:'All';
-  btn.dataset.on=sel.value?'1':'0';
-  btn.disabled=sel.disabled;
+  const pop=el('kWPop'), btn=el('kWBtn');
+  if(!pop||!btn)return;
+  /* ติ๊กได้หลายค่า · ไม่เลือก = แสดงทั้งหมด */
+  pop.innerHTML=`<div class="wsel-h"><span>ติ๊กได้หลายค่า</span>
+      <span><button type="button" data-all="1">ทั้งหมด</button>
+      <button type="button" data-clear="1">ล้าง</button></span></div>`
+    +WK_OPTS.map(([w,n])=>{const on=WKSEL.includes(w);
+      return `<button type="button" data-v="${w}" class="${on?'on':''}">
+        <i class="ck${on?' on':''}">${on?'✓':''}</i>Week ${w}
+        <b class="cnt">${fmt(n)}</b></button>`;}).join('')
+    +`<div class="wsel-f">ไม่เลือก = แสดงทั้งหมด</div>`;
+  btn.textContent=!WKSEL.length?'All'
+    :WKSEL.length===1?('Week '+WKSEL[0]):(WKSEL.length+' สัปดาห์');
+  btn.dataset.on=WKSEL.length?'1':'0';
 }
 el('kWBtn').addEventListener('click',e=>{
   e.stopPropagation(); openWeekPop(el('kWPop').hidden);
 });
 el('kWPop').addEventListener('click',e=>{
   e.stopPropagation();
-  const b=e.target.closest('button[data-v]'); if(!b)return;
-  el('kW').value=b.dataset.v;
-  openWeekPop(false);
-  el('kW').dispatchEvent(new Event('change'));
+  if(e.target.closest('[data-all]')){ WKSEL=WK_OPTS.map(o=>o[0]); }
+  else if(e.target.closest('[data-clear]')){ WKSEL=[]; }
+  else{
+    const b=e.target.closest('button[data-v]'); if(!b)return;
+    const v=b.dataset.v;
+    WKSEL=WKSEL.includes(v)?WKSEL.filter(x=>x!==v):[...WKSEL,v];
+  }
+  DAYSEL=''; calYM=null;
+  buildWeekPop(); fillFilters(); render();     /* เปิดค้างไว้ให้ติ๊กต่อได้ */
 });
 document.addEventListener('click',()=>openWeekPop(false));
 document.addEventListener('keydown',e=>{if(e.key==='Escape')openWeekPop(false);});
@@ -3475,9 +3507,12 @@ function fillFilters(){
   const byM=byY.filter(r=>!fMonth()||r.month===fMonth());
   const weeks=[...new Set(byM.map(r=>String(r.week)).filter(w=>w&&w!=='undefined'))]
     .sort((a,b)=>a-b);
-  opts(el('kW'),weeks,v=>'Week '+v,'All');
+  const wkCnt={}; byM.forEach(r=>{const w=String(parseInt(r.week)||'');
+    if(w)wkCnt[w]=(wkCnt[w]||0)+1;});
+  WK_OPTS=weeks.map(w=>[String(parseInt(w)||w),wkCnt[String(parseInt(w)||w)]||0]);
+  WKSEL=WKSEL.filter(w=>WK_OPTS.some(o=>o[0]===w));   /* ตัดสัปดาห์ที่ไม่มีในชุดนี้ */
   buildWeekPop();
-  const byW=byM.filter(r=>!fWeek()||String(r.week)===fWeek());
+  const byW=byM.filter(r=>weekOK(r.week));
   CAL_DAYS=new Set(byW.map(r=>r.date).filter(Boolean));
   if(DAYSEL&&!CAL_DAYS.has(DAYSEL))DAYSEL='';
   drawCal();
@@ -3529,13 +3564,13 @@ el('kCalAll').addEventListener('click',()=>{DAYSEL='';openCal(false);fillFilters
 document.addEventListener('click',()=>openCal(false));
 document.addEventListener('keydown',e=>{if(e.key==='Escape')openCal(false);});
 
-['kY','kM','kW'].forEach(id=>el(id).addEventListener('change',()=>{
-  if(id==='kY'){el('kM').value='';el('kW').value='';}
-  if(id==='kM')el('kW').value='';
+['kY','kM'].forEach(id=>el(id).addEventListener('change',()=>{
+  if(id==='kY'){el('kM').value='';WKSEL=[];}
+  if(id==='kM')WKSEL=[];
   DAYSEL='';calYM=null;fillFilters();render();
 }));
 el('kClear').addEventListener('click',()=>{
-  el('kY').value='';el('kM').value='';el('kW').value='';DAYSEL='';calYM=null;fillFilters();render();
+  el('kY').value='';el('kM').value='';WKSEL=[];DAYSEL='';calYM=null;fillFilters();render();
 });
 
 async function boot(){
@@ -3572,7 +3607,7 @@ el('kSave').addEventListener('click',async()=>{
     const c=await html2canvas(el('kShot'),{scale:2,backgroundColor:'#FFFFFF',useCORS:true});
     const a=document.createElement('a');
     const tag=[fYear(), fMonth()&&MONTH_EN[MONTH_ORDER.indexOf(fMonth())],
-               fWeek()&&('W'+fWeek()), DAYSEL].filter(Boolean).join('-')||'all';
+               WKSEL.length&&('W'+WKSEL.join('_')), DAYSEL].filter(Boolean).join('-')||'all';
     a.download=`kpi-overview-${tag}.png`;
     a.href=c.toDataURL('image/png');a.click();
   }catch(e){alert('บันทึกรูปไม่สำเร็จ: '+e.message);}
