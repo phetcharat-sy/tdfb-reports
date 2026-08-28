@@ -545,6 +545,7 @@ body.present #vKPI .tscroll{max-height:none}
       <button data-view="kpi" data-sec="oos">KPI Out Of Stock</button>
       <button data-view="kpi" data-sec="diff">Stock Diff</button>
       <button data-view="kpi" data-sec="dock">Dock To Stock Time</button>
+      <button data-view="kpi" data-sec="pick">Picking</button>
       <button data-view="kpi" data-sec="repl">Replenishment</button>
       <button data-view="report" data-team="warehouse">รายงานประจำวัน</button>
 
@@ -820,7 +821,7 @@ function parseDMY(s){
 /* dashboard เดิมโหลดทั้งชีตด้วย /export?format=csv แล้วคำนวณในเบราว์เซอร์
    ทำแบบเดียวกันเป๊ะ จะได้ตัวเลขตรงกันทุกตัว ไม่ต้องพึ่งการกรองวันที่ฝั่ง Google */
 let RAW=[], COLS=null, NO_DATE=0, SEC='overview', REPL=null, REPL_ERR='';
-const SHEET_STATE={otp:'รอโหลด',diff:'รอโหลด',dock:'รอโหลด',repl:'ยังไม่เปิด',ret:'ยังไม่เปิด'};
+const SHEET_STATE={otp:'รอโหลด',diff:'รอโหลด',dock:'รอโหลด',repl:'ยังไม่เปิด',ret:'ยังไม่เปิด',pick:'ยังไม่เปิด'};
 
 /* ดาวน์โหลดตรงๆ ด้วย r.text() — วิธีเดียวกับ dashboard เดิมที่ใช้งานได้จริง
    (เคยลองอ่านทีละก้อนเพื่อโชว์ MB แล้วทำให้ช้าจนเหมือนค้าง จึงถอยกลับมา) */
@@ -1548,7 +1549,17 @@ function secDiff(){
     const A=byW[a],B=byW[b];
     return A.y===B.y ? (parseInt(A.w)||0)-(parseInt(B.w)||0) : A.y.localeCompare(B.y);});
   const multiYear=new Set(wk.map(k=>byW[k].y)).size>1;
-  DIFF_CTX={bad,byW,wk,wpct,multiYear};
+  /* สรุปรายเดือน — ใช้ตรรกะเดียวกับรายสัปดาห์ */
+  const byM={};
+  rows.forEach(r=>{
+    const k=(r.date||'').slice(0,7); if(!k)return;
+    const o=byM[k]=byM[k]||{k,n:0,bad:0,gap:0,cTot:0,cBad:0,d0:'',d1:''};
+    o.n++; o.cTot+=r.crit;
+    if(r.diff){o.bad++;o.cBad+=r.crit;o.gap+=Math.abs(r.gap);}
+    if(!o.d0||r.date<o.d0)o.d0=r.date; if(!o.d1||r.date>o.d1)o.d1=r.date;});
+  const mk=Object.keys(byM).sort();
+  const monLbl=k=>{const[y,m]=k.split('-');return MON_S[+m-1]+' '+String(+y).slice(2);};
+  DIFF_CTX={bad,byW,wk,wpct,multiYear,byM,mk,monLbl};
 
   const allD=rows.map(r=>r.date).filter(Boolean).sort();
   const span=allD.length?`${showD(allD[0])} – ${showD(allD[allD.length-1])}`:'—';
@@ -1563,21 +1574,30 @@ function secDiff(){
       ${card('ไม่ตรง',bad.length,'rose')}${card('ตรง',rows.length-bad.length,'teal')}
       ${card('ผลต่างรวม (ชิ้น)',gapSum,'amber')}</div>
 
-     <h2 class="sec">สรุปรายสัปดาห์<span></span></h2>
+     <h2 class="sec">ความแม่นยำรายเดือน <em>% ที่นับตรงกับระบบ</em><span></span></h2>
      <div class="cpanel">
-       <div class="chint">เป้าหมาย &lt; 2% · แท่งเขียว = ผ่าน · แท่งแดง = เกินเกณฑ์${DIFF_HAS_CRIT?' · คิด % แบบถ่วงน้ำหนักด้วยเกณฑ์ เหมือนหน้า KPI ทุกแผนก':''}${wk.length>14?' · เลื่อนซ้าย-ขวาเพื่อดูทุกสัปดาห์':''}${multiYear?'<br><b style="color:var(--bad)">กำลังรวมข้อมูลมากกว่า 1 ปี</b> — เลือกตัวกรอง YEAR เพื่อให้ตัวเลขตรงกับ Pivot ในชีต':''}</div>
+       <div class="chint">เป้าหมาย ≥ 98% (Stock Diff &lt; 2%) · แท่งเขียว = ผ่าน · แท่งแดง = ต่ำกว่าเป้า</div>
+       <div class="cscroll"><div class="cbox" style="height:520px;min-width:${Math.max(900,mk.length*140)}px">
+         <canvas id="c_diffmo"></canvas></div></div>
+     </div>
+
+     <h2 class="sec">ความแม่นยำรายสัปดาห์ <em>% ที่นับตรงกับระบบ</em><span></span></h2>
+     <div class="cpanel">
+       <div class="chint">เป้าหมาย ≥ 98%${DIFF_HAS_CRIT?' · คิด % แบบถ่วงน้ำหนักด้วยเกณฑ์ เหมือนหน้า KPI ทุกแผนก':''}${wk.length>14?' · เลื่อนซ้าย-ขวาเพื่อดูทุกสัปดาห์':''}${multiYear?'<br><b style="color:var(--bad)">กำลังรวมข้อมูลมากกว่า 1 ปี</b> — เลือกตัวกรอง YEAR เพื่อให้ตัวเลขตรงกับ Pivot ในชีต':''}</div>
        <div class="cscroll"><div class="cbox" style="height:600px;min-width:${Math.max(900,wk.length*122)}px">
          <canvas id="c_diffwk"></canvas></div></div>
      </div>
      <div class="tscroll" style="max-height:480px"><table class="dt"><thead><tr>
        <th class="c-week">สัปดาห์</th><th style="width:250px">ช่วงวันที่</th>
        <th class="num">นับทั้งหมด</th><th class="num">ไม่ตรง</th>
-       <th class="num">ผลต่าง (ชิ้น)</th><th class="num">Stock Diff</th></tr></thead><tbody>`
+       <th class="num">ผลต่าง (ชิ้น)</th><th class="num">% ตรง</th>
+       <th class="num">Stock Diff</th></tr></thead><tbody>`
    +wk.map(k=>{const o=byW[k],v=wpct(o);
       return `<tr><td class="c-week"><b>Week ${o.w}</b>${multiYear?` <span style="color:var(--mute);font-weight:normal">${o.y}</span>`:''}</td>
         <td style="white-space:nowrap;color:var(--mute)">${weekRange(o.d0,o.d1)||'—'}</td>
         <td class="num">${fmt(o.n)}</td>
         <td class="num">${fmt(o.bad)}</td><td class="num">${fmt(o.gap)}</td>
+        <td class="num ${v<2?'good':'bad'}">${pct(100-v)}</td>
         <td class="num ${v<2?'good':'bad'}">${pct(v)}</td></tr>`;}).join('')
    +`</tbody></table></div>
 
@@ -1605,32 +1625,44 @@ function secDiff(){
 
 function drawDiff(){
   if(!DIFF_CTX)return;
-  const el2=document.getElementById('c_diffwk'); if(!el2)return;
-  const byW=DIFF_CTX.byW||{}, wk=DIFF_CTX.wk||[], wpct=DIFF_CTX.wpct,
-        multiYear=DIFF_CTX.multiYear;
-  if(!wk.length)return;
-  /* ใช้ % ชุดเดียวกับตารางด้านล่างและหน้า KPI (ถ่วงน้ำหนักด้วยเกณฑ์) */
-  const vals=wk.map(k=>wpct(byW[k]));
+  const {byW,wk,wpct,multiYear,byM,mk,monLbl}=DIFF_CTX;
+
+  /* กราฟทั้งสองแสดง "% ที่นับตรง" = 100 − Stock Diff · เป้าหมาย ≥ 98% */
+  const mkChart=(id,key,labels,vals,meta,minW)=>{
+    const el2=document.getElementById(id); if(!el2||!labels.length)return;
+    destroy(key);
+    const o=baseOpts(false); o.layout={padding:{top:34}};
+    o.scales.y.ticks.callback=v=>v+'%';
+    o.scales.y.max=100;
+    o.scales.y.suggestedMin=Math.max(0,Math.floor(Math.min(...vals)/5)*5-2);
+    o.plugins.barPct={display:true,digits:2,target:98};
+    o.scales.x.ticks.font={size:cf(26)};
+    o.scales.y.ticks.font={size:cf(26)};
+    o.plugins.tooltip.callbacks={
+      title:c=>meta[c[0].dataIndex].title,
+      label:c=>[`นับตรง ${(+c.raw).toFixed(2)}%  (Stock Diff ${(100-c.raw).toFixed(2)}%)`,
+                `นับทั้งหมด ${fmt(meta[c.dataIndex].n)} · ไม่ตรง ${fmt(meta[c.dataIndex].bad)} รายการ`]};
+    CH[key]=new Chart(el2,{type:'bar',
+      data:{labels,datasets:[{data:vals,
+        backgroundColor:vals.map(v=>v>=98?C.teal:C.rose),borderRadius:6,
+        maxBarThickness:70,minBarLength:2}]},options:o});
+  };
+
+  /* รายเดือน */
+  if(mk&&mk.length){
+    const vals=mk.map(k=>100-wpct(byM[k]));
+    const meta=mk.map(k=>{const o=byM[k];
+      return {title:monLbl(k)+'  ·  '+weekRange(o.d0,o.d1),n:o.n,bad:o.bad};});
+    mkChart('c_diffmo','diffmo',mk.map(monLbl),vals,meta);
+  }
+
+  /* รายสัปดาห์ */
+  const vals=wk.map(k=>100-wpct(byW[k]));
   const labels=wk.map(k=>{const o=byW[k];
     return multiYear?['W'+o.w,"'"+o.y.slice(2)]:'W'+o.w;});
-  destroy('diffwk');
-  const o=baseOpts(false); o.layout={padding:{top:30}};
-  o.scales.y.ticks.callback=v=>v+'%';
-  o.scales.y.suggestedMax=Math.max(4,Math.ceil(Math.max(...vals)*1.15));
-  o.plugins.tooltip.callbacks={
-    title:c=>{const d=byW[wk[c[0].dataIndex]]||{};
-      const rg=weekRange(d.d0,d.d1);
-      return 'Week '+d.w+(rg?'  ·  '+rg:'');},
-    label:c=>{
-      const d=byW[wk[c.dataIndex]]||{n:0,bad:0};
-      return `Stock Diff ${(+c.raw).toFixed(2)}%  (ไม่ตรง ${fmt(d.bad)} / นับ ${fmt(d.n)} รายการ)`;}};
-  o.plugins.barPct={display:true,digits:2,target:2};
-  o.scales.x.ticks.font={size:cf(26)};
-  o.scales.y.ticks.font={size:cf(26)};
-  CH.diffwk=new Chart(el2,{type:'bar',
-    data:{labels,datasets:[{data:vals,
-      backgroundColor:vals.map(v=>v<2?C.teal:C.rose),borderRadius:6,
-      maxBarThickness:70,minBarLength:2}]},options:o});
+  const meta=wk.map(k=>{const o=byW[k];const rg=weekRange(o.d0,o.d1);
+    return {title:'Week '+o.w+(rg?'  ·  '+rg:''),n:o.n,bad:o.bad};});
+  mkChart('c_diffwk','diffwk',labels,vals,meta);
 }
 
 /* ================= Dock to Stock Time (GR → Putaway) ================= */
@@ -2338,6 +2370,210 @@ function drawForecast(){
   recalcStaff();
 }
 
+/* ================= Picking (ภาพรวมการหยิบสินค้า) =================
+   ชีต: S_PICK · หนึ่งแถว = หนึ่ง batch ที่พนักงานหยิบ
+   ชื่อคอลัมน์ในชีตอาจต่างกันเล็กน้อย จึงค้นแบบไม่สนตัวพิมพ์และลองหลายคำ */
+const S_PICK='1FsH-qtremQYCUKksPjAakLOu-SmxEquumTgUHZ19VbA';
+const G_PICK='0';
+let PICK=null, PICK_ERR='', PICK_LOADING=false;
+
+async function loadPick(){
+  if(PICK||PICK_LOADING)return PICK;
+  PICK_LOADING=true;
+  try{
+    const rows=await smallSheet(S_PICK,G_PICK,s=>SHEET_STATE.pick=s);
+    const t=table(rows,/batch|พนักงาน|ผู้หยิบ|ชื่อ|วันที่|จำนวน/i);
+    if(!t)throw new Error('หาหัวตารางไม่เจอ');
+    const HL=t.H.map(v=>String(v).toLowerCase());
+    const col=(...p)=>{for(const x of p){const q=String(x).toLowerCase();
+      const i=HL.findIndex(v=>v.includes(q)); if(i>=0)return i;} return -1;};
+    const c={
+      who: col('พนักงาน','ผู้หยิบ','ผู้ปฏิบัติงาน','ชื่อ','Picker','User','ผู้ใช้'),
+      qty: col('จำนวนชิ้น','จำนวนสินค้า','ชิ้น','จำนวน','Qty','Quantity','Pieces'),
+      bat: col('Batch','แบทช์','เลขที่แบตช์','เลขที่แบทช์'),
+      dt:  col('วันที่','Date'),
+      st:  col('เวลาเริ่ม','เริ่ม','Start','เวลาที่เริ่ม'),
+      en:  col('เวลาเสร็จ','เสร็จ','สิ้นสุด','End','เวลาที่เสร็จ'),
+      min: col('นาที','ระยะเวลา','Duration','ใช้เวลา'),
+      rate:col('ชิ้น/ชม','ชิ้นต่อชั่วโมง','อัตรา','Rate','ความเร็ว')
+    };
+    const g=(r,i)=>i>=0?String(r[i]||'').trim():'';
+    const list=t.rows.map(r=>{
+      const o={who:g(r,c.who)||'ไม่ระบุ', qty:c.qty>=0?parseQty(r[c.qty]):0,
+               bat:g(r,c.bat), dRaw:g(r,c.dt), st:g(r,c.st), en:g(r,c.en), raw:r};
+      /* วันที่: รับได้ทั้งช่องวันที่ล้วน และช่องที่มีเวลาต่อท้าย */
+      const dm=dtparse(o.dRaw)||dtparse(o.st);
+      o.date=dm!=null?dkey(new Date(dm)):'';
+      o.hour=tod(o.st)!=null?Math.floor(tod(o.st)/60)
+            :(dm!=null?new Date(dm).getHours():null);
+      /* นาทีที่ใช้: จากคอลัมน์โดยตรง ไม่มีก็คำนวณจากเวลาเริ่ม-เสร็จ */
+      let mn=c.min>=0?dnum(r[c.min]):NaN;
+      if(isNaN(mn)){const a=tod(o.st),b=tod(o.en);
+        if(a!=null&&b!=null&&b>=a)mn=b-a;}
+      o.min=isNaN(mn)?null:mn;
+      o.rate=c.rate>=0?(isNaN(dnum(r[c.rate]))?null:dnum(r[c.rate]))
+            :(o.min?o.qty/(o.min/60):null);
+      return o;
+    }).filter(x=>x.qty>0||x.bat);
+    if(!list.length)throw new Error('ไม่พบแถวข้อมูล');
+    PICK={list,H:t.H,c};
+    SHEET_STATE.pick=fmt(list.length)+' batch';
+  }catch(e){ PICK=null; PICK_ERR=e.message; SHEET_STATE.pick='ผิดพลาด — '+e.message; }
+  PICK_LOADING=false;
+  return PICK;
+}
+
+let PICK_CTX=null;
+const PICK_PAL=[ '#4A7DE0','#3FA46A','#E0A33C','#D45B4A','#7B62C9','#3E8E8C','#8A5A2E','#5F6675'];
+
+function secPick(){
+  if(!PICK)return `<div class="empty2">${PICK_ERR?'อ่านชีตไม่ได้ — '+esc(PICK_ERR):'กำลังโหลดข้อมูล…'}</div>`;
+
+  const all0=PICK.list.filter(r=>!fYear()||(r.date||'').slice(0,4)===fYear());
+  const people=[...new Set(all0.map(r=>r.who))].sort();
+  const fWho=sf('pk_who','');
+  const bar=people.length>1?chipBar('pk_who','พนักงาน',
+    [['','ทั้งหมด'],...people.map(p=>[p,p])],fWho):'';
+  const list=fWho?all0.filter(r=>r.who===fWho):all0;
+  if(!list.length)return bar+'<div class="empty2">ไม่มีข้อมูลตามตัวกรองนี้</div>';
+
+  const totQty=list.reduce((s,r)=>s+r.qty,0);
+  const batches=new Set(list.map(r=>r.bat).filter(Boolean)).size||list.length;
+  const mins=list.reduce((s,r)=>s+(r.min||0),0);
+  const avgRate=mins>0?totQty/(mins/60):null;
+
+  /* รายคน */
+  const by={};
+  list.forEach(r=>{const o=by[r.who]=by[r.who]||{who:r.who,qty:0,min:0,bat:new Set()};
+    o.qty+=r.qty; o.min+=r.min||0; if(r.bat)o.bat.add(r.bat);});
+  const per=Object.values(by).map(o=>({...o,batches:o.bat.size,
+    rate:o.min>0?o.qty/(o.min/60):null})).sort((a,b)=>b.qty-a.qty);
+  const top=per[0];
+
+  /* รายวัน · รายชั่วโมง */
+  const days=[...new Set(list.map(r=>r.date).filter(Boolean))].sort();
+  const dayBy={}; per.forEach(p=>dayBy[p.who]=days.map(()=>0));
+  list.forEach(r=>{const i=days.indexOf(r.date); if(i>=0&&dayBy[r.who])dayBy[r.who][i]+=r.qty;});
+  const hrs=[...new Set(list.map(r=>r.hour).filter(v=>v!=null))].sort((a,b)=>a-b);
+  const hrBy={}; per.forEach(p=>hrBy[p.who]=hrs.map(()=>0));
+  list.forEach(r=>{const i=hrs.indexOf(r.hour); if(i>=0&&hrBy[r.who])hrBy[r.who][i]+=r.qty;});
+
+  PICK_CTX={per,days,dayBy,hrs,hrBy};
+
+  return bar
+   +`<div class="sgrid">
+      ${card('รวมสินค้าที่หยิบ (ชิ้น)',fmt(totQty))}
+      ${card('จำนวน Batch',fmt(batches),'plum')}
+      ${card('ความเร็วเฉลี่ย (ชิ้น/ชม.)',avgRate==null?'—':fmt(Math.round(avgRate)),'teal')}
+      ${card('ผลงานยอดเยี่ยม',top?esc(top.who):'—','amber')}</div>
+
+     <div class="cgrid2">
+       <div class="cpanel"><div class="chname2">อัตราการหยิบรายคน (ชิ้น / ชั่วโมง)</div>
+         <div class="cbox" style="height:460px"><canvas id="c_pkrate"></canvas></div></div>
+       <div class="cpanel"><div class="chname2">สัดส่วนแบทช์รายคน</div>
+         <div class="cbox" style="height:460px"><canvas id="c_pkbat"></canvas></div></div>
+     </div>
+
+     <h2 class="sec">แนวโน้มการหยิบในแต่ละวัน <em>จำนวนชิ้นต่อวัน แยกตามคน</em><span></span></h2>
+     <div class="cpanel"><div class="cscroll">
+       <div class="cbox" style="height:480px;min-width:${Math.max(900,days.length*120)}px">
+         <canvas id="c_pkday"></canvas></div></div></div>
+
+     <h2 class="sec">ช่วงเวลาที่หยิบหนาแน่น <em>จำนวนชิ้นตามชั่วโมง</em><span></span></h2>
+     <div class="cpanel"><div class="cscroll">
+       <div class="cbox" style="height:460px;min-width:${Math.max(900,hrs.length*130)}px">
+         <canvas id="c_pkhr"></canvas></div></div></div>
+
+     <h2 class="sec">สรุปรายคน <em>${fmt(per.length)} คน</em><span></span></h2>
+     <div class="tscroll"><table class="dt"><thead><tr>
+       <th>พนักงาน</th><th class="num">ชิ้นที่หยิบ</th><th class="num">Batch</th>
+       <th class="num">เวลารวม (ชม.)</th><th class="num">ชิ้น/ชม.</th>
+       <th class="num">สัดส่วนชิ้น</th></tr></thead><tbody>`
+   +per.map((p,i)=>`<tr>
+       <td><span class="brkdot" style="background:${PICK_PAL[i%PICK_PAL.length]}"></span><b>${esc(p.who)}</b></td>
+       <td class="num">${fmt(p.qty)}</td>
+       <td class="num">${fmt(p.batches)}</td>
+       <td class="num">${p.min?(p.min/60).toFixed(1):'—'}</td>
+       <td class="num"><b>${p.rate==null?'—':fmt(Math.round(p.rate))}</b></td>
+       <td class="num">${totQty?(p.qty/totQty*100).toFixed(1)+'%':'—'}</td></tr>`).join('')
+   +`</tbody><tfoot><tr><td><b>รวม</b></td><td class="num"><b>${fmt(totQty)}</b></td>
+       <td class="num"><b>${fmt(batches)}</b></td>
+       <td class="num"><b>${mins?(mins/60).toFixed(1):'—'}</b></td>
+       <td class="num"><b>${avgRate==null?'—':fmt(Math.round(avgRate))}</b></td>
+       <td class="num"><b>100%</b></td></tr></tfoot></table></div>`;
+}
+
+function drawPick(){
+  if(!PICK_CTX)return;
+  const {per,days,dayBy,hrs,hrBy}=PICK_CTX;
+  const cols=per.map((_,i)=>PICK_PAL[i%PICK_PAL.length]);
+
+  /* อัตราการหยิบรายคน */
+  const el1=document.getElementById('c_pkrate');
+  if(el1){
+    destroy('pkrate');
+    const o=baseOpts(false); o.layout={padding:{top:34}};
+    o.plugins.barPct={display:true,raw:true};
+    o.scales.x.ticks.font={size:cf(24)};
+    o.scales.y.ticks.font={size:cf(24)};
+    o.scales.y.ticks.callback=v=>fmt(v);
+    o.plugins.tooltip.callbacks={label:c=>fmt(c.raw)+' ชิ้น/ชม.'};
+    CH.pkrate=new Chart(el1,{type:'bar',
+      data:{labels:per.map(p=>p.who),
+        datasets:[{data:per.map(p=>p.rate==null?0:Math.round(p.rate)),
+          backgroundColor:cols,borderRadius:8,maxBarThickness:96}]},options:o});
+  }
+
+  /* สัดส่วนแบทช์รายคน */
+  const el2=document.getElementById('c_pkbat');
+  if(el2){
+    destroy('pkbat');
+    const tb=per.reduce((s,p)=>s+p.batches,0)||1;
+    CH.pkbat=new Chart(el2,{type:'doughnut',
+      data:{labels:per.map(p=>p.who),
+        datasets:[{data:per.map(p=>Math.round(p.batches/tb*1000)/10),
+          backgroundColor:cols,borderColor:'#fff',borderWidth:4,hoverOffset:12}]},
+      options:{responsive:true,maintainAspectRatio:false,cutout:'55%',layout:{padding:8},
+        plugins:{legend:{position:'right',labels:{font:{size:cf(24)},boxWidth:24,padding:16}},
+          pieLbl:{display:true,minPercent:4,size:30},
+          tooltip:{titleFont:{size:cf(23)},bodyFont:{size:cf(22)},padding:12,
+            callbacks:{label:x=>x.formattedValue+'% ('+fmt(per[x.dataIndex].batches)+' batch)'}}}}});
+  }
+
+  /* แนวโน้มรายวัน */
+  const el3=document.getElementById('c_pkday');
+  if(el3&&days.length){
+    destroy('pkday');
+    const o=baseOpts(true);
+    o.interaction={mode:'index',intersect:false};
+    o.scales.x.ticks.font={size:cf(23)};
+    o.scales.y.ticks.font={size:cf(23)};
+    o.scales.y.ticks.callback=v=>fmt(v);
+    o.plugins.tooltip.callbacks={label:c=>`${c.dataset.label}: ${fmt(c.raw)} ชิ้น`};
+    CH.pkday=new Chart(el3,{type:'line',
+      data:{labels:days.map(d=>shortD(d)),
+        datasets:per.map((p,i)=>({label:p.who,data:dayBy[p.who],
+          borderColor:cols[i],backgroundColor:cols[i],borderWidth:3,
+          tension:.3,pointRadius:4,fill:false}))},options:o});
+  }
+
+  /* ช่วงเวลาหนาแน่น */
+  const el4=document.getElementById('c_pkhr');
+  if(el4&&hrs.length){
+    destroy('pkhr');
+    const o=baseOpts(true);
+    o.scales.x.stacked=true; o.scales.y.stacked=true;
+    o.scales.x.ticks.font={size:cf(23)};
+    o.scales.y.ticks.font={size:cf(23)};
+    o.scales.y.ticks.callback=v=>fmt(v);
+    o.plugins.tooltip.callbacks={label:c=>`${c.dataset.label}: ${fmt(c.raw)} ชิ้น`};
+    CH.pkhr=new Chart(el4,{type:'bar',
+      data:{labels:hrs.map(h=>String(h).padStart(2,'0')+':00'),
+        datasets:per.map((p,i)=>({label:p.who,data:hrBy[p.who],
+          backgroundColor:cols[i],borderRadius:4,maxBarThickness:70}))},options:o});
+  }
+}
+
 /* ================= Return (Admin) =================
    ชีตต้นทาง: Case Admin (S_RET) · แต่ละหัวข้อเป็นแท็บของตัวเอง (gid แยกกัน)
    skip = คอลัมน์ที่ไม่ต้องเอามาทำสัดส่วน (ระบุเป็นชื่อคอลัมน์ หรือตัวอักษรคอลัมน์ชีต) */
@@ -2894,6 +3130,7 @@ function render(){
                dock:['Dock To Stock Time','Warehouse · GR → Putaway · รับเข้าและจัดเก็บตามเกณฑ์'],
                repl:['Replenishment','Warehouse · รายการที่ต้องเติมสต็อก'],
                fc:['Forecast','Warehouse · พยากรณ์ยอดขาย สต็อก และอัตรากำลังคน'],
+               pick:['Picking','Warehouse · ภาพรวมการหยิบสินค้ารายคน'],
                ret:['Return','Admin · งานตีคืน ยกเลิก และเคสค้าง']};
   const tt=TITLE[SEC]||TITLE.overview;
   el('kTitle').textContent=tt[0];
@@ -2902,6 +3139,7 @@ function render(){
     el('detail').innerHTML = SEC==='ontime'?secOnTime() : SEC==='oos'?secOOS()
                            : SEC==='diff'?secDiff() : SEC==='dock'?secDock()
                            : SEC==='fc'?secForecast()
+                           : SEC==='pick'?secPick()
                            : SEC==='ret'?secReturn() : secRepl();
     fitScrolls();
     /* กราฟต้องวาดหลัง canvas เข้า DOM แล้ว */
@@ -2909,6 +3147,7 @@ function render(){
       try{ if(SEC==='ontime')drawOnTime(); else if(SEC==='oos')drawOOS();
            else if(SEC==='diff')drawDiff(); else if(SEC==='dock')drawDock();
            else if(SEC==='fc')drawForecast();
+           else if(SEC==='pick')drawPick();
            else if(SEC==='ret')drawReturn(); else drawRepl(); }
       catch(e){ console.warn('chart',e); }
     });
@@ -3041,7 +3280,8 @@ function render(){
     +' · Stock Diff <b>'+SHEET_STATE.diff+'</b>'
     +' · Dock to Stock <b>'+SHEET_STATE.dock+'</b>'
     +' · Replenishment <b>'+SHEET_STATE.repl+'</b>'
-    +' · Return <b>'+SHEET_STATE.ret+'</b>';
+    +' · Return <b>'+SHEET_STATE.ret+'</b>'
+    +' · Picking <b>'+SHEET_STATE.pick+'</b>';
   const now=new Date();
   el('kTs').textContent=`ข้อมูล ณ ${now.getDate()} ${MONTHS[now.getMonth()]} ${now.getFullYear()} `
     +`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')} น.`;
@@ -3276,6 +3516,7 @@ window.KPI_SEC=async(sec)=>{
   SEC=sec||'overview';
   render();
   if((SEC==='repl'||SEC==='fc')&&!REPL){ await loadRepl(); render(); }
+  if(SEC==='pick'&&!PICK){ await loadPick(); render(); }
   if(SEC==='ret'){ const g=(RET_TABS.find(t=>t.k===sf('ret_t','cancel'))||RET_TABS[0]).gid;
     if(!RET[g]){ await loadRet(g); render(); } }
 };
@@ -3283,6 +3524,7 @@ window.KPI_SEC=async(sec)=>{
 /* ให้หน้า Replenishment เริ่มโหลดชีตของตัวเองทันที ไม่ต้องรอชีต On-Time ที่ใหญ่กว่ามาก */
 if(/^#kpi-(repl|fc)/.test(location.hash||'')) loadRepl().then(()=>{ if(SEC==='repl'||SEC==='fc')render(); });
 if(/^#kpi-ret/.test(location.hash||'')) loadRet(RET_TABS[0].gid).then(()=>{ if(SEC==='ret')render(); });
+if(/^#kpi-pick/.test(location.hash||'')) loadPick().then(()=>{ if(SEC==='pick')render(); });
 
 boot();
 
