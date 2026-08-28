@@ -246,6 +246,12 @@
 #vKPI .fbar button.on.rose{background:var(--bad);border-color:var(--bad)}
 #vKPI .fbar button.on.amber{background:#B98526;border-color:#B98526}
 #vKPI .fbar .cnt{opacity:.75;font-weight:normal}
+/* กล่องติ๊กในชิปแบบเลือกหลายอัน */
+#vKPI .fbar .ck{display:inline-flex;align-items:center;justify-content:center;
+  width:26px;height:26px;margin-right:12px;vertical-align:-4px;
+  border:2px solid var(--line);border-radius:6px;background:#fff;
+  font-style:normal;font-size:19px;line-height:1;color:var(--teal);font-weight:bold}
+#vKPI .fbar button.on .ck{background:#fff;border-color:#fff;color:var(--teal)}
 
 /* ---------- หน้า Forecast ---------- */
 #vKPI .cgrid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:6px}
@@ -1266,6 +1272,18 @@ function chipBar(key,label,items,cur){
         class="${v===cur?'on '+(cls||''):''}">${t}</button>`).join('')
     +`</div>`;
 }
+/* ชิปแบบเลือกได้หลายอัน — ค่าเก็บเป็นข้อความคั่นด้วย | ใน SUBF
+   items = [[value,label], ...] · sel = อาเรย์ของค่าที่เลือกอยู่ */
+function chipMulti(key,label,items,sel){
+  const on=new Set(sel||[]);
+  const box=c=>`<i class="ck${c?' on':''}">${c?'✓':''}</i>`;
+  return `<div class="fbar"><span class="fl">${label}</span>`
+    +`<button type="button" data-sf="${key}" data-multi="1" data-v=""
+        class="${on.size?'':'on'}">${box(!on.size)}ทั้งหมด</button>`
+    +items.map(([v,t])=>`<button type="button" data-sf="${key}" data-multi="1" data-v="${esc(v)}"
+        class="${on.has(v)?'on':''}">${box(on.has(v))}${esc(t)}</button>`).join('')
+    +`</div>`;
+}
 function detailTable(rows,mode){
   mode=mode||'ex';
   /* ex = เฉพาะที่ไม่ใช่ "ส่งในวัน" (ค่าเดิม) · all = ทุกแถว
@@ -1434,10 +1452,10 @@ function secOOS(){
   if(!all0.length)return '<div class="empty2">ไม่มีข้อมูลในช่วงที่เลือก</div>';
 
   /* ตัวกรองย่อย — มีผลทั้งหน้า เหมือนหน้า Dock To Stock Time */
-  const fSt=sf('oos_st','all');
-  const bars=chipBar('oos_st','สถานะการส่งของ',
-    [['all','ทั้งหมด'],['ontime','On time'],['early','Early','amber'],['late','Late','rose']],fSt);
-  const rows=fSt==='all'?all0:all0.filter(r=>classify(r.wh)===fSt);
+  const stSel=String(sf('oos_st','')).split('|').filter(Boolean);
+  const bars=chipMulti('oos_st','สถานะการส่งของ',
+    [['ontime','On time'],['early','Early'],['late','Late']],stSel);
+  const rows=stSel.length?all0.filter(r=>stSel.includes(classify(r.wh))):all0;
   if(!rows.length)return bars+'<div class="empty2">ไม่มีข้อมูลที่ตรงกับตัวกรองนี้</div>';
 
   let tq=0,on=0,ea=0,la=0;
@@ -1450,7 +1468,7 @@ function secOOS(){
 
   const totQ=all0.reduce((s,r)=>s+r.qty,0);
   return bars
-   +(fSt!=='all'?`<div class="chint">กำลังกรอง — แสดง ${fmt(tq)} ชิ้น จากทั้งหมด ${fmt(totQ)} ชิ้นในช่วงนี้</div>`:'')
+   +(stSel.length?`<div class="chint">กำลังกรอง — แสดง ${fmt(tq)} ชิ้น จากทั้งหมด ${fmt(totQ)} ชิ้นในช่วงนี้</div>`:'')
    +ringHTML(p,99,`<span>WH ส่งของให้ Packing ตามกำหนด</span><span>เป้าหมาย <b>≥ 99%</b></span>`)
    +`<div class="sgrid">${card('จำนวนสินค้า (ชิ้น)',tq)}${card('On-Time Dispatch',on,'teal')}
       ${card('จัดส่งก่อนกำหนด',ea,'amber')}${card('จัดส่งล่าช้า',la,'rose')}${card('Orders',ord)}</div>
@@ -1527,10 +1545,9 @@ function secDiff(){
   if(!all0.length)return '<div class="empty2">ไม่มีรายการนับสต็อกในช่วงที่เลือก</div>';
 
   /* ตัวกรองย่อย — มีผลทั้งหน้า เหมือนหน้า Dock To Stock Time */
-  const fDf=sf('df_st','all');
-  const bars=chipBar('df_st','ผลการนับ',
-    [['all','ทั้งหมด'],['ok','ตรง'],['bad','ไม่ตรง','rose']],fDf);
-  const rows=fDf==='all'?all0:fDf==='ok'?all0.filter(r=>!r.diff):all0.filter(r=>r.diff);
+  const dfSel=String(sf('df_st','')).split('|').filter(Boolean);
+  const bars=chipMulti('df_st','ผลการนับ',[['ok','ตรง'],['bad','ไม่ตรง']],dfSel);
+  const rows=!dfSel.length?all0:all0.filter(r=>dfSel.includes(r.diff?'bad':'ok'));
   if(!rows.length)return bars+'<div class="empty2">ไม่มีรายการที่ตรงกับตัวกรองนี้</div>';
 
   const bad=rows.filter(r=>r.diff);
@@ -1572,7 +1589,7 @@ function secDiff(){
   const span=allD.length?`${showD(allD[0])} – ${showD(allD[allD.length-1])}`:'—';
 
   return bars
-   +(fDf!=='all'?`<div class="chint">กำลังกรอง — แสดง ${fmt(rows.length)} รายการ จากทั้งหมด ${fmt(all0.length)} รายการที่นับในช่วงนี้</div>`:'')
+   +(dfSel.length?`<div class="chint">กำลังกรอง — แสดง ${fmt(rows.length)} รายการ จากทั้งหมด ${fmt(all0.length)} รายการที่นับในช่วงนี้</div>`:'')
    +ringHTML(100-p,98,
       `<span>ความแม่นยำสต็อก (นับแล้วตรงกับระบบ)</span>`
      +`<span>เป้าหมาย Stock Diff <b>&lt; 2%</b> · ตอนนี้ <b>${pct(p)}</b></span>`
@@ -2472,10 +2489,10 @@ function secPick(){
   const noName=v=>!v||/^[-–—]$/.test(v)||v==='ไม่ระบุ';
   const all0=PICK.list.filter(r=>!noName(r.who)&&(!fYear()||(r.date||'').slice(0,4)===fYear()));
   const people=[...new Set(all0.map(r=>r.who))].sort();
-  const fWho=sf('pk_who','');
-  const bar=people.length>1?chipBar('pk_who','พนักงาน',
-    [['','ทั้งหมด'],...people.map(p=>[p,p])],fWho):'';
-  const list=fWho?all0.filter(r=>r.who===fWho):all0;
+  /* เลือกได้หลายคนพร้อมกัน */
+  const who=String(sf('pk_who','')).split('|').filter(Boolean);
+  const bar=people.length>1?chipMulti('pk_who','พนักงาน',people.map(p=>[p,p]),who):'';
+  const list=who.length?all0.filter(r=>who.includes(r.who)):all0;
   if(!list.length)return bar+'<div class="empty2">ไม่มีข้อมูลตามตัวกรองนี้</div>';
 
   const totQty=list.reduce((s,r)=>s+r.qty,0);
@@ -2882,15 +2899,14 @@ function secReturn(){
 
   /* ตัวกรองสถานะ — ทำแบบเดียวกับ ตรง/ไม่ตรง ของหน้า Stock Diff */
   const stOpts=[...new Set(d.list.map(r=>r.st).filter(Boolean))].sort();
-  const fSt=sf('ret_s','');
+  const stSel=String(sf('ret_s','')).split('|').filter(Boolean);
   let list=d.list;
   if(fWeek())list=list.filter(r=>String(parseInt(r.w)||'')===fWeek());
-  if(fSt)list=list.filter(r=>r.st===fSt);
+  if(stSel.length)list=list.filter(r=>stSel.includes(r.st));
 
   /* ชิปสถานะแสดงตามปกติทุกหัวข้อ
      ยกเว้นหัวข้อ "สถานะไม่เคลื่อนไหว" ที่คอลัมน์นี้เก็บเลขออเดอร์ ชิปจะยาวเป็นพรืด */
-  const stBar=(stOpts.length&&!(cur==='idle'&&stOpts.length>12))?chipBar('ret_s','สถานะ',
-    [['','ทั้งหมด'],...stOpts.map(v=>[v,v])],fSt):'';
+  const stBar=(stOpts.length&&!(cur==='idle'&&stOpts.length>12))?chipMulti('ret_s','สถานะ',stOpts.map(v=>[v,v]),stSel):'';
 
   const tot=list.length;
   const skip=new Set(tab.skip);
@@ -3161,6 +3177,12 @@ el('detail').addEventListener('change',e=>{
 el('detail').addEventListener('click',async e=>{
   const b=e.target.closest('[data-sf]'); if(!b)return;
   const k=b.dataset.sf, v=b.dataset.v;
+  if(b.dataset.multi){              /* ชิปเลือกหลายอัน — กดสลับติ๊ก/ไม่ติ๊ก */
+    const cur=new Set(String(SUBF[k]||'').split('|').filter(Boolean));
+    if(v==='')cur.clear(); else cur.has(v)?cur.delete(v):cur.add(v);
+    SUBF[k]=[...cur].join('|');
+    render(); return;
+  }
   if(k==='__w'){                       /* ชิปสัปดาห์ในหน้า Return — กดซ้ำเพื่อยกเลิก */
     el('kW').value=(fWeek()===v?'':v);
     DAYSEL=''; calYM=null; fillFilters(); render(); return;
