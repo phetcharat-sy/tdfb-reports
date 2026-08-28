@@ -958,7 +958,14 @@ async function smallSheet(id,gid,onState){
   onState&&onState('กำลังโหลด (gviz)…');
   let rows;
   try{ rows=await gviz(id,gid,null,40000,true); }
-  catch(e){ throw new Error(`${e.message} · csv: ${err1}`); }
+  catch(e){
+    /* ทั้ง CSV และ gviz ล้มเหลวแบบ Failed to fetch = เบราว์เซอร์เข้าชีตไม่ได้เลย
+       เกือบทุกครั้งคือชีตยังไม่ได้แชร์เป็น "ทุกคนที่มีลิงก์ · ผู้อ่าน" */
+    const net=/Failed to fetch|NetworkError|Load failed/i;
+    if(net.test(e.message)&&net.test(err1))
+      throw new Error('เปิดชีตไม่ได้ — ตรวจว่าแชร์เป็น “ทุกคนที่มีลิงก์ (ผู้อ่าน)” แล้วหรือยัง');
+    throw new Error(`${e.message} · csv: ${err1}`);
+  }
   if(!rows||rows.length<2)throw new Error(`ชีตว่าง · csv: ${err1}`);
   return rows;
 }
@@ -2377,44 +2384,59 @@ const S_PICK='1FsH-qtremQYCUKksPjAakLOu-SmxEquumTgUHZ19VbA';
 const G_PICK='0';
 let PICK=null, PICK_ERR='', PICK_LOADING=false;
 
-async function loadPick(){
+async function loadPick(force){
+  if(force){ PICK=null; PICK_ERR=''; }
   if(PICK||PICK_LOADING)return PICK;
   PICK_LOADING=true;
   try{
     const rows=await smallSheet(S_PICK,G_PICK,s=>SHEET_STATE.pick=s);
-    const t=table(rows,/batch|พนักงาน|ผู้หยิบ|ชื่อ|วันที่|จำนวน/i);
+    const t=table(rows,/batch|ชื่อพนักงาน|pick date|จำนวน/i);
     if(!t)throw new Error('หาหัวตารางไม่เจอ');
     const HL=t.H.map(v=>String(v).toLowerCase());
     const col=(...p)=>{for(const x of p){const q=String(x).toLowerCase();
       const i=HL.findIndex(v=>v.includes(q)); if(i>=0)return i;} return -1;};
+    /* หัวคอลัมน์จริงในชีต 260610 Performance Picking:
+       B Batch Transfer · F เวลาหยิบเสร็จ · G เวลาเริ่มหยิบ · H เวลาที่ใช้ (H:MM:SS)
+       L Responsible · N State · Q จำนวน (ชิ้น) · R Pick Date · S ชั่วโมงที่ทำงาน · V ชื่อพนักงาน */
     const c={
-      who: col('พนักงาน','ผู้หยิบ','ผู้ปฏิบัติงาน','ชื่อ','Picker','User','ผู้ใช้'),
-      qty: col('จำนวนชิ้น','จำนวนสินค้า','ชิ้น','จำนวน','Qty','Quantity','Pieces'),
-      bat: col('Batch','แบทช์','เลขที่แบตช์','เลขที่แบทช์'),
-      dt:  col('วันที่','Date'),
-      st:  col('เวลาเริ่ม','เริ่ม','Start','เวลาที่เริ่ม'),
-      en:  col('เวลาเสร็จ','เสร็จ','สิ้นสุด','End','เวลาที่เสร็จ'),
-      min: col('นาที','ระยะเวลา','Duration','ใช้เวลา'),
-      rate:col('ชิ้น/ชม','ชิ้นต่อชั่วโมง','อัตรา','Rate','ความเร็ว')
+      who: col('ชื่อพนักงาน','Responsible','พนักงาน','ผู้หยิบ'),
+      qty: col('จำนวน'),                       /* คนละช่องกับ Stock move lines/Quantity */
+      bat: col('Batch Transfer','แปลงเลข Batch','Batch'),
+      dt:  col('Pick Date','วันที่'),
+      st:  col('เวลาเริ่มหยิบ','เวลาเริ่ม'),
+      en:  col('เวลาหยิบเสร็จ','เวลาเสร็จ'),
+      dur: col('เวลาที่ใช้','ระยะเวลา'),
+      slot:col('ชั่วโมงที่ทำงาน'),
+      state:col('State'),
+      prod:col('Stock move lines/Product')
     };
+    if(c.who<0||c.qty<0)throw new Error('หาคอลัมน์ ชื่อพนักงาน / จำนวน ไม่เจอ');
     const g=(r,i)=>i>=0?String(r[i]||'').trim():'';
+    /* "0:03:27" → นาที */
+    const durMin=v=>{const m=String(v||'').match(/^(\d+):(\d{2})(?::(\d{2}))?$/);
+      return m?(+m[1])*60+(+m[2])+(+(m[3]||0))/60:null;};
+    const seen=new Set();
     const list=t.rows.map(r=>{
-      const o={who:g(r,c.who)||'ไม่ระบุ', qty:c.qty>=0?parseQty(r[c.qty]):0,
-               bat:g(r,c.bat), dRaw:g(r,c.dt), st:g(r,c.st), en:g(r,c.en), raw:r};
-      /* วันที่: รับได้ทั้งช่องวันที่ล้วน และช่องที่มีเวลาต่อท้าย */
-      const dm=dtparse(o.dRaw)||dtparse(o.st);
+      const o={who:g(r,c.who)||'ไม่ระบุ', qty:parseQty(r[c.qty])||0,
+               bat:g(r,c.bat), st:g(r,c.st), en:g(r,c.en),
+               prod:g(r,c.prod), state:g(r,c.state), raw:r};
+      const dm=dtparse(g(r,c.dt))||dtparse(o.st)||dtparse(o.en);
       o.date=dm!=null?dkey(new Date(dm)):'';
-      o.hour=tod(o.st)!=null?Math.floor(tod(o.st)/60)
-            :(dm!=null?new Date(dm).getHours():null);
-      /* นาทีที่ใช้: จากคอลัมน์โดยตรง ไม่มีก็คำนวณจากเวลาเริ่ม-เสร็จ */
-      let mn=c.min>=0?dnum(r[c.min]):NaN;
-      if(isNaN(mn)){const a=tod(o.st),b=tod(o.en);
-        if(a!=null&&b!=null&&b>=a)mn=b-a;}
-      o.min=isNaN(mn)?null:mn;
-      o.rate=c.rate>=0?(isNaN(dnum(r[c.rate]))?null:dnum(r[c.rate]))
-            :(o.min?o.qty/(o.min/60):null);
+      /* ชั่วโมง: ใช้ช่อง "ชั่วโมงที่ทำงาน" (เช่น 11:00 - 12:00) ถ้าไม่มีค่อยดูเวลาเริ่ม */
+      const slot=g(r,c.slot).match(/^(\d{1,2}):/);
+      o.hour=slot?+slot[1]:(tod(o.st)!=null?Math.floor(tod(o.st)/60):null);
+      o.min=durMin(g(r,c.dur));
+      if(o.min==null){const a2=dtparse(o.st),b2=dtparse(o.en);
+        if(a2!=null&&b2!=null&&b2>=a2)o.min=(b2-a2)/60000;}
       return o;
-    }).filter(x=>x.qty>0||x.bat);
+    }).filter(x=>{
+      if(!(x.qty>0))return false;
+      if(x.state&&!/done|เสร็จ/i.test(x.state))return false;   /* เอาเฉพาะที่ปิดงานแล้ว */
+      /* หนึ่ง batch อาจมีหลายบรรทัด (แยกตามสินค้า) แต่ "จำนวน" เป็นยอดรวมของ batch
+         จึงนับ batch ละครั้งเดียว ไม่งั้นยอดชิ้นจะบวกซ้ำ */
+      if(x.bat){ if(seen.has(x.bat))return false; seen.add(x.bat); }
+      return true;
+    });
     if(!list.length)throw new Error('ไม่พบแถวข้อมูล');
     PICK={list,H:t.H,c};
     SHEET_STATE.pick=fmt(list.length)+' batch';
@@ -2427,7 +2449,24 @@ let PICK_CTX=null;
 const PICK_PAL=[ '#4A7DE0','#3FA46A','#E0A33C','#D45B4A','#7B62C9','#3E8E8C','#8A5A2E','#5F6675'];
 
 function secPick(){
-  if(!PICK)return `<div class="empty2">${PICK_ERR?'อ่านชีตไม่ได้ — '+esc(PICK_ERR):'กำลังโหลดข้อมูล…'}</div>`;
+  if(!PICK){
+    if(!PICK_ERR)return '<div class="empty2">กำลังโหลดข้อมูล…</div>';
+    /* Failed to fetch ทั้ง csv และ gviz = เบราว์เซอร์เข้าชีตไม่ได้เลย
+       เกือบทุกครั้งคือชีตยังไม่ได้เปิดให้ "ทุกคนที่มีลิงก์" ดูได้ */
+    const noAccess=/failed to fetch|networkerror|403|401/i.test(PICK_ERR);
+    return `<div class="empty2">อ่านชีตไม่ได้ — ${esc(PICK_ERR)}</div>`
+      +(noAccess?`<div class="cpanel" style="max-width:1100px;margin:0 auto">
+        <div class="chname2">วิธีแก้</div>
+        <div style="font-size:31px;line-height:1.7;color:var(--ink)">
+          ชีต Picking ยังไม่ได้เปิดให้เข้าถึงแบบสาธารณะ แดชบอร์ดจึงดึงข้อมูลไม่ได้<br><br>
+          เปิดชีต → กด <b>แชร์</b> → ในหัวข้อ <b>“การเข้าถึงทั่วไป”</b>
+          เปลี่ยนจาก “จำกัด” เป็น <b>“ทุกคนที่มีลิงก์”</b> สิทธิ์ <b>ผู้อ่าน</b> → บันทึก<br>
+          แล้วกลับมากดปุ่ม <b>ดึงข้อมูลใหม่</b> ด้านบน
+        </div>
+        <div class="chint" style="margin-top:14px">
+          ชีตอื่นในแดชบอร์ดนี้ตั้งค่าแบบนั้นไว้แล้ว จึงโหลดได้ตามปกติ
+        </div></div>`:'');
+  }
 
   const all0=PICK.list.filter(r=>!fYear()||(r.date||'').slice(0,4)===fYear());
   const people=[...new Set(all0.map(r=>r.who))].sort();
@@ -2598,7 +2637,13 @@ const minToClock=v=>String(Math.floor(v/60)).padStart(2,'0')+':'
 /* อ่านค่าแบบ "26/08/2026 13:29:13" (วินาทีมีหรือไม่มีก็ได้) → มิลลิวินาที */
 function dtparse(v){
   const s=String(v||'').trim(); if(!s)return null;
-  const m=s.match(/^(\d{1,2})[/.\-](\d{1,2})[/.\-](\d{2,4})(?:[\sT]+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+  /* รูปแบบ ISO: 2026-06-09 11:08:33 */
+  const iso=s.match(/^(\d{4})-(\d{2})-(\d{2})(?:[\sT]+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+  if(iso){const t=new Date(+iso[1],+iso[2]-1,+iso[3],
+    +(iso[4]||0),+(iso[5]||0),+(iso[6]||0)).getTime();
+    return isNaN(t)?null:t;}
+  /* รูปแบบไทย/อังกฤษ: 9/6/2026 หรือ 9/6/2026, 11:11:51 (มีคอมมาคั่นได้) */
+  const m=s.match(/^(\d{1,2})[/.\-](\d{1,2})[/.\-](\d{2,4})(?:[,\sT]+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
   if(!m)return null;
   let y=+m[3]; if(y<100)y+=2000; if(y>2400)y-=543;   /* พ.ศ. → ค.ศ. */
   const t=new Date(y,+m[2]-1,+m[1],+(m[4]||0),+(m[5]||0),+(m[6]||0)).getTime();
