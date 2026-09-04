@@ -145,30 +145,30 @@
 #vKPI .pkcard{background:#fff;border:1px solid var(--line);border-top:6px solid var(--line);
   border-radius:18px;padding:24px}
 #vKPI .pkhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px}
-#vKPI .pkname{font-size:34px;font-weight:800;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#vKPI .pkutil{font-size:23px;font-weight:700;padding:5px 14px;border-radius:12px;white-space:nowrap}
+#vKPI .pkname{font-size:41px;font-weight:800;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#vKPI .pkutil{font-size:27px;font-weight:700;padding:6px 16px;border-radius:12px;white-space:nowrap}
 #vKPI .pkutil.teal{background:#E6F2F1;color:#2F6F6D}
 #vKPI .pkutil.plum{background:#EEEBF7;color:#514682}
 #vKPI .pkutil.amber{background:#FBF0DC;color:#8A5A2E}
 #vKPI .pkutil.rose{background:#F8E7E3;color:#B4462F}
-#vKPI .pklbl{font-size:21px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.4px}
+#vKPI .pklbl{font-size:25px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.4px}
 #vKPI .pkbar{width:100%;height:12px;background:#E9ECF1;border-radius:8px;overflow:hidden;margin:8px 0 18px}
 #vKPI .pkbar i{display:block;height:100%;border-radius:8px}
 #vKPI .pkbar i.teal{background:#3E8E8C}#vKPI .pkbar i.plum{background:#6B5CA5}
 #vKPI .pkbar i.amber{background:#D89A2E}#vKPI .pkbar i.rose{background:#B4462F}
 #vKPI .pkmain{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-bottom:16px}
-#vKPI .pkbig{font-size:44px;font-weight:800;color:#2F6F6D}
-#vKPI .pkbig span{font-size:23px;font-weight:400;color:var(--ink-faint)}
-#vKPI .pkbig2{font-size:38px;font-weight:800;color:var(--ink)}
+#vKPI .pkbig{font-size:54px;font-weight:800;color:#2F6F6D}
+#vKPI .pkbig span{font-size:27px;font-weight:400;color:var(--ink-faint)}
+#vKPI .pkbig2{font-size:46px;font-weight:800;color:var(--ink)}
 #vKPI .pkrow{display:flex;justify-content:space-between;align-items:center;gap:10px;
-  background:#F4F6F9;border:1px solid var(--line);border-radius:12px;padding:14px 18px;
-  font-size:23px;color:var(--ink-faint);margin-bottom:14px}
-#vKPI .pkrow b{color:#514682;font-size:24px;white-space:nowrap}
+  flex-wrap:wrap;background:#F4F6F9;border:1px solid var(--line);border-radius:12px;padding:14px 18px;
+  font-size:27px;color:var(--ink-faint);margin-bottom:14px}
+#vKPI .pkrow b{color:#514682;font-size:29px;white-space:nowrap}
 #vKPI .pkgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 #vKPI .pkcell{background:#F9FAFC;border:1px solid var(--line);border-radius:12px;padding:14px}
-#vKPI .pkv{font-size:26px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#vKPI .pkv{font-size:31px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #vKPI .pkv.amber{color:#8A5A2E}#vKPI .pkv.plum{color:#514682}
-#vKPI .pksub{font-size:21px;color:var(--ink-faint)}
+#vKPI .pksub{font-size:25px;color:var(--ink-faint)}
 #vKPI .cscroll{overflow-x:auto;overflow-y:hidden;padding-bottom:6px}
 #vKPI .cscroll::-webkit-scrollbar{height:12px}
 #vKPI .cscroll::-webkit-scrollbar-thumb{background:#CBD0D9;border-radius:6px}
@@ -1309,6 +1309,15 @@ const pieLbl={id:'pieLbl',
       const r=arc.innerRadius+(arc.outerRadius-arc.innerRadius)*0.62;
       const px=arc.x+Math.cos(ang)*r, py=arc.y+Math.sin(ang)*r;
       const t=(Number.isInteger(v)?v:v.toFixed(1))+'%';
+      /* fit: เขียนเฉพาะชิ้นที่มีที่พอ — กันตัวเลขล้นออกนอกวง
+         ตัวหนังสือวางแนวนอนเสมอ ชิ้นที่อยู่บน/ล่างจึงใช้ความยาวส่วนโค้ง
+         ส่วนชิ้นที่อยู่ซ้าย/ขวาใช้ความหนาของวงแหวน */
+      if(op.fit){
+        const arcW=Math.abs(arc.endAngle-arc.startAngle)*r;
+        const ringW=arc.outerRadius-arc.innerRadius;
+        const avail=Math.abs(Math.sin(ang))*arcW+Math.abs(Math.cos(ang))*ringW;
+        if(x.measureText(t).width>avail-8)return;
+      }
       x.lineJoin='round'; x.lineWidth=6; x.strokeStyle='rgba(34,37,44,.35)';
       x.strokeText(t,px,py);
       x.fillStyle='#fff'; x.fillText(t,px,py);
@@ -2822,7 +2831,7 @@ function drawPack(){
       backgroundColor:S.pArr.map((n,i)=>col(i)),borderWidth:0}]},
     options:{responsive:true,maintainAspectRatio:false,cutout:'55%',layout:{padding:10},
       plugins:{legend:{position:'right',labels:{color:C.mute,font:{size:cf(20)},boxWidth:18}},
-        pieLbl:{display:true,minPercent:3,size:38},
+        pieLbl:{display:true,minPercent:3,size:26,fit:true},
         tooltip:{titleFont:{size:cf(22)},bodyFont:{size:cf(21)},padding:12,
           callbacks:{label:c=>c.label+': '+c.formattedValue+'% ('
             +fmt(shareVal[c.dataIndex])+' กล่อง)'}}}}});
