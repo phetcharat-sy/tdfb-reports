@@ -111,7 +111,30 @@
   box-shadow:0 1px 2px rgba(20,24,40,.04),0 8px 22px rgba(20,24,40,.05)}
 #vKPI .cbox{position:relative;height:520px}
 /* ---- Delivery · Packing ---- */
-#vKPI .pkstations{display:flex;flex-wrap:wrap;gap:18px;justify-content:center;padding:14px 0}
+/* สองแผงคู่กัน สูงเท่ากันเสมอ ไม่ว่าฝั่งไหนจะมีของมากกว่า */
+#vKPI .pkpair{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:stretch}
+#vKPI .pkpair>div{display:flex;flex-direction:column;min-width:0}
+#vKPI .pkpair .cpanel{flex:1;display:flex;flex-direction:column;justify-content:center;margin-bottom:0}
+@media(max-width:1500px){#vKPI .pkpair{grid-template-columns:1fr}}
+/* ตารางอันดับ */
+#vKPI .pkrank{display:flex;flex-direction:column;gap:10px;width:100%}
+#vKPI .rrow{display:grid;grid-template-columns:64px minmax(150px,1.3fr) 3fr auto;
+  align-items:center;gap:16px;padding:10px 6px;border-radius:12px}
+#vKPI .rrow.top{background:#F7F8FB}
+#vKPI .rno{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:28px;font-weight:800;color:#fff;background:#B9BFC9}
+#vKPI .rno.g{background:linear-gradient(160deg,#E8B93E,#C08A16)}
+#vKPI .rno.s{background:linear-gradient(160deg,#B9C0CC,#8D96A6)}
+#vKPI .rno.b{background:linear-gradient(160deg,#C98B5E,#9C6236)}
+#vKPI .rname{font-size:29px;font-weight:700;color:var(--ink);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#vKPI .rrow.top .rname{font-size:31px;font-weight:800}
+#vKPI .rbar{background:#EDEFF3;border-radius:8px;height:20px;overflow:hidden}
+#vKPI .rbar i{display:block;height:100%;border-radius:8px}
+#vKPI .rval{font-size:31px;font-weight:800;color:var(--ink);
+  font-variant-numeric:tabular-nums;min-width:150px;text-align:right}
+#vKPI .pkstations{display:flex;flex-wrap:wrap;gap:18px;justify-content:center;
+  align-content:center;padding:14px 0;flex:1}
 #vKPI .pkgauge{width:45%;min-width:180px;display:flex;flex-direction:column;align-items:center}
 #vKPI .pkgauge .gwrap{position:relative;width:100%;height:190px}
 #vKPI .pkgauge .gval{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);
@@ -2718,9 +2741,19 @@ function secPack(){
        ${card('ความเร็วแพ็คเฉลี่ย (ออเดอร์/ชม.)',S.speed,'amber')}
        ${card('TEAM UTIL. (เป้า '+PACK_TARGET+'/คน/วัน)',S.util+'%',S.util>=80?'teal':'rose')}</div>
 
-     <div class="g2">
+     <div class="pkpair">
        <div><h2 class="sec">ผลงานพนักงานแพ็ค (Leaderboard)<span></span></h2>
-         <div class="cpanel"><div class="cbox"><canvas id="c_pkLead"></canvas></div></div></div>
+         <div class="cpanel"><div class="pkrank">${
+           S.pArr.map((n,i)=>{
+             const v=S.per[n].count, mx=S.per[S.pArr[0]].count||1;
+             const medal=i<3?['g','s','b'][i]:'';
+             return `<div class="rrow${i<3?' top':''}">
+               <span class="rno ${medal}">${i+1}</span>
+               <span class="rname">${esc(n)}</span>
+               <span class="rbar"><i style="width:${Math.max(2,v/mx*100)}%;
+                 background:${['#6B5CA5','#3E8E8C','#D89A2E'][i]||'#9AA1AE'}"></i></span>
+               <span class="rval">${fmt(v)}</span></div>`;
+           }).join('')}</div></div></div>
        <div><h2 class="sec">Station Utilization <em>วันที่สถานีถูกใช้ ÷ วันทำงาน</em><span></span></h2>
          <div class="cpanel"><div id="pkStations" class="pkstations"></div></div></div>
      </div>
@@ -2749,12 +2782,7 @@ function drawPack(){
              '#7A6BB8','#6E9E4A','#4A7FB8','#3E8E6C','#D8A93E'];
   const col=i=>PAL[i%PAL.length];
 
-  /* Leaderboard */
-  destroy('pkLead');
-  CH.pkLead=new Chart(document.getElementById('c_pkLead'),{type:'bar',
-    data:{labels:S.pArr,datasets:[{data:S.pArr.map(n=>S.per[n].count),
-      backgroundColor:S.pArr.map((n,i)=>col(i)),borderRadius:4}]},
-    options:Object.assign(baseOpts(false),{indexAxis:'y'})});
+  /* Leaderboard เป็น HTML list แล้ว ไม่ต้องวาดกราฟ */
 
   /* Station gauges */
   const box=document.getElementById('pkStations');
