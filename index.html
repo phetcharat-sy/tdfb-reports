@@ -109,6 +109,10 @@
 
 #vKPI .cpanel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:28px;margin-bottom:18px;
   box-shadow:0 1px 2px rgba(20,24,40,.04),0 8px 22px rgba(20,24,40,.05)}
+#vKPI .sopwrap{background:#fff;border:1px solid var(--line);border-radius:18px;
+  overflow:hidden;padding:0}
+#vKPI .sopframe{display:block;width:100%;height:1600px;border:0}
+@media(max-width:1500px){#vKPI .sopframe{height:1400px}}
 #vKPI .cbox{position:relative;height:520px}
 /* ---- Delivery · Packing ---- */
 /* สองแผงคู่กัน สูงเท่ากันเสมอ ไม่ว่าฝั่งไหนจะมีของมากกว่า */
@@ -636,6 +640,9 @@ body.present #vKPI .tscroll{max-height:none}
       <div class="grp">Admin</div>
       <button data-view="report" data-team="admin">รายงานประจำวัน</button>
       <button data-view="kpi" data-sec="ret">Return</button>
+
+      <div class="grp">วิธีการปฏิบัติงาน</div>
+      <button data-view="kpi" data-sec="sop">เงื่อนไขการส่งสินค้าแต่ละ Platform</button>
 
       <div class="nav-sep"></div>
       <button data-view="kpi" data-sec="fc">Forecast</button>
@@ -2550,6 +2557,20 @@ async function loadPick(force){
 
 let PICK_CTX=null;
 const PICK_PAL=[ '#4A7DE0','#3FA46A','#E0A33C','#D45B4A','#7B62C9','#3E8E8C','#8A5A2E','#5F6675'];
+
+/* ================= วิธีการปฏิบัติงาน · เงื่อนไขการส่งสินค้าแต่ละ Platform =================
+   ฝังเอกสาร 3PL Operation Dashboard ไว้ใน iframe เพื่อกันไม่ให้ Tailwind/Font Awesome
+   ของเอกสารไปทับสไตล์ของแดชบอร์ด (คนละ document = คนละ CSS scope) */
+function secSOP(){
+  return '<div class="sopwrap"><iframe id="sopFrame" class="sopframe" title="เงื่อนไขการส่งสินค้าแต่ละ Platform"></iframe></div>';
+}
+function drawSOP(){
+  const f=document.getElementById('sopFrame'), t=document.getElementById('sopDoc');
+  if(!f||!t||f.dataset.ready)return;
+  f.srcdoc=t.content.textContent;   /* <template> ถอด entity ให้แล้ว ได้ HTML ต้นฉบับกลับมา */
+  f.dataset.ready='1';
+}
+
 /* ================= Delivery · Packing =================
    ต้นทาง: published CSV เดียวกับหน้า Logistics Central (gid=640931357)
    คอลัมน์ (0-based ตามที่หน้าเดิมใช้):
@@ -2831,7 +2852,7 @@ function drawPack(){
       backgroundColor:S.pArr.map((n,i)=>col(i)),borderWidth:0}]},
     options:{responsive:true,maintainAspectRatio:false,cutout:'55%',layout:{padding:10},
       plugins:{legend:{position:'right',labels:{color:C.mute,font:{size:cf(20)},boxWidth:18}},
-        pieLbl:{display:true,minPercent:3,size:26,fit:true},
+        pieLbl:{display:true,minPercent:3,size:20,fit:true},
         tooltip:{titleFont:{size:cf(22)},bodyFont:{size:cf(21)},padding:12,
           callbacks:{label:c=>c.label+': '+c.formattedValue+'% ('
             +fmt(shareVal[c.dataIndex])+' กล่อง)'}}}}});
@@ -3606,6 +3627,7 @@ function render(){
                fc:['Forecast','Warehouse · พยากรณ์ยอดขาย สต็อก และอัตรากำลังคน'],
                pick:['KPI Human Error On Picking <0.05%','Warehouse · ภาพรวมการหยิบสินค้ารายคน'],
                pack:['Packing','Delivery · ผลงานพนักงานแพ็ค สถานี และเวลาหนาแน่น'],
+               sop:['เงื่อนไขการส่งสินค้าแต่ละ Platform','วิธีการปฏิบัติงาน · รอบตัดคำสั่งซื้อ Shopee · Lazada · TikTok'],
                ret:['Return','Admin · งานตีคืน ยกเลิก และเคสค้าง']};
   const tt=TITLE[SEC]||TITLE.overview;
   el('kTitle').textContent=tt[0];
@@ -3616,6 +3638,7 @@ function render(){
                            : SEC==='fc'?secForecast()
                            : SEC==='pick'?secPick()
                            : SEC==='pack'?secPack()
+                           : SEC==='sop'?secSOP()
                            : SEC==='ret'?secReturn() : secRepl();
     fitScrolls();
     /* กราฟต้องวาดหลัง canvas เข้า DOM แล้ว */
@@ -3625,6 +3648,7 @@ function render(){
            else if(SEC==='fc')drawForecast();
            else if(SEC==='pick')drawPick();
            else if(SEC==='pack')drawPack();
+           else if(SEC==='sop')drawSOP();
            else if(SEC==='ret')drawReturn(); else drawRepl(); }
       catch(e){ console.warn('chart',e); }
     });
@@ -4368,5 +4392,695 @@ window.RPT_INIT=(t)=>{ if(started){ if(t&&t!==TEAM) team(t); return; } started=t
   else go('kpi',hash.startsWith('kpi-')?hash.slice(4):'overview');
 })();
 </script>
+
+<template id="sopDoc">&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;th&quot;&gt;
+&lt;head&gt;
+    &lt;meta charset=&quot;UTF-8&quot;&gt;
+    &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;&gt;
+    &lt;title&gt;3PL Operation Dashboard&lt;/title&gt;
+    &lt;script src=&quot;https://cdn.tailwindcss.com&quot;&gt;&lt;/script&gt;
+    &lt;link href=&quot;https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css&quot; rel=&quot;stylesheet&quot;&gt;
+    &lt;style&gt;
+        @import url(&#x27;https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&amp;display=swap&#x27;);
+        body {
+            font-family: &#x27;Prompt&#x27;, sans-serif;
+            background-color: #f8fafc; /* Slate 50 */
+        }
+        .blinking {
+            animation: blinker 1.5s linear infinite;
+        }
+        @keyframes blinker {
+            50% { opacity: 0; }
+        }
+        /* ซ่อน Scrollbar สำหรับ Sidebar */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    &lt;/style&gt;
+&lt;/head&gt;
+&lt;body class=&quot;text-slate-800 flex min-h-screen&quot;&gt;
+
+    &lt;aside class=&quot;w-64 bg-slate-900 text-slate-300 flex flex-col hidden md:flex h-full shadow-xl z-20&quot;&gt;
+        &lt;div class=&quot;p-6 border-b border-slate-800 flex items-center gap-3&quot;&gt;
+            &lt;i class=&quot;fa-solid fa-warehouse text-2xl text-blue-400&quot;&gt;&lt;/i&gt;
+            &lt;div&gt;
+                &lt;h1 class=&quot;font-bold text-lg text-white&quot;&gt;3PL Dashboard&lt;/h1&gt;
+                &lt;p class=&quot;text-[10px] text-slate-400&quot;&gt;อัปเดต ก.ย. 2026&lt;/p&gt;
+            &lt;/div&gt;
+        &lt;/div&gt;
+        
+        &lt;nav class=&quot;flex-1 overflow-y-auto py-4 no-scrollbar&quot;&gt;
+            &lt;ul class=&quot;space-y-1 px-3&quot;&gt;
+                &lt;li&gt;
+                    &lt;button onclick=&quot;switchTab(&#x27;dashboard&#x27;)&quot; id=&quot;btn-dashboard&quot; class=&quot;w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors bg-blue-600 text-white font-medium&quot;&gt;
+                        &lt;i class=&quot;fa-solid fa-chart-pie w-5&quot;&gt;&lt;/i&gt; ภาพรวม (Overview)
+                    &lt;/button&gt;
+                &lt;/li&gt;
+                &lt;li class=&quot;pt-4 pb-2 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider&quot;&gt;
+                    ข้อกำหนดแพลตฟอร์ม
+                &lt;/li&gt;
+                &lt;li&gt;
+                    &lt;button onclick=&quot;switchTab(&#x27;shopee&#x27;)&quot; id=&quot;btn-shopee&quot; class=&quot;w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors hover:bg-slate-800 hover:text-white&quot;&gt;
+                        &lt;img src=&quot;https://www.google.com/s2/favicons?sz=128&amp;domain=shopee.co.th&quot; alt=&quot;Shopee&quot; class=&quot;w-6 h-6 rounded bg-white&quot;&gt; Shopee
+                    &lt;/button&gt;
+                &lt;/li&gt;
+                &lt;li&gt;
+                    &lt;button onclick=&quot;switchTab(&#x27;lazada&#x27;)&quot; id=&quot;btn-lazada&quot; class=&quot;w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors hover:bg-slate-800 hover:text-white&quot;&gt;
+                        &lt;img src=&quot;https://www.google.com/s2/favicons?sz=128&amp;domain=lazada.co.th&quot; alt=&quot;Lazada&quot; class=&quot;w-6 h-6 rounded bg-white&quot;&gt; Lazada
+                    &lt;/button&gt;
+                &lt;/li&gt;
+                &lt;li&gt;
+                    &lt;button onclick=&quot;switchTab(&#x27;tiktok&#x27;)&quot; id=&quot;btn-tiktok&quot; class=&quot;w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors hover:bg-slate-800 hover:text-white&quot;&gt;
+                        &lt;div class=&quot;w-6 h-6 bg-black rounded flex items-center justify-center text-white text-xs&quot;&gt;&lt;i class=&quot;fa-brands fa-tiktok&quot;&gt;&lt;/i&gt;&lt;/div&gt; TikTok
+                    &lt;/button&gt;
+                &lt;/li&gt;
+            &lt;/ul&gt;
+        &lt;/nav&gt;
+    &lt;/aside&gt;
+
+    &lt;div class=&quot;flex-1 flex flex-col h-full overflow-hidden relative&quot;&gt;
+        
+        &lt;header class=&quot;bg-white border-b border-slate-200 h-16 flex items-center justify-between px-4 sm:px-6 z-10 shrink-0&quot;&gt;
+            &lt;div class=&quot;flex items-center gap-4&quot;&gt;
+                &lt;button class=&quot;md:hidden text-slate-500 hover:text-slate-700&quot;&gt;
+                    &lt;i class=&quot;fa-solid fa-bars text-xl&quot;&gt;&lt;/i&gt;
+                &lt;/button&gt;
+                &lt;h2 class=&quot;font-bold text-slate-700&quot; id=&quot;current-page-title&quot;&gt;ภาพรวมรอบตัดคำสั่งซื้อ&lt;/h2&gt;
+            &lt;/div&gt;
+            &lt;div class=&quot;flex items-center gap-3&quot;&gt;
+                &lt;div class=&quot;bg-slate-100 px-4 py-1.5 rounded-md border border-slate-200 text-center flex items-center gap-2 shadow-sm&quot;&gt;
+                    &lt;i class=&quot;fa-regular fa-clock text-blue-600&quot;&gt;&lt;/i&gt;
+                    &lt;span class=&quot;text-lg font-mono font-bold text-slate-700&quot; id=&quot;live-clock&quot;&gt;00:00:00&lt;/span&gt;
+                &lt;/div&gt;
+            &lt;/div&gt;
+        &lt;/header&gt;
+
+        &lt;div id=&quot;alert-banner&quot; class=&quot;bg-red-500 text-white text-center py-2 font-semibold text-sm hidden blinking shadow-md shrink-0&quot;&gt;
+            &lt;i class=&quot;fa-solid fa-triangle-exclamation mr-2&quot;&gt;&lt;/i&gt; ขณะนี้เข้าสู่ช่วงเวลาเร่งด่วน กรุณาดำเนินการจัดเตรียมพัสดุและกดนัดรับ (RTS) ก่อน 13:00 น.
+        &lt;/div&gt;
+
+        &lt;main class=&quot;flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8&quot;&gt;
+            
+            &lt;div id=&quot;view-dashboard&quot; class=&quot;view-panel max-w-5xl mx-auto block&quot;&gt;
+                &lt;h2 class=&quot;text-2xl font-bold text-slate-800 mb-6&quot;&gt;ภาพรวมจุดตัดเวลาการปฏิบัติงาน (Operational Choke Points)&lt;/h2&gt;
+                &lt;div class=&quot;grid grid-cols-1 md:grid-cols-3 gap-6 mb-8&quot;&gt;
+                    &lt;div class=&quot;bg-white rounded-xl shadow-sm p-6 border-l-4 border-amber-500&quot;&gt;
+                        &lt;p class=&quot;text-sm text-slate-500 font-medium&quot;&gt;ยืนยันคำสั่งซื้อเพื่อจัดส่งภายในวัน&lt;/p&gt;
+                        &lt;h3 class=&quot;text-3xl font-bold text-slate-800 mt-1 mb-2&quot;&gt;12:00 น.&lt;/h3&gt;
+                        &lt;p class=&quot;text-xs text-slate-400&quot;&gt;Shopee, Lazada, TikTok (Same Day)&lt;/p&gt;
+                    &lt;/div&gt;
+                    &lt;div class=&quot;bg-white rounded-xl shadow-sm p-6 border-l-4 border-red-500&quot;&gt;
+                        &lt;p class=&quot;text-sm text-slate-500 font-medium&quot;&gt;กำหนดเวลาสุดท้ายในการกดนัดรับ (RTS)&lt;/p&gt;
+                        &lt;h3 class=&quot;text-3xl font-bold text-slate-800 mt-1 mb-2&quot;&gt;13:00 น.&lt;/h3&gt;
+                        &lt;p class=&quot;text-xs text-slate-400&quot;&gt;ต้องดำเนินการก่อนเวลานี้เพื่อให้รถเข้ารับตรงตามกำหนด&lt;/p&gt;
+                    &lt;/div&gt;
+                    &lt;div class=&quot;bg-white rounded-xl shadow-sm p-6 border-l-4 border-blue-500&quot;&gt;
+                        &lt;p class=&quot;text-sm text-slate-500 font-medium&quot;&gt;ช่วงเวลาบริษัทขนส่งเข้ารับพัสดุ&lt;/p&gt;
+                        &lt;h3 class=&quot;text-xl font-bold text-slate-800 mt-3 mb-2&quot;&gt;13:00 - 19:00 น.&lt;/h3&gt;
+                        &lt;p class=&quot;text-xs text-slate-400&quot;&gt;เตรียมพัสดุให้พร้อม ณ จุดส่งมอบ (Handover Area)&lt;/p&gt;
+                    &lt;/div&gt;
+                &lt;/div&gt;
+
+                &lt;div class=&quot;bg-blue-50 border border-blue-200 rounded-xl p-6&quot;&gt;
+                    &lt;h3 class=&quot;text-lg font-bold text-blue-800 mb-3&quot;&gt;&lt;i class=&quot;fa-solid fa-lightbulb text-amber-500 mr-2&quot;&gt;&lt;/i&gt; ข้อปฏิบัติแนะนำสำหรับทีมบรรจุสินค้า (Pick &amp; Pack)&lt;/h3&gt;
+                    &lt;ul class=&quot;list-disc pl-5 space-y-2 text-sm text-slate-700&quot;&gt;
+                        &lt;li&gt;&lt;b&gt;08:00 - 11:30 น.&lt;/b&gt; ดำเนินการบรรจุสินค้าจากคำสั่งซื้อคงค้างและคำสั่งซื้อรอบเช้าให้แล้วเสร็จ&lt;/li&gt;
+                        &lt;li&gt;&lt;b&gt;11:30 - 12:00 น.&lt;/b&gt; ผู้ดูแลระบบตรวจสอบคำสั่งซื้อก่อน 12:00 น. และดำเนินการกดนัดรับพัสดุ (RTS)&lt;/li&gt;
+                        &lt;li&gt;&lt;b&gt;12:00 - 13:00 น.&lt;/b&gt; ช่วงเวลาสำคัญ ห้ามละเว้นการกดนัดรับพัสดุโดยเด็ดขาด เพื่อป้องกันการถูกบันทึกประวัติจัดส่งล่าช้า (LDR)&lt;/li&gt;
+                    &lt;/ul&gt;
+                &lt;/div&gt;
+            &lt;/div&gt;
+
+            &lt;div id=&quot;view-shopee&quot; class=&quot;view-panel max-w-5xl mx-auto hidden&quot;&gt;
+                &lt;div class=&quot;bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-8&quot;&gt;
+                    &lt;div class=&quot;h-32 sm:h-48 relative&quot;&gt;
+                        &lt;div class=&quot;absolute inset-0 bg-gradient-to-r from-[#EE4D2D] to-orange-500&quot;&gt;&lt;/div&gt;
+                        &lt;div class=&quot;absolute inset-0 p-8 flex flex-col justify-center&quot;&gt;
+                            &lt;div class=&quot;flex items-center gap-3 mb-2&quot;&gt;
+                                &lt;img src=&quot;https://www.google.com/s2/favicons?sz=128&amp;domain=shopee.co.th&quot; alt=&quot;Shopee&quot; class=&quot;w-10 h-10 rounded-xl border-2 border-white shadow-md bg-white p-1&quot;&gt;
+                                &lt;h2 class=&quot;text-3xl font-bold text-white&quot;&gt;Shopee (มาตรฐานการปฏิบัติงาน)&lt;/h2&gt;
+                            &lt;/div&gt;
+                            &lt;p class=&quot;text-white/90 text-sm&quot;&gt;รวมนโยบายการจัดส่ง การบรรจุสินค้า และการจัดการระบบสำหรับผู้ดูแลระบบ&lt;/p&gt;
+                        &lt;/div&gt;
+                    &lt;/div&gt;
+                &lt;/div&gt;
+
+                &lt;h3 class=&quot;text-xl font-bold text-slate-800 mb-4 border-l-4 border-[#EE4D2D] pl-3&quot;&gt;หมวดที่ 1: กำหนดเวลาและประเภทการจัดส่ง (SLA)&lt;/h3&gt;
+                &lt;div class=&quot;grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10&quot;&gt;
+                    
+                    &lt;div class=&quot;bg-white rounded-xl shadow-sm border border-slate-200 p-5 hover:shadow-md transition-shadow&quot;&gt;
+                        &lt;div class=&quot;flex items-center gap-3 mb-3 border-b border-slate-100 pb-3&quot;&gt;
+                            &lt;div class=&quot;bg-orange-100 text-[#EE4D2D] w-8 h-8 rounded-full flex items-center justify-center font-bold&quot;&gt;1&lt;/div&gt;
+                            &lt;h3 class=&quot;text-md font-bold text-slate-800&quot;&gt;ระยะเวลาการจัดส่งสินค้า (SLA ปกติ)&lt;/h3&gt;
+                        &lt;/div&gt;
+                        &lt;ul class=&quot;text-sm text-slate-700 list-disc pl-5 space-y-2 mb-4&quot;&gt;
+                            &lt;li&gt;&lt;span class=&quot;font-bold text-[#EE4D2D]&quot;&gt;คำสั่งซื้อก่อน 12:00 น.:&lt;/span&gt; ต้องบรรจุและส่งมอบให้ขนส่งสแกนบาร์โค้ด &lt;u class=&quot;font-semibold&quot;&gt;ภายในวันเดียวกัน&lt;/u&gt;&lt;/li&gt;
+                            &lt;li&gt;&lt;span class=&quot;font-bold text-slate-700&quot;&gt;คำสั่งซื้อหลัง 12:00 น.:&lt;/span&gt; ต้องบรรจุและส่งมอบให้ขนส่งสแกนบาร์โค้ด &lt;u class=&quot;font-semibold&quot;&gt;ภายในวันทำการถัดไป&lt;/u&gt;&lt;/li&gt;
+                            &lt;li class=&quot;text-xs text-slate-500&quot;&gt;วันอาทิตย์และวันหยุดนักขัตฤกษ์ไม่นับรวมในรอบการปฏิบัติงาน&lt;/li&gt;
+                        &lt;/ul&gt;
+                        &lt;a href=&quot;https://seller.shopee.co.th/edu/article/10615&quot; target=&quot;_blank&quot; class=&quot;text-xs text-blue-600 hover:underline flex items-center gap-1&quot;&gt;&lt;i class=&quot;fa-solid fa-book&quot;&gt;&lt;/i&gt; อ่านกฎระยะเวลาจัดส่งสินค้า&lt;/a&gt;
+                    &lt;/div&gt;
+
+                    &lt;div class=&quot;bg-white rounded-xl shadow-sm border border-red-300 p-5 hover:shadow-md transition-shadow relative overflow-hidden&quot;&gt;
+                        &lt;div class=&quot;absolute top-0 right-0 bg-red-500 text-white text-xs px-3 py-1 rounded-bl-lg blinking font-bold&quot;&gt;กรณีเร่งด่วน! (4 ชม.)&lt;/div&gt;
+                        &lt;div class=&quot;flex items-center gap-3 mb-3 border-b border-slate-100 pb-3&quot;&gt;
+                            &lt;div class=&quot;bg-red-100 text-red-600 w-8 h-8 rounded-full flex items-center justify-center font-bold&quot;&gt;2&lt;/div&gt;
+                            &lt;h3 class=&quot;text-md font-bold text-red-700&quot;&gt;Instant Delivery (จัดส่งทันที)&lt;/h3&gt;
+                        &lt;/div&gt;
+                        &lt;p class=&quot;text-sm text-slate-700 mb-2&quot;&gt;เข้ารับพัสดุโดย &lt;b&gt;พนักงานขับรถ ShopeeFood&lt;/b&gt;&lt;/p&gt;
+                        &lt;ul class=&quot;text-sm text-red-600 font-medium list-disc pl-5 space-y-2 mb-4&quot;&gt;
+                            &lt;li&gt;&lt;span class=&quot;font-bold text-red-700 bg-red-100 px-1 rounded&quot;&gt;ข้อปฏิบัติสำคัญ:&lt;/span&gt; ต้องบรรจุสินค้าและเรียกรถเข้ารับให้แล้วเสร็จ &lt;b class=&quot;text-xl underline&quot;&gt;ภายใน 2 ชั่วโมง&lt;/b&gt; นับจากเวลาสั่งซื้อ&lt;/li&gt;
+                            &lt;li&gt;พนักงานจะเข้ามารับภายใน 1 ชั่วโมง หลังจากกดนัดรับ และจัดส่งถึงผู้รับภายใน 2-4 ชั่วโมง&lt;/li&gt;
+                            &lt;li class=&quot;text-xs text-slate-500&quot;&gt;ไม่อนุญาตให้ส่งมอบสินค้าหมวดนี้แก่รถขนส่ง SPX รอบปกติโดยเด็ดขาด&lt;/li&gt;
+                        &lt;/ul&gt;
+                        &lt;a href=&quot;https://seller.shopee.co.th/edu/article/25604&quot; target=&quot;_blank&quot; class=&quot;text-xs text-blue-600 hover:underline flex items-center gap-1 mt-auto&quot;&gt;&lt;i class=&quot;fa-solid fa-book&quot;&gt;&lt;/i&gt; อ่านข้อกำหนด Instant Delivery&lt;/a&gt;
+                    &lt;/div&gt;
+
+                    &lt;div class=&quot;bg-white rounded-xl shadow-sm border border-slate-200 p-5 hover:shadow-md transition-shadow border-l-4 border-l-blue-500&quot;&gt;
+                        &lt;div class=&quot;flex items-center gap-3 mb-3 border-b border-slate-100 pb-3&quot;&gt;
+                            &lt;div class=&quot;bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center font-bold&quot;&gt;3&lt;/div&gt;
+                            &lt;h3 class=&quot;text-md font-bold text-slate-800&quot;&gt;Express Delivery (จัดส่งด่วน)&lt;/h3&gt;
+                        &lt;/div&gt;
+                        &lt;ul class=&quot;text-sm text-slate-700 list-disc pl-5 space-y-2 mb-4&quot;&gt;
+                            &lt;li&gt;&lt;span class=&quot;font-bold text-blue-700&quot;&gt;คำสั่งซื้อก่อน 12:00 น.:&lt;/span&gt; ระบบกำหนดให้บรรจุและส่งมอบ &lt;b&gt;ภายในวันเดียวกัน (Same Day)&lt;/b&gt;&lt;/li&gt;
+                            &lt;li&gt;&lt;span class=&quot;font-bold text-slate-700&quot;&gt;การจัดการของคลังสินค้า:&lt;/span&gt; ต้องคัดแยกคำสั่งซื้อประเภท Express ออกมาดำเนินการบรรจุก่อนคำสั่งซื้อปกติเสมอ เพื่อให้ทันต่อรอบรถเข้ารับ&lt;/li&gt;
+                        &lt;/ul&gt;
+                        &lt;a href=&quot;https://seller.shopee.co.th/edu/article/19315&quot; target=&quot;_blank&quot; class=&quot;text-xs text-blue-600 hover:underline flex items-center gap-1&quot;&gt;&lt;i class=&quot;fa-solid fa-book&quot;&gt;&lt;/i&gt; อ่านข้อกำหนด Express Delivery&lt;/a&gt;
+                    &lt;/div&gt;
+
+                    &lt;div class=&quot;bg-white rounded-xl shadow-sm border border-slate-200 p-5 hover:shadow-md transition-shadow border-l-4 border-l-teal-500&quot;&gt;
+                        &lt;div class=&quot;flex items-center gap-3 mb-3 border-b border-slate-100 pb-3&quot;&gt;
+                            &lt;div class=&quot;bg-teal-100 text-teal-600 w-8 h-8 rounded-full flex items-center justify-center font-bold&quot;&gt;4&lt;/div&gt;
+                            &lt;h3 class=&quot;text-md font-bold text-slate-800&quot;&gt;Next Day Delivery (จัดส่งวันทำการถัดไป)&lt;/h3&gt;
+                        &lt;/div&gt;
+                        &lt;ul class=&quot;text-sm text-slate-700 list-disc pl-5 space-y-2 mb-4&quot;&gt;
+                            &lt;li&gt;&lt;span class=&quot;font-bold text-teal-700&quot;&gt;รอบเวลา:&lt;/span&gt; อ้างอิงตาม SLA ปกติ คือตัดรอบ 12:00 น.&lt;/li&gt;
+                            &lt;li&gt;&lt;span class=&quot;font-bold text-slate-700&quot;&gt;ข้อควรระวัง:&lt;/span&gt; สินค้าประเภทนี้ผู้ซื้อคาดหวังการจัดส่งในวันถัดไป โปรดส่งมอบพัสดุไปยัง &lt;u class=&quot;font-semibold&quot;&gt;ศูนย์กระจายสินค้าล่วงหน้า&lt;/u&gt; ภายในวันที่กำหนดอย่างเคร่งครัด ห้ามเกิดข้อผิดพลาด&lt;/li&gt;
+                        &lt;/ul&gt;
+                        &lt;a href=&quot;https://seller.shopee.co.th/edu/article/26486&quot; target=&quot;_blank&quot; class=&quot;text-xs text-blue-600 hover:underline flex items-center gap-1&quot;&gt;&lt;i class=&quot;fa-solid fa-book&quot;&gt;&lt;/i&gt; อ่านข้อกำหนด Next Day Delivery&lt;/a&gt;
+                    &lt;/div&gt;
+                &lt;/div&gt;
+
+                &lt;h3 class=&quot;text-xl font-bold text-slate-800 mb-4 border-l-4 border-green-500 pl-3&quot;&gt;หมวดที่ 2: มาตรฐานการปฏิบัติงานคลังสินค้า (Warehouse SOP)&lt;/h3&gt;
+                &lt;div class=&quot;grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10&quot;&gt;
+                    
+                    &lt;div class=&quot;bg-white rounded-xl shadow-sm border border-slate-200 p-5 hover:shadow-md transition-shadow&quot;&gt;
+                        &lt;div class=&quot;flex items-center gap-3 mb-3 border-b border-slate-100 pb-3&quot;&gt;
+                            &lt;div class=&quot;bg-slate-100 text-slate-600 w-8 h-8 rounded-full flex items-center justify-center font-bold&quot;&gt;5&lt;/div&gt;
+                            &lt;h3 class=&quot;text-md font-bold text-slate-800&quot;&gt;การเตรียมสินค้าก่อนจัดส่ง&lt;/h3&gt;
+                        &lt;/div&gt;
+                        &lt;ul class=&quot;text-sm text-slate-700 list-decimal pl-5 space-y-1 mb-4&quot;&gt;
+                            &lt;li&gt;ตรวจสอบรายการในหน้า &quot;ที่ต้องจัดส่ง&quot;&lt;/li&gt;
+                            &lt;li&gt;พิมพ์ใบปะหน้าพัสดุ (AWB) และใบหยิบสินค้า (Pick List)&lt;/li&gt;
+                            &lt;li&gt;หยิบสินค้าจากชั้นวางให้ถูกต้องตามรหัสและจำนวนที่ระบุ&lt;/li&gt;
+                        &lt;/ul&gt;
+                        &lt;a href=&quot;https://seller.shopee.co.th/edu/article/7125&quot; target=&quot;_blank&quot; class=&quot;text-xs text-blue-600 hover:underline flex items-center gap-1&quot;&gt;&lt;i class=&quot;fa-solid fa-book&quot;&gt;&lt;/i&gt; อ่านขั้นตอนการเตรียมสินค้า&lt;/a&gt;
+                    &lt;/div&gt;
+
+                    &lt;div class=&quot;bg-white rounded-xl shadow-sm border border-slate-200 p-5 hover:shadow-md transition-shadow&quot;&gt;
+                        &lt;div class=&quot;flex items-center gap-3 mb-3 border-b border-slate-100 pb-3&quot;&gt;
+                            &lt;div class=&quot;bg-slate-100 text-slate-600 w-8 h-8 rounded-full flex items-center justify-center font-bold&quot;&gt;6&lt;/div&gt;
+                            &lt;h3 class=&quot;text-md font-bold text-slate-800&quot;&gt;มาตรฐานการบรรจุและติดฉลาก&lt;/h3&gt;
+                        &lt;/div&gt;
+                        &lt;ul class=&quot;text-sm text-slate-700 list-disc pl-5 space-y-1 mb-4&quot;&gt;
+                            &lt;li&gt;ใช้วัสดุกันกระแทกสำหรับสินค้าที่เสี่ยงต่อการชำรุดเสมอ&lt;/li&gt;
+                            &lt;li&gt;เลือกขนาดกล่องบรรจุภัณฑ์ให้เหมาะสมกับขนาดสินค้า&lt;/li&gt;
+                            &lt;li&gt;&lt;span class=&quot;text-red-600 font-bold&quot;&gt;ห้ามพับหรือใช้เทปใสปิดทับบริเวณบาร์โค้ดโดยเด็ดขาด&lt;/span&gt; เพื่อป้องกันปัญหาเครื่องสแกนไม่สามารถอ่านข้อมูลได้&lt;/li&gt;
+                        &lt;/ul&gt;
+                        &lt;a href=&quot;https://seller.shopee.co.th/edu/article/412&quot; target=&quot;_blank&quot; class=&quot;text-xs text-blue-600 hover:underline flex items-center gap-1&quot;&gt;&lt;i class=&quot;fa-solid fa-book&quot;&gt;&lt;/i&gt; อ่านข้อกำหนดการบรรจุสินค้า&lt;/a&gt;
+                    &lt;/div&gt;
+
+                    &lt;div class=&quot;bg-white rounded-xl shadow-sm border border-slate-200 p-5 hover:shadow-md transition-shadow&quot;&gt;
+                        &lt;div class=&quot;flex items-center gap-3 mb-3 border-b border-slate-100 pb-3&quot;&gt;
+                            &lt;div class=&quot;bg-slate-100 text-slate-600 w-8 h-8 rounded-full flex items-center justify-center font-bold&quot;&gt;7&lt;/div&gt;
+                            &lt;h3 class=&quot;text-md font-bold text-slate-800&quot;&gt;การส่งมอบพัสดุ (Handover)&lt;/h3&gt;
+                        &lt;/div&gt;
+                        &lt;ul class=&quot;text-sm text-slate-700 list-disc pl-5 space-y-1 mb-4&quot;&gt;
+                            &lt;li&gt;เจ้าหน้าที่คลังสินค้าต้องตรวจสอบยอดพัสดุร่วมกับพนักงานขับรถให้ตรงกัน&lt;/li&gt;
+                            &lt;li&gt;&lt;b&gt;ต้องให้พนักงานขับรถสแกนรับพัสดุให้ครบถ้วน ณ จุดรับมอบ&lt;/b&gt; หากปล่อยผ่านโดยไม่สแกน จะส่งผลให้เกิดประวัติจัดส่งล่าช้า&lt;/li&gt;
+                            &lt;li&gt;เก็บรักษาเอกสารใบส่งมอบ (Manifest) ไว้เป็นหลักฐานเสมอ&lt;/li&gt;
+                        &lt;/ul&gt;
+                        &lt;a href=&quot;https://seller.shopee.co.th/edu/article/13041&quot; target=&quot;_blank&quot; class=&quot;text-xs text-blue-600 hover:underline flex items-center gap-1&quot;&gt;&lt;i class=&quot;fa-solid fa-book&quot;&gt;&lt;/i&gt; อ่านแนวทางการส่งมอบพัสดุ&lt;/a&gt;
+                    &lt;/div&gt;
+
+                    &lt;div class=&quot;bg-white rounded-xl shadow-sm border border-slate-200 p-5 hover:shadow-md transition-shadow border-l-4 border-l-amber-500&quot;&gt;
+                        &lt;div class=&quot;flex items-center gap-3 mb-3 border-b border-slate-100 pb-3&quot;&gt;
+                            &lt;div class=&quot;bg-amber-100 text-amber-700 w-8 h-8 rounded-full flex items-center justify-center font-bold&quot;&gt;8&lt;/div&gt;
+                            &lt;h3 class=&quot;text-md font-bold text-slate-800&quot;&gt;การจัดการพัสดุตีกลับ (Return to Sender)&lt;/h3&gt;
+                        &lt;/div&gt;
+                        &lt;p class=&quot;text-sm text-slate-600 mb-3&quot;&gt;กรณีพัสดุถูกตีกลับมายังศูนย์กระจายสินค้า &lt;b&gt;ห้ามเปิดกล่องเพื่อนำสินค้ากลับเข้าคลังทันที&lt;/b&gt; ต้องบันทึกวิดีโอสภาพบรรจุภัณฑ์และขณะตรวจสอบสินค้าภายในทุกครั้ง เพื่อใช้เป็นหลักฐานประกอบการเคลมกรณีสินค้าชำรุดหรือสูญหาย&lt;/p&gt;
+                        &lt;a href=&quot;https://seller.shopee.co.th/edu/article/14590&quot; target=&quot;_blank&quot; class=&quot;text-xs text-blue-600 hover:underline flex items-center gap-1&quot;&gt;&lt;i class=&quot;fa-solid fa-book&quot;&gt;&lt;/i&gt; อ่านแนวทางการจัดการพัสดุตีกลับ&lt;/a&gt;
+                    &lt;/div&gt;
+                &lt;/div&gt;
+
+                &lt;h3 class=&quot;text-xl font-bold text-slate-800 mb-4 border-l-4 border-blue-600 pl-3&quot;&gt;หมวดที่ 3: ระบบการจัดการสำหรับผู้ดูแลระบบ&lt;/h3&gt;
+                &lt;div class=&quot;grid grid-cols-1 md:grid-cols-3 gap-6 mb-10&quot;&gt;
+                    
+                    &lt;div class=&quot;bg-white rounded-xl shadow-sm border border-slate-200 p-5 hover:shadow-md transition-shadow&quot;&gt;
+                        &lt;div class=&quot;flex items-center gap-2 mb-2&quot;&gt;
+                            &lt;div class=&quot;bg-slate-100 text-slate-600 w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs&quot;&gt;9&lt;/div&gt;
+                            &lt;h3 class=&quot;font-bold text-slate-800 text-sm&quot;&gt;การจัดการคำสั่งซื้อ&lt;/h3&gt;
+                        &lt;/div&gt;
+                        &lt;p class=&quot;text-xs text-slate-600 mb-3&quot;&gt;ตรวจสอบและคัดกรองคำสั่งซื้อที่ถูกระงับหรือยกเลิกออกจากระบบ Seller Center อย่างสม่ำเสมอ เพื่อหลีกเลี่ยงการจัดเตรียมสินค้าซ้ำซ้อน&lt;/p&gt;
+                        &lt;a href=&quot;https://seller.shopee.co.th/edu/article/9289&quot; target=&quot;_blank&quot; class=&quot;text-[10px] text-blue-600 hover:underline&quot;&gt;อ่านรายละเอียด&lt;/a&gt;
+                    &lt;/div&gt;
+
+                    &lt;div class=&quot;bg-white rounded-xl shadow-sm border border-slate-200 p-5 hover:shadow-md transition-shadow&quot;&gt;
+                        &lt;div class=&quot;flex items-center gap-2 mb-2&quot;&gt;
+                            &lt;div class=&quot;bg-slate-100 text-slate-600 w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs&quot;&gt;10&lt;/div&gt;
+                            &lt;h3 class=&quot;font-bold text-slate-800 text-sm&quot;&gt;จัดส่งแบบเป็นชุด (Mass Ship)&lt;/h3&gt;
+                        &lt;/div&gt;
+                        &lt;p class=&quot;text-xs text-slate-600 mb-3&quot;&gt;ในกรณีที่มีปริมาณคำสั่งซื้อจำนวนมาก แนะนำให้ใช้ฟังก์ชันเตรียมจัดส่ง (RTS) แบบชุด (50-100 รายการ) เพื่อเพิ่มประสิทธิภาพในการทำงาน&lt;/p&gt;
+                        &lt;a href=&quot;https://seller.shopee.co.th/edu/article/7126&quot; target=&quot;_blank&quot; class=&quot;text-[10px] text-blue-600 hover:underline&quot;&gt;อ่านรายละเอียด&lt;/a&gt;
+                    &lt;/div&gt;
+
+                    &lt;div class=&quot;bg-white rounded-xl shadow-sm border border-slate-200 p-5 hover:shadow-md transition-shadow&quot;&gt;
+                        &lt;div class=&quot;flex items-center gap-2 mb-2&quot;&gt;
+                            &lt;div class=&quot;bg-slate-100 text-slate-600 w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs&quot;&gt;11&lt;/div&gt;
+                            &lt;h3 class=&quot;font-bold text-slate-800 text-sm&quot;&gt;ดาวน์โหลดเอกสารแบบชุด&lt;/h3&gt;
+                        &lt;/div&gt;
+                        &lt;p class=&quot;text-xs text-slate-600 mb-3&quot;&gt;กำหนดการพิมพ์ใบปะหน้า (AWB) และใบหยิบสินค้าในคราวเดียว เพื่อให้กระบวนการส่งมอบงานแก่ทีมคลังสินค้ามีความต่อเนื่อง&lt;/p&gt;
+                        &lt;a href=&quot;https://seller.shopee.co.th/edu/article/1753&quot; target=&quot;_blank&quot; class=&quot;text-[10px] text-blue-600 hover:underline&quot;&gt;อ่านรายละเอียด&lt;/a&gt;
+                    &lt;/div&gt;
+                &lt;/div&gt;
+
+                &lt;h3 class=&quot;text-xl font-bold text-red-700 mb-4 border-l-4 border-red-600 pl-3&quot;&gt;หมวดที่ 4: ข้อควรระวังและมาตรการลงโทษ&lt;/h3&gt;
+                &lt;div class=&quot;grid grid-cols-1 md:grid-cols-2 gap-6 mb-8&quot;&gt;
+                    
+                    &lt;div class=&quot;bg-red-50 rounded-xl border border-red-200 p-5 hover:shadow-md transition-shadow&quot;&gt;
+                        &lt;div class=&quot;flex items-center gap-3 mb-3 border-b border-red-100 pb-3&quot;&gt;
+                            &lt;div class=&quot;bg-red-200 text-red-800 w-8 h-8 rounded-full flex items-center justify-center font-bold&quot;&gt;12&lt;/div&gt;
+                            &lt;h3 class=&quot;text-md font-bold text-red-800&quot;&gt;อัตราการจัดส่งล่าช้า (LSR)&lt;/h3&gt;
+                        &lt;/div&gt;
+                        &lt;p class=&quot;text-sm text-red-700 mb-2&quot;&gt;หากศูนย์กระจายสินค้าดำเนินการบรรจุสินค้าล่าช้า จนล่วงเลยกำหนดการจัดส่ง (DTS) &lt;b&gt;เกิน 5% ของคำสั่งซื้อทั้งหมด&lt;/b&gt;&lt;/p&gt;
+                        &lt;p class=&quot;text-sm text-red-900 font-bold mb-3&quot;&gt;&lt;i class=&quot;fa-solid fa-triangle-exclamation mr-1&quot;&gt;&lt;/i&gt; มาตรการ: ร้านค้าจะถูกหักคะแนนความประพฤติและถูกลดอัตราการมองเห็นของสินค้า&lt;/p&gt;
+                        &lt;a href=&quot;https://seller.shopee.co.th/edu/article/10701&quot; target=&quot;_blank&quot; class=&quot;text-xs text-red-600 hover:underline flex items-center gap-1&quot;&gt;&lt;i class=&quot;fa-solid fa-book&quot;&gt;&lt;/i&gt; อ่านเกณฑ์ประเมิน LSR&lt;/a&gt;
+                    &lt;/div&gt;
+
+                    &lt;div class=&quot;bg-red-50 rounded-xl border border-red-200 p-5 hover:shadow-md transition-shadow&quot;&gt;
+                        &lt;div class=&quot;flex items-center gap-3 mb-3 border-b border-red-100 pb-3&quot;&gt;
+                            &lt;div class=&quot;bg-red-200 text-red-800 w-8 h-8 rounded-full flex items-center justify-center font-bold&quot;&gt;13&lt;/div&gt;
+                            &lt;h3 class=&quot;text-md font-bold text-red-800&quot;&gt;อัตราจัดส่งไม่สำเร็จ (NFR)&lt;/h3&gt;
+                        &lt;/div&gt;
+                        &lt;p class=&quot;text-sm text-red-700 mb-2&quot;&gt;หากผู้ดูแลระบบยกเลิกคำสั่งซื้อ หรือเกิดข้อผิดพลาดในการบรรจุสินค้าจนเป็นเหตุให้ผู้ซื้อขอคืนเงิน &lt;b&gt;ในอัตราที่เกิน 5%&lt;/b&gt;&lt;/p&gt;
+                        &lt;p class=&quot;text-sm text-red-900 font-bold mb-3&quot;&gt;&lt;i class=&quot;fa-solid fa-ban mr-1&quot;&gt;&lt;/i&gt; มาตรการ: ร้านค้าจะถูกเพิกถอนสถานะร้านค้าแนะนำ และถูกระงับสิทธิ์การเข้าร่วมแคมเปญ&lt;/p&gt;
+                        &lt;a href=&quot;https://seller.shopee.co.th/edu/article/10702&quot; target=&quot;_blank&quot; class=&quot;text-xs text-red-600 hover:underline flex items-center gap-1&quot;&gt;&lt;i class=&quot;fa-solid fa-book&quot;&gt;&lt;/i&gt; อ่านเกณฑ์ประเมิน NFR&lt;/a&gt;
+                    &lt;/div&gt;
+                &lt;/div&gt;
+            &lt;/div&gt;
+
+            &lt;div id=&quot;view-lazada&quot; class=&quot;view-panel max-w-5xl mx-auto hidden&quot;&gt;
+                &lt;div class=&quot;bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-8&quot;&gt;
+                    &lt;div class=&quot;h-32 sm:h-48 relative&quot;&gt;
+                        &lt;div class=&quot;absolute inset-0 bg-gradient-to-r from-[#0F146D] to-blue-800&quot;&gt;&lt;/div&gt;
+                        &lt;div class=&quot;absolute inset-0 p-8 flex flex-col justify-center&quot;&gt;
+                            &lt;div class=&quot;flex items-center gap-3 mb-2&quot;&gt;
+                                &lt;img src=&quot;https://www.google.com/s2/favicons?sz=128&amp;domain=lazada.co.th&quot; alt=&quot;Lazada&quot; class=&quot;w-10 h-10 rounded-xl border-2 border-white shadow-md bg-white p-1&quot;&gt;
+                                &lt;h2 class=&quot;text-3xl font-bold text-white&quot;&gt;Lazada (มาตรฐานการปฏิบัติงาน)&lt;/h2&gt;
+                            &lt;/div&gt;
+                            &lt;p class=&quot;text-white/90 text-sm&quot;&gt;คู่มือมาตรฐานการปฏิบัติงาน (SOP) และข้อกำหนดนโยบายฉบับสมบูรณ์&lt;/p&gt;
+                        &lt;/div&gt;
+                    &lt;/div&gt;
+                &lt;/div&gt;
+
+                &lt;h3 class=&quot;text-xl font-bold text-slate-800 mb-4 border-l-4 border-[#0F146D] pl-3&quot;&gt;หมวดที่ 1: นโยบายระยะเวลาและการตัดรอบ (SLA &amp; Cut-off)&lt;/h3&gt;
+                &lt;div class=&quot;grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10&quot;&gt;
+                    
+                    &lt;div class=&quot;bg-white rounded-xl shadow-sm border border-slate-200 p-5&quot;&gt;
+                        &lt;div class=&quot;flex items-center gap-3 mb-3 border-b border-slate-100 pb-3&quot;&gt;
+                            &lt;div class=&quot;bg-blue-100 text-[#0F146D] w-8 h-8 rounded-full flex items-center justify-center font-bold&quot;&gt;1&lt;/div&gt;
+                            &lt;h3 class=&quot;text-md font-bold text-slate-800&quot;&gt;อัตราการจัดส่งรวดเร็ว (Fast Fulfillment Rate - FFR)&lt;/h3&gt;
+                        &lt;/div&gt;
+                        &lt;ul class=&quot;text-sm text-slate-700 list-disc pl-5 space-y-2 mb-4&quot;&gt;
+                            &lt;li&gt;&lt;span class=&quot;font-bold text-[#0F146D]&quot;&gt;คำสั่งซื้อก่อน 12:00 น. (จ.-ส.):&lt;/span&gt; ต้องดำเนินการบรรจุและส่งมอบให้บริษัทขนส่ง (สถานะ Shipped) ภายใน 23:59 น. ของวันเดียวกัน&lt;/li&gt;
+                            &lt;li&gt;&lt;span class=&quot;font-bold text-slate-700&quot;&gt;คำสั่งซื้อหลัง 12:00 น. (จ.-ศ.):&lt;/span&gt; ต้องดำเนินการบรรจุและส่งมอบ ภายใน 23:59 น. ของวันทำการถัดไป&lt;/li&gt;
+                            &lt;li&gt;&lt;span class=&quot;font-bold text-slate-700&quot;&gt;บทลงโทษ:&lt;/span&gt; อัตรา FFR ต่ำกว่ามาตรฐานอาจส่งผลให้ถูกจำกัดปริมาณคำสั่งซื้อ (OVL) หรือถูกระงับสิทธิ์การเข้าร่วมแคมเปญ&lt;/li&gt;
+                        &lt;/ul&gt;
+                        &lt;div class=&quot;mt-auto border-t border-slate-100 pt-3 flex justify-end&quot;&gt;
+                            &lt;a href=&quot;https://sellercenter.lazada.co.th/helpcenter/s/faq/knowledge?questionId=1000147871&quot; target=&quot;_blank&quot; class=&quot;text-xs text-blue-600 hover:underline flex items-center gap-1&quot;&gt;&lt;i class=&quot;fa-solid fa-book&quot;&gt;&lt;/i&gt; อ้างอิง: เกณฑ์ FFR&lt;/a&gt;
+                        &lt;/div&gt;
+                    &lt;/div&gt;
+
+                    &lt;div class=&quot;bg-white rounded-xl shadow-sm border border-orange-300 p-5 relative overflow-hidden&quot;&gt;
+                        &lt;div class=&quot;absolute top-0 right-0 bg-orange-500 text-white text-xs px-3 py-1 rounded-bl-lg font-bold&quot;&gt;จุดวิกฤต (Choke Point)&lt;/div&gt;
+                        &lt;div class=&quot;flex items-center gap-3 mb-3 border-b border-slate-100 pb-3&quot;&gt;
+                            &lt;div class=&quot;bg-orange-100 text-orange-600 w-8 h-8 rounded-full flex items-center justify-center font-bold&quot;&gt;2&lt;/div&gt;
+                            &lt;h3 class=&quot;text-md font-bold text-slate-800&quot;&gt;การตัดรอบรถเข้ารับพัสดุ (Pick-up Cut-off)&lt;/h3&gt;
+                        &lt;/div&gt;
+                        &lt;p class=&quot;text-sm text-slate-700 mb-2 font-bold text-orange-700&quot;&gt;เงื่อนไขสำคัญสำหรับบริการเรียกรถเข้ารับพัสดุ:&lt;/p&gt;
+                        &lt;ul class=&quot;text-sm text-slate-700 list-disc pl-5 space-y-2 mb-4&quot;&gt;
+                            &lt;li&gt;ผู้ดูแลระบบต้องดำเนินการเปลี่ยนสถานะเป็น &lt;b class=&quot;underline&quot;&gt;&quot;พร้อมจัดส่ง (RTS)&quot; ภายในเวลา 13:00 น.&lt;/b&gt;&lt;/li&gt;
+                            &lt;li&gt;หากดำเนินการหลัง 13:00 น. บริษัทขนส่งจะเข้ารับพัสดุในวันทำการถัดไป ซึ่งอาจก่อให้เกิดปัญหาการจัดส่งล่าช้า (Breach SLA)&lt;/li&gt;
+                        &lt;/ul&gt;
+                        &lt;div class=&quot;mt-auto border-t border-slate-100 pt-3 flex justify-end&quot;&gt;
+                            &lt;a href=&quot;https://sellercenter.lazada.co.th/helpcenter/s/faq/knowledge?categoryId=1000028111&amp;m_station=faq&amp;questionId=1000147720&quot; target=&quot;_blank&quot; class=&quot;text-xs text-blue-600 hover:underline flex items-center gap-1&quot;&gt;&lt;i class=&quot;fa-solid fa-book&quot;&gt;&lt;/i&gt; อ้างอิง: การตัดรอบเข้ารับ&lt;/a&gt;
+                        &lt;/div&gt;
+                    &lt;/div&gt;
+                &lt;/div&gt;
+
+                &lt;h3 class=&quot;text-xl font-bold text-slate-800 mb-4 border-l-4 border-green-600 pl-3&quot;&gt;หมวดที่ 2: มาตรฐานการปฏิบัติงานคลังสินค้า (Warehouse SOP)&lt;/h3&gt;
+                &lt;div class=&quot;grid grid-cols-1 md:grid-cols-3 gap-6 mb-10&quot;&gt;
+                    
+                    &lt;div class=&quot;bg-white rounded-xl shadow-sm border border-slate-200 p-5&quot;&gt;
+                        &lt;div class=&quot;flex items-center gap-2 mb-2&quot;&gt;
+                            &lt;div class=&quot;bg-slate-100 text-slate-600 w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs&quot;&gt;3&lt;/div&gt;
+                            &lt;h3 class=&quot;font-bold text-slate-800 text-sm&quot;&gt;ขั้นตอนการจัดการคำสั่งซื้อ&lt;/h3&gt;
+                        &lt;/div&gt;
+                        &lt;ul class=&quot;text-xs text-slate-600 space-y-2 mb-3 list-disc pl-4&quot;&gt;
+                            &lt;li&gt;พิมพ์ใบแจ้งหนี้ (Invoice) และใบปะหน้าพัสดุ (Shipping Label)&lt;/li&gt;
+                            &lt;li&gt;บรรจุสินค้าอย่างแน่นหนาและระมัดระวัง&lt;/li&gt;
+                            &lt;li&gt;ห้ามพับ ติดเทปใส หรือกระทำการใดๆ ที่บดบังบาร์โค้ดบนใบปะหน้า&lt;/li&gt;
+                        &lt;/ul&gt;
+                        &lt;div class=&quot;mt-auto border-t border-slate-100 pt-2 flex justify-end&quot;&gt;
+                            &lt;a href=&quot;https://sellercenter.lazada.co.th/helpcenter/s/faq/knowledge?categoryId=1000028134&amp;m_station=faq&amp;questionId=1000147318&quot; target=&quot;_blank&quot; class=&quot;text-[10px] text-blue-600 hover:underline&quot;&gt;อ้างอิงนโยบาย&lt;/a&gt;
+                        &lt;/div&gt;
+                    &lt;/div&gt;
+
+                    &lt;div class=&quot;bg-white rounded-xl shadow-sm border border-slate-200 p-5&quot;&gt;
+                        &lt;div class=&quot;flex items-center gap-2 mb-2&quot;&gt;
+                            &lt;div class=&quot;bg-slate-100 text-slate-600 w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs&quot;&gt;4&lt;/div&gt;
+                            &lt;h3 class=&quot;font-bold text-slate-800 text-sm&quot;&gt;การส่งมอบพัสดุ (Pick Up)&lt;/h3&gt;
+                        &lt;/div&gt;
+                        &lt;ul class=&quot;text-xs text-slate-600 space-y-2 mb-3 list-disc pl-4&quot;&gt;
+                            &lt;li&gt;ตรวจสอบความเรียบร้อยของพัสดุ ณ จุดส่งมอบ (Handover Area)&lt;/li&gt;
+                            &lt;li&gt;ควบคุมให้พนักงานขับรถสแกนรับพัสดุทุกชิ้น เพื่อปรับสถานะเข้าสู่ระบบโลจิสติกส์&lt;/li&gt;
+                            &lt;li&gt;ลงนามเอกสารรับมอบ (Manifest) ร่วมกันเพื่อเป็นหลักฐาน&lt;/li&gt;
+                        &lt;/ul&gt;
+                        &lt;div class=&quot;mt-auto border-t border-slate-100 pt-2 flex justify-end&quot;&gt;
+                            &lt;a href=&quot;https://sellercenter.lazada.co.th/helpcenter/s/faq/knowledge?categoryId=1000028111&amp;m_station=faq&amp;questionId=1000147738&quot; target=&quot;_blank&quot; class=&quot;text-[10px] text-blue-600 hover:underline&quot;&gt;อ้างอิงนโยบาย&lt;/a&gt;
+                        &lt;/div&gt;
+                    &lt;/div&gt;
+
+                    &lt;div class=&quot;bg-white rounded-xl shadow-sm border border-slate-200 p-5&quot;&gt;
+                        &lt;div class=&quot;flex items-center gap-2 mb-2&quot;&gt;
+                            &lt;div class=&quot;bg-slate-100 text-slate-600 w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs&quot;&gt;5&lt;/div&gt;
+                            &lt;h3 class=&quot;font-bold text-slate-800 text-sm&quot;&gt;การนำส่ง ณ จุดบริการ (Drop Off)&lt;/h3&gt;
+                        &lt;/div&gt;
+                        &lt;ul class=&quot;text-xs text-slate-600 space-y-2 mb-3 list-disc pl-4&quot;&gt;
+                            &lt;li&gt;กรณีใช้บริการ Drop Off จะต้องนำส่งพัสดุ ณ จุดบริการที่กำหนดภายในระยะเวลาที่แพลตฟอร์มระบุ&lt;/li&gt;
+                            &lt;li&gt;ตรวจสอบเวลาทำการของจุดบริการขนส่งแต่ละแห่งล่วงหน้าเพื่อป้องกันการจัดส่งล่าช้า&lt;/li&gt;
+                        &lt;/ul&gt;
+                        &lt;div class=&quot;mt-auto border-t border-slate-100 pt-2 flex justify-end&quot;&gt;
+                            &lt;a href=&quot;https://sellercenter.lazada.co.th/helpcenter/s/faq/knowledge?categoryId=1000028110&amp;m_station=faq&amp;questionId=1000147839&quot; target=&quot;_blank&quot; class=&quot;text-[10px] text-blue-600 hover:underline&quot;&gt;อ้างอิงนโยบาย&lt;/a&gt;
+                        &lt;/div&gt;
+                    &lt;/div&gt;
+                &lt;/div&gt;
+
+                &lt;h3 class=&quot;text-xl font-bold text-slate-800 mb-4 border-l-4 border-amber-500 pl-3&quot;&gt;หมวดที่ 3: การติดตามและจัดการข้อขัดข้อง (Issue Management)&lt;/h3&gt;
+                &lt;div class=&quot;grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10&quot;&gt;
+                    
+                    &lt;div class=&quot;bg-white rounded-xl shadow-sm border border-slate-200 p-5&quot;&gt;
+                        &lt;div class=&quot;flex items-center gap-3 mb-3 border-b border-slate-100 pb-3&quot;&gt;
+                            &lt;div class=&quot;bg-amber-100 text-amber-700 w-8 h-8 rounded-full flex items-center justify-center font-bold&quot;&gt;6&lt;/div&gt;
+                            &lt;h3 class=&quot;text-md font-bold text-slate-800&quot;&gt;การติดตามรถเข้ารับพัสดุ&lt;/h3&gt;
+                        &lt;/div&gt;
+                        &lt;ul class=&quot;text-sm text-slate-700 list-disc pl-5 space-y-2 mb-4&quot;&gt;
+                            &lt;li&gt;หากพนักงานขับรถไม่เข้ารับพัสดุภายในเวลาที่กำหนด ผู้ดูแลระบบต้องดำเนินการแจ้งปัญหาผ่านระบบศูนย์ช่วยเหลือ (Help Center)&lt;/li&gt;
+                            &lt;li&gt;การติดตามอย่างทันท่วงทีช่วยป้องกันการถูกประเมินคะแนนการจัดส่งล่าช้า ซึ่งเกิดจากความผิดพลาดของผู้ให้บริการขนส่ง&lt;/li&gt;
+                        &lt;/ul&gt;
+                        &lt;div class=&quot;mt-auto border-t border-slate-100 pt-3 flex justify-end&quot;&gt;
+                            &lt;a href=&quot;https://sellercenter.lazada.co.th/helpcenter/s/faq/knowledge?categoryId=1000028111&amp;m_station=faq&amp;questionId=1000155577&quot; target=&quot;_blank&quot; class=&quot;text-xs text-blue-600 hover:underline flex items-center gap-1&quot;&gt;&lt;i class=&quot;fa-solid fa-book&quot;&gt;&lt;/i&gt; อ้างอิง: วิธีการตามรถ&lt;/a&gt;
+                        &lt;/div&gt;
+                    &lt;/div&gt;
+
+                    &lt;div class=&quot;bg-white rounded-xl shadow-sm border border-slate-200 p-5&quot;&gt;
+                        &lt;div class=&quot;flex items-center gap-3 mb-3 border-b border-slate-100 pb-3&quot;&gt;
+                            &lt;div class=&quot;bg-amber-100 text-amber-700 w-8 h-8 rounded-full flex items-center justify-center font-bold&quot;&gt;7&lt;/div&gt;
+                            &lt;h3 class=&quot;text-md font-bold text-slate-800&quot;&gt;การยกเลิกสถานะ &quot;ระหว่างการจัดส่ง&quot;&lt;/h3&gt;
+                        &lt;/div&gt;
+                        &lt;ul class=&quot;text-sm text-slate-700 list-disc pl-5 space-y-2 mb-4&quot;&gt;
+                            &lt;li&gt;กรณีมีการขอระงับหรือยกเลิกคำสั่งซื้อภายหลังจากที่พัสดุถูกส่งมอบเข้าสู่เครือข่ายของบริษัทขนส่งแล้ว&lt;/li&gt;
+                            &lt;li&gt;ศูนย์กระจายสินค้าต้องปฏิบัติตามขั้นตอนการระงับการจัดส่ง และประสานงานกับส่วนงานตีกลับพัสดุตามนโยบาย&lt;/li&gt;
+                        &lt;/ul&gt;
+                        &lt;div class=&quot;mt-auto border-t border-slate-100 pt-3 flex justify-end&quot;&gt;
+                            &lt;a href=&quot;https://sellercenter.lazada.co.th/helpcenter/s/faq/knowledge?categoryId=1000028136&amp;m_station=faq&amp;questionId=1000147879&quot; target=&quot;_blank&quot; class=&quot;text-xs text-blue-600 hover:underline flex items-center gap-1&quot;&gt;&lt;i class=&quot;fa-solid fa-book&quot;&gt;&lt;/i&gt; อ้างอิง: นโยบายการยกเลิก&lt;/a&gt;
+                        &lt;/div&gt;
+                    &lt;/div&gt;
+                &lt;/div&gt;
+
+                &lt;h3 class=&quot;text-xl font-bold text-slate-800 mb-4 border-l-4 border-red-600 pl-3&quot;&gt;หมวดที่ 4: การจัดการพัสดุตีกลับและการเรียกร้องค่าสินไหม (Returns &amp; Claims)&lt;/h3&gt;
+                &lt;div class=&quot;grid grid-cols-1 md:grid-cols-3 gap-6 mb-8&quot;&gt;
+                    
+                    &lt;div class=&quot;bg-white rounded-xl shadow-sm border border-slate-200 p-5&quot;&gt;
+                        &lt;div class=&quot;flex items-center gap-2 mb-2&quot;&gt;
+                            &lt;div class=&quot;bg-red-50 text-red-600 w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs&quot;&gt;8&lt;/div&gt;
+                            &lt;h3 class=&quot;font-bold text-slate-800 text-sm&quot;&gt;การตรวจสอบสินค้าคืน&lt;/h3&gt;
+                        &lt;/div&gt;
+                        &lt;p class=&quot;text-xs text-slate-600 mb-3&quot;&gt;เมื่อได้รับพัสดุตีกลับจากลูกค้า ต้องดำเนินการตรวจสอบสภาพสินค้าอย่างละเอียดก่อนบันทึกกลับเข้าสู่ระบบสินค้าคงคลัง (Inventory)&lt;/p&gt;
+                        &lt;div class=&quot;mt-auto border-t border-slate-100 pt-2 flex justify-end&quot;&gt;
+                            &lt;a href=&quot;https://sellercenter.lazada.co.th/helpcenter/s/faq/knowledge?categoryId=1000028125&amp;m_station=faq&amp;questionId=1000147553&quot; target=&quot;_blank&quot; class=&quot;text-[10px] text-blue-600 hover:underline&quot;&gt;อ้างอิงนโยบาย&lt;/a&gt;
+                        &lt;/div&gt;
+                    &lt;/div&gt;
+
+                    &lt;div class=&quot;bg-white rounded-xl shadow-sm border border-slate-200 p-5&quot;&gt;
+                        &lt;div class=&quot;flex items-center gap-2 mb-2&quot;&gt;
+                            &lt;div class=&quot;bg-red-50 text-red-600 w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs&quot;&gt;9&lt;/div&gt;
+                            &lt;h3 class=&quot;font-bold text-slate-800 text-sm&quot;&gt;สินค้าสูญหายหรือเสียหาย&lt;/h3&gt;
+                        &lt;/div&gt;
+                        &lt;p class=&quot;text-xs text-slate-600 mb-3&quot;&gt;เรียนรู้เงื่อนไขความรับผิดชอบของบริษัทขนส่ง กรณีสินค้าเกิดความเสียหายหรือสูญหายระหว่างกระบวนการจัดส่ง เพื่อเตรียมพร้อมสำหรับการชดเชย&lt;/p&gt;
+                        &lt;div class=&quot;mt-auto border-t border-slate-100 pt-2 flex justify-end&quot;&gt;
+                            &lt;a href=&quot;https://sellercenter.lazada.co.th/helpcenter/s/faq/knowledge?categoryId=1000028531&amp;m_station=faq&amp;questionId=1000148093&quot; target=&quot;_blank&quot; class=&quot;text-[10px] text-blue-600 hover:underline&quot;&gt;อ้างอิงนโยบาย&lt;/a&gt;
+                        &lt;/div&gt;
+                    &lt;/div&gt;
+
+                    &lt;div class=&quot;bg-white rounded-xl shadow-sm border border-red-300 p-5 relative&quot;&gt;
+                        &lt;div class=&quot;absolute top-0 right-0 bg-red-500 text-white text-[10px] px-2 py-1 rounded-bl-lg font-bold&quot;&gt;สำคัญ!&lt;/div&gt;
+                        &lt;div class=&quot;flex items-center gap-2 mb-2&quot;&gt;
+                            &lt;div class=&quot;bg-red-50 text-red-600 w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs&quot;&gt;10&lt;/div&gt;
+                            &lt;h3 class=&quot;font-bold text-slate-800 text-sm&quot;&gt;การยื่นคำร้องขอเรียกร้องสินไหม&lt;/h3&gt;
+                        &lt;/div&gt;
+                        &lt;p class=&quot;text-xs text-slate-600 mb-3 font-medium&quot;&gt;ข้อบังคับคลังสินค้า: &lt;span class=&quot;text-red-600&quot;&gt;ต้องบันทึกวิดีโอหลักฐานขณะปฏิบัติงานเสมอ&lt;/span&gt; ทั้งการบรรจุสินค้าก่อนจัดส่ง และการเปิดกล่องพัสดุตีกลับ เพื่อใช้ประกอบการยื่นคำร้อง (Claim)&lt;/p&gt;
+                        &lt;div class=&quot;mt-auto border-t border-slate-100 pt-2 flex justify-end&quot;&gt;
+                            &lt;a href=&quot;https://sellercenter.lazada.co.th/helpcenter/s/faq/knowledge?categoryId=1000028531&amp;m_station=faq&amp;questionId=1000149277&quot; target=&quot;_blank&quot; class=&quot;text-[10px] text-blue-600 hover:underline&quot;&gt;อ้างอิงวิธีการเคลม&lt;/a&gt;
+                        &lt;/div&gt;
+                    &lt;/div&gt;
+                &lt;/div&gt;
+
+            &lt;/div&gt;
+
+            &lt;div id=&quot;view-tiktok&quot; class=&quot;view-panel max-w-5xl mx-auto hidden&quot;&gt;
+                &lt;div class=&quot;bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-8&quot;&gt;
+                    &lt;div class=&quot;h-32 sm:h-40 relative&quot;&gt;
+                        &lt;div class=&quot;absolute inset-0 bg-gradient-to-r from-gray-900 to-gray-700&quot;&gt;&lt;/div&gt;
+                        &lt;div class=&quot;absolute inset-0 p-8 flex flex-col justify-center&quot;&gt;
+                            &lt;div class=&quot;flex items-center gap-3 mb-2&quot;&gt;
+                                &lt;div class=&quot;w-10 h-10 rounded-full border-2 border-white shadow-md bg-black flex items-center justify-center text-white&quot;&gt;&lt;i class=&quot;fa-brands fa-tiktok text-xl&quot;&gt;&lt;/i&gt;&lt;/div&gt;
+                                &lt;h2 class=&quot;text-3xl font-bold text-white&quot;&gt;TikTok Shop (นโยบายการจัดส่ง)&lt;/h2&gt;
+                            &lt;/div&gt;
+                            &lt;p class=&quot;text-white/90 text-sm&quot;&gt;คู่มือมาตรฐานการปฏิบัติงาน (SOP) จำนวน 8 หมวดหมู่ อ้างอิงจาก TikTok University&lt;/p&gt;
+                        &lt;/div&gt;
+                    &lt;/div&gt;
+                &lt;/div&gt;
+
+                &lt;div class=&quot;grid grid-cols-1 lg:grid-cols-2 gap-6&quot;&gt;
+
+                    &lt;div class=&quot;bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-md transition-shadow relative&quot;&gt;
+                        &lt;div class=&quot;absolute top-4 right-4 text-slate-300 opacity-30 text-5xl font-bold&quot;&gt;1&lt;/div&gt;
+                        &lt;h3 class=&quot;text-lg font-bold text-slate-800 mb-2 border-l-4 border-slate-800 pl-3&quot;&gt;กรอบเวลาการจัดส่ง (Standard)&lt;/h3&gt;
+                        &lt;p class=&quot;text-sm text-slate-600 mb-4&quot;&gt;สำหรับคำสั่งซื้อที่จัดส่งด้วยผู้ให้บริการขนส่งมาตรฐาน (Standard Delivery)&lt;/p&gt;
+                        &lt;div class=&quot;bg-slate-50 p-3 rounded text-sm mb-4&quot;&gt;
+                            &lt;ul class=&quot;list-disc pl-5 space-y-2 text-slate-700&quot;&gt;
+                                &lt;li&gt;ผู้ขายควรดำเนินการเปลี่ยนสถานะเป็น &lt;b&gt;&quot;รอเข้ารับ&quot; (RTS) ภายใน 15:00 น.&lt;/b&gt; เพื่อให้บริษัทขนส่งเข้ารับพัสดุได้ภายในวันเดียวกัน&lt;/li&gt;
+                                &lt;li&gt;หากดำเนินการล่าช้า แพลตฟอร์มจะประเมินคะแนนจัดส่งล่าช้า (LDR)&lt;/li&gt;
+                            &lt;/ul&gt;
+                        &lt;/div&gt;
+                        &lt;div class=&quot;mt-4 pt-4 border-t border-slate-100 flex justify-end&quot;&gt;
+                            &lt;a href=&quot;https://seller-th.tiktok.com/university/essay?knowledge_id=8800940128913168&quot; target=&quot;_blank&quot; class=&quot;text-xs text-blue-600 hover:underline flex items-center gap-1&quot;&gt;&lt;i class=&quot;fa-solid fa-book&quot;&gt;&lt;/i&gt; อ้างอิง: กรอบเวลาจัดส่ง&lt;/a&gt;
+                        &lt;/div&gt;
+                    &lt;/div&gt;
+
+                    &lt;div class=&quot;bg-blue-50 rounded-xl shadow-sm border border-blue-200 p-6 hover:shadow-md transition-shadow relative&quot;&gt;
+                        &lt;div class=&quot;absolute top-4 right-4 text-blue-200 opacity-50 text-5xl font-bold&quot;&gt;2&lt;/div&gt;
+                        &lt;h3 class=&quot;text-lg font-bold text-blue-900 mb-2 border-l-4 border-blue-600 pl-3&quot;&gt;การจัดส่งภายในวัน (Same Day)&lt;/h3&gt;
+                        &lt;p class=&quot;text-sm text-blue-700 mb-4&quot;&gt;สำหรับการจัดส่งที่ต้องการความรวดเร็วภายในวัน&lt;/p&gt;
+                        &lt;div class=&quot;bg-white p-3 rounded border border-blue-100 text-sm mb-4&quot;&gt;
+                            &lt;ul class=&quot;list-disc pl-5 space-y-2 text-slate-700&quot;&gt;
+                                &lt;li&gt;&lt;b&gt;คำสั่งซื้อ 00:00 - 11:59 น.:&lt;/b&gt; ต้องดำเนินการนัดรับขนส่งให้แล้วเสร็จภายใน &lt;b&gt;13:00 น. ของวันเดียวกัน&lt;/b&gt;&lt;/li&gt;
+                                &lt;li&gt;&lt;b&gt;คำสั่งซื้อหลัง 12:00 น.:&lt;/b&gt; ต้องดำเนินการนัดรับขนส่งให้แล้วเสร็จภายใน &lt;b&gt;13:00 น. ของวันทำการถัดไป&lt;/b&gt;&lt;/li&gt;
+                            &lt;/ul&gt;
+                        &lt;/div&gt;
+                        &lt;div class=&quot;mt-4 pt-4 border-t border-blue-200 flex justify-end&quot;&gt;
+                            &lt;a href=&quot;https://seller-th.tiktok.com/university/essay?knowledge_id=4708356737861393&quot; target=&quot;_blank&quot; class=&quot;text-xs text-blue-700 hover:underline flex items-center gap-1&quot;&gt;&lt;i class=&quot;fa-solid fa-book&quot;&gt;&lt;/i&gt; อ้างอิง: การจัดส่งภายในวัน&lt;/a&gt;
+                        &lt;/div&gt;
+                    &lt;/div&gt;
+
+                    &lt;div class=&quot;bg-red-50 rounded-xl shadow-sm border border-red-200 p-6 hover:shadow-md transition-shadow relative&quot;&gt;
+                        &lt;div class=&quot;absolute top-0 right-0 bg-red-600 text-white text-xs px-3 py-1 rounded-bl-lg blinking font-bold&quot;&gt;กรณีเร่งด่วน!&lt;/div&gt;
+                        &lt;div class=&quot;absolute top-4 right-6 text-red-200 opacity-50 text-5xl font-bold&quot;&gt;3&lt;/div&gt;
+                        &lt;h3 class=&quot;text-lg font-bold text-red-900 mb-2 border-l-4 border-red-600 pl-3&quot;&gt;การจัดส่งด่วน (Instant Delivery)&lt;/h3&gt;
+                        &lt;p class=&quot;text-sm text-red-700 mb-4&quot;&gt;บริการจัดส่งด่วนโดยรถจักรยานยนต์ (Grab Express)&lt;/p&gt;
+                        &lt;div class=&quot;bg-white p-4 rounded border border-red-100 text-sm mb-4&quot;&gt;
+                            &lt;p class=&quot;font-bold text-red-700 mb-2&quot;&gt;ข้อปฏิบัติสำคัญ: ต้องบรรจุสินค้าและเรียกรถเข้ารับ &quot;ภายใน 2 ชั่วโมง&quot;&lt;/p&gt;
+                            &lt;ul class=&quot;list-disc pl-5 space-y-1 text-slate-700 text-xs mt-2&quot;&gt;
+                                &lt;li&gt;พนักงานขนส่งจะเข้ารับพัสดุภายใน 1 ชั่วโมง หลังจากทำรายการ&lt;/li&gt;
+                                &lt;li&gt;โปรดให้ความสำคัญและดำเนินการเป็นลำดับแรก&lt;/li&gt;
+                            &lt;/ul&gt;
+                        &lt;/div&gt;
+                        &lt;div class=&quot;mt-4 pt-4 border-t border-red-200 flex justify-end&quot;&gt;
+                            &lt;a href=&quot;https://seller-th.tiktok.com/university/essay?knowledge_id=5952166616270613&quot; target=&quot;_blank&quot; class=&quot;text-xs text-red-700 hover:underline flex items-center gap-1&quot;&gt;&lt;i class=&quot;fa-solid fa-book&quot;&gt;&lt;/i&gt; อ้างอิง: การจัดส่งด่วน&lt;/a&gt;
+                        &lt;/div&gt;
+                    &lt;/div&gt;
+
+                    &lt;div class=&quot;bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-md transition-shadow relative&quot;&gt;
+                        &lt;div class=&quot;absolute top-4 right-4 text-slate-300 opacity-30 text-5xl font-bold&quot;&gt;4&lt;/div&gt;
+                        &lt;h3 class=&quot;text-lg font-bold text-slate-800 mb-2 border-l-4 border-purple-500 pl-3&quot;&gt;พรีออเดอร์ (Pre-order)&lt;/h3&gt;
+                        &lt;p class=&quot;text-sm text-slate-600 mb-4&quot;&gt;สำหรับสินค้าที่ต้องการระยะเวลาจัดเตรียมพิเศษ&lt;/p&gt;
+                        &lt;div class=&quot;bg-slate-50 p-3 rounded text-sm mb-4&quot;&gt;
+                            &lt;ul class=&quot;list-disc pl-5 space-y-2 text-slate-700&quot;&gt;
+                                &lt;li&gt;อนุญาตให้กำหนดระยะเวลาจัดเตรียมพัสดุได้ &lt;b&gt;3 - 30 วัน&lt;/b&gt;&lt;/li&gt;
+                                &lt;li&gt;&lt;b&gt;ข้อควรระวัง:&lt;/b&gt; ควรใช้ฟังก์ชันนี้เฉพาะกรณีจำเป็น เนื่องจากการเปิดตั้งค่าพรีออเดอร์อาจส่งผลให้อัตราการมองเห็นสินค้าลดลง&lt;/li&gt;
+                            &lt;/ul&gt;
+                        &lt;/div&gt;
+                        &lt;div class=&quot;mt-4 pt-4 border-t border-slate-100 flex justify-end&quot;&gt;
+                            &lt;a href=&quot;https://seller-th.tiktok.com/university/essay?knowledge_id=1926670517159697&quot; target=&quot;_blank&quot; class=&quot;text-xs text-blue-600 hover:underline flex items-center gap-1&quot;&gt;&lt;i class=&quot;fa-solid fa-book&quot;&gt;&lt;/i&gt; อ้างอิง: พรีออเดอร์&lt;/a&gt;
+                        &lt;/div&gt;
+                    &lt;/div&gt;
+
+                    &lt;div class=&quot;bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-md transition-shadow relative&quot;&gt;
+                        &lt;div class=&quot;absolute top-4 right-4 text-slate-300 opacity-30 text-5xl font-bold&quot;&gt;5&lt;/div&gt;
+                        &lt;h3 class=&quot;text-lg font-bold text-slate-800 mb-2 border-l-4 border-amber-500 pl-3&quot;&gt;การยกเลิกคำสั่งซื้อ&lt;/h3&gt;
+                        &lt;p class=&quot;text-sm text-slate-600 mb-4&quot;&gt;เงื่อนไขกรณีการขอยกเลิกคำสั่งซื้อ&lt;/p&gt;
+                        &lt;div class=&quot;bg-slate-50 p-3 rounded text-sm mb-4&quot;&gt;
+                            &lt;ul class=&quot;list-disc pl-5 space-y-2 text-slate-700&quot;&gt;
+                                &lt;li&gt;ผู้ซื้อสามารถกดยกเลิกคำสั่งซื้อได้ &lt;b&gt;ก่อนที่ร้านค้าจะดำเนินการอัปเดตสถานะ &quot;รอเข้ารับ (RTS)&quot;&lt;/b&gt;&lt;/li&gt;
+                                &lt;li&gt;กรณีร้านค้าเป็นผู้ดำเนินการยกเลิกเอง (เช่น สินค้าขาดสต็อก) ร้านค้าจะถูกประเมินความผิด (SFCR) ซึ่งส่งผลกระทบต่อสถานะของบัญชีร้านค้า&lt;/li&gt;
+                            &lt;/ul&gt;
+                        &lt;/div&gt;
+                        &lt;div class=&quot;mt-4 pt-4 border-t border-slate-100 flex justify-end&quot;&gt;
+                            &lt;a href=&quot;https://seller-th.tiktok.com/university/essay?knowledge_id=3594067753780993&quot; target=&quot;_blank&quot; class=&quot;text-xs text-blue-600 hover:underline flex items-center gap-1&quot;&gt;&lt;i class=&quot;fa-solid fa-book&quot;&gt;&lt;/i&gt; อ้างอิง: การยกเลิกคำสั่งซื้อ&lt;/a&gt;
+                        &lt;/div&gt;
+                    &lt;/div&gt;
+
+                    &lt;div class=&quot;bg-orange-50 rounded-xl shadow-sm border border-orange-200 p-6 hover:shadow-md transition-shadow relative&quot;&gt;
+                        &lt;div class=&quot;absolute top-4 right-4 text-orange-200 opacity-50 text-5xl font-bold&quot;&gt;6&lt;/div&gt;
+                        &lt;h3 class=&quot;text-lg font-bold text-orange-900 mb-2 border-l-4 border-orange-600 pl-3&quot;&gt;การยกเลิกอัตโนมัติ (Auto-Cancel)&lt;/h3&gt;
+                        &lt;p class=&quot;text-sm text-orange-700 font-bold mb-4&quot;&gt;คำสั่งซื้อจะถูกยกเลิกอัตโนมัติ หากร้านค้าดำเนินการล่าช้าเกินกำหนด!&lt;/p&gt;
+                        &lt;div class=&quot;bg-white p-3 rounded border border-orange-100 text-sm mb-4&quot;&gt;
+                            &lt;ul class=&quot;list-disc pl-5 space-y-2 text-slate-700&quot;&gt;
+                                &lt;li&gt;กรณีร้านค้าไม่กดนัดรับ (RTS) ภายใน 2 วันทำการ&lt;/li&gt;
+                                &lt;li&gt;กรณีกด RTS แล้ว แต่ผู้ให้บริการขนส่งไม่สแกนรับพัสดุภายใน 4 วันทำการ&lt;/li&gt;
+                                &lt;li class=&quot;text-xs text-orange-600&quot;&gt;(สำหรับบริการ Same Day/Instant ระยะเวลาดำเนินการจะสั้นกว่าข้อกำหนดข้างต้น)&lt;/li&gt;
+                            &lt;/ul&gt;
+                        &lt;/div&gt;
+                        &lt;div class=&quot;mt-4 pt-4 border-t border-orange-200 flex justify-end&quot;&gt;
+                            &lt;a href=&quot;https://seller-th.tiktok.com/university/essay?knowledge_id=6837799362201346&quot; target=&quot;_blank&quot; class=&quot;text-xs text-orange-700 hover:underline flex items-center gap-1&quot;&gt;&lt;i class=&quot;fa-solid fa-book&quot;&gt;&lt;/i&gt; อ้างอิง: การยกเลิกอัตโนมัติ&lt;/a&gt;
+                        &lt;/div&gt;
+                    &lt;/div&gt;
+
+                    &lt;div class=&quot;bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-md transition-shadow relative&quot;&gt;
+                        &lt;div class=&quot;absolute top-4 right-4 text-slate-300 opacity-30 text-5xl font-bold&quot;&gt;7&lt;/div&gt;
+                        &lt;h3 class=&quot;text-lg font-bold text-slate-800 mb-2 border-l-4 border-green-500 pl-3&quot;&gt;การบรรจุสินค้าและติดฉลาก&lt;/h3&gt;
+                        &lt;p class=&quot;text-sm text-slate-600 mb-4&quot;&gt;มาตรฐานการปฏิบัติงาน (SOP) สำหรับเจ้าหน้าที่บรรจุสินค้า&lt;/p&gt;
+                        &lt;div class=&quot;bg-slate-50 p-3 rounded text-sm mb-4&quot;&gt;
+                            &lt;ul class=&quot;list-disc pl-5 space-y-2 text-slate-700&quot;&gt;
+                                &lt;li&gt;&lt;b&gt;ฉลาก (Label):&lt;/b&gt; ต้องพิมพ์ให้คมชัด &lt;span class=&quot;text-red-600 font-bold&quot;&gt;ห้ามพับหรือใช้เทปใสปิดทับบริเวณบาร์โค้ดโดยเด็ดขาด&lt;/span&gt;&lt;/li&gt;
+                                &lt;li&gt;&lt;b&gt;วัสดุกันกระแทก:&lt;/b&gt; ต้องห่อหุ้มสินค้าด้วยวัสดุกันกระแทกเสมอ (นโยบายการเคลมสินค้าของ TikTok ค่อนข้างเข้มงวด จึงควรป้องกันความเสียหายอย่างรัดกุม)&lt;/li&gt;
+                                &lt;li&gt;เลือกบรรจุภัณฑ์ให้มีขนาดเหมาะสมกับตัวสินค้า&lt;/li&gt;
+                            &lt;/ul&gt;
+                        &lt;/div&gt;
+                        &lt;div class=&quot;mt-4 pt-4 border-t border-slate-100 flex justify-end&quot;&gt;
+                            &lt;a href=&quot;https://seller-th.tiktok.com/university/essay?knowledge_id=1044391167117057&quot; target=&quot;_blank&quot; class=&quot;text-xs text-blue-600 hover:underline flex items-center gap-1&quot;&gt;&lt;i class=&quot;fa-solid fa-book&quot;&gt;&lt;/i&gt; อ้างอิง: การบรรจุและติดฉลาก&lt;/a&gt;
+                        &lt;/div&gt;
+                    &lt;/div&gt;
+
+                    &lt;div class=&quot;bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-md transition-shadow relative&quot;&gt;
+                        &lt;div class=&quot;absolute top-4 right-4 text-slate-300 opacity-30 text-5xl font-bold&quot;&gt;8&lt;/div&gt;
+                        &lt;h3 class=&quot;text-lg font-bold text-slate-800 mb-2 border-l-4 border-teal-500 pl-3&quot;&gt;แนวทางการจัดส่งของร้านค้า&lt;/h3&gt;
+                        &lt;p class=&quot;text-sm text-slate-600 mb-4&quot;&gt;ข้อกำหนดและระเบียบปฏิบัติทั่วไปจากแพลตฟอร์ม&lt;/p&gt;
+                        &lt;div class=&quot;bg-slate-50 p-3 rounded text-sm mb-4&quot;&gt;
+                            &lt;ul class=&quot;list-disc pl-5 space-y-2 text-slate-700&quot;&gt;
+                                &lt;li&gt;ต้องใช้บริการบริษัทขนส่งที่ระบบกำหนดไว้เท่านั้น (Drop-off / Pick-up)&lt;/li&gt;
+                                &lt;li&gt;ห้ามจัดส่งสินค้าผิดกฎหมาย หรือจัดส่งกล่องเปล่า (อาจถูกระงับบัญชีร้านค้า)&lt;/li&gt;
+                                &lt;li&gt;กรณีผู้ซื้อปฏิเสธการรับพัสดุและสินค้าถูกตีกลับ &lt;b&gt;ต้องบันทึกวิดีโอขณะแกะตรวจสอบสินค้าทุกครั้ง&lt;/b&gt;&lt;/li&gt;
+                            &lt;/ul&gt;
+                        &lt;/div&gt;
+                        &lt;div class=&quot;mt-4 pt-4 border-t border-slate-100 flex justify-end&quot;&gt;
+                            &lt;a href=&quot;https://seller-th.tiktok.com/university/essay?knowledge_id=6837812376864514&quot; target=&quot;_blank&quot; class=&quot;text-xs text-blue-600 hover:underline flex items-center gap-1&quot;&gt;&lt;i class=&quot;fa-solid fa-book&quot;&gt;&lt;/i&gt; อ้างอิง: แนวทางการจัดส่ง&lt;/a&gt;
+                        &lt;/div&gt;
+                    &lt;/div&gt;
+
+                &lt;/div&gt;
+            &lt;/div&gt;
+
+        &lt;/main&gt;
+    &lt;/div&gt;
+
+    &lt;script&gt;
+        // Tab Titles Mapping
+        const tabTitles = {
+            &#x27;dashboard&#x27;: &#x27;ภาพรวมรอบตัดคำสั่งซื้อ&#x27;,
+            &#x27;shopee&#x27;: &#x27;นโยบาย Shopee&#x27;,
+            &#x27;lazada&#x27;: &#x27;นโยบาย Lazada&#x27;,
+            &#x27;tiktok&#x27;: &#x27;นโยบาย TikTok&#x27;
+        };
+
+        // Tab Switching Logic
+        function switchTab(tabId) {
+            // 1. Hide all views
+            const views = document.querySelectorAll(&#x27;.view-panel&#x27;);
+            views.forEach(view =&gt; {
+                view.classList.add(&#x27;hidden&#x27;);
+                view.classList.remove(&#x27;block&#x27;);
+            });
+
+            // 2. Show target view
+            const targetView = document.getElementById(`view-${tabId}`);
+            if (targetView) {
+                targetView.classList.remove(&#x27;hidden&#x27;);
+                targetView.classList.add(&#x27;block&#x27;);
+            }
+
+            // 3. Update Title
+            document.getElementById(&#x27;current-page-title&#x27;).innerText = tabTitles[tabId];
+
+            // 4. Update Button Styles (Sidebar)
+            const buttons = document.querySelectorAll(&#x27;aside nav button&#x27;);
+            buttons.forEach(btn =&gt; {
+                // Reset all to unselected state
+                btn.classList.remove(&#x27;bg-blue-600&#x27;, &#x27;text-white&#x27;);
+                btn.classList.add(&#x27;hover:bg-slate-800&#x27;, &#x27;hover:text-white&#x27;);
+            });
+
+            // Set active state for clicked button
+            const activeBtn = document.getElementById(`btn-${tabId}`);
+            if (activeBtn) {
+                activeBtn.classList.remove(&#x27;hover:bg-slate-800&#x27;, &#x27;hover:text-white&#x27;);
+                activeBtn.classList.add(&#x27;bg-blue-600&#x27;, &#x27;text-white&#x27;);
+            }
+        }
+
+        // Live Clock Logic
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, &#x27;0&#x27;);
+            const minutes = String(now.getMinutes()).padStart(2, &#x27;0&#x27;);
+            const seconds = String(now.getSeconds()).padStart(2, &#x27;0&#x27;);
+            
+            document.getElementById(&#x27;live-clock&#x27;).innerText = `${hours}:${minutes}:${seconds}`;
+
+            // Check if current time is in the alert zone (12:00:00 to 12:59:59)
+            const currentHour = now.getHours();
+            const alertBanner = document.getElementById(&#x27;alert-banner&#x27;);
+
+            if (currentHour === 12) {
+                alertBanner.classList.remove(&#x27;hidden&#x27;);
+                alertBanner.classList.add(&#x27;block&#x27;);
+            } else {
+                alertBanner.classList.remove(&#x27;block&#x27;);
+                alertBanner.classList.add(&#x27;hidden&#x27;);
+            }
+        }
+
+        // Initialize clock
+        setInterval(updateClock, 1000);
+        updateClock();
+    &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</template>
 </body>
 </html>
