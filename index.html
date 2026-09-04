@@ -564,9 +564,9 @@ body.present #vKPI .tscroll{max-height:none}
       <div class="grp">Warehouse</div>
       <button data-view="kpi" data-sec="ontime">KPI On-Time Performance</button>
       <button data-view="kpi" data-sec="oos">KPI Out Of Stock</button>
-      <button data-view="kpi" data-sec="diff">Stock Diff</button>
-      <button data-view="kpi" data-sec="dock">Dock To Stock Time</button>
-      <button data-view="kpi" data-sec="pick">Picking</button>
+      <button data-view="kpi" data-sec="diff">KPI Stock Variance &lt;2%</button>
+      <button data-view="kpi" data-sec="dock">KPI Dock Time To Stock</button>
+      <button data-view="kpi" data-sec="pick">KPI Human Error On Picking &lt;0.05%</button>
       <button data-view="kpi" data-sec="repl">Replenishment</button>
       <button data-view="report" data-team="warehouse">รายงานประจำวัน</button>
 
@@ -1606,7 +1606,7 @@ function secDiff(){
    +(dfSel.length?`<div class="chint">กำลังกรอง — แสดง ${fmt(rows.length)} รายการ จากทั้งหมด ${fmt(all0.length)} รายการที่นับในช่วงนี้</div>`:'')
    +ringHTML(100-p,98,
       `<span>ความแม่นยำสต็อก (นับแล้วตรงกับระบบ)</span>`
-     +`<span>เป้าหมาย Stock Diff <b>&lt; 2%</b> · ตอนนี้ <b>${pct(p)}</b></span>`
+     +`<span>เป้าหมาย Stock Variance <b>&lt; 2%</b> · ตอนนี้ <b>${pct(p)}</b></span>`
      +`<span style="opacity:.8">นับจากรายการวันที่ ${span}</span>`)
    +`<div class="sgrid">${card('รายการที่นับ',rows.length)}
       ${card('ไม่ตรง',bad.length,'rose')}${card('ตรง',rows.length-bad.length,'teal')}
@@ -1614,7 +1614,7 @@ function secDiff(){
 
      <h2 class="sec">ความแม่นยำรายเดือน <em>% ที่นับตรงกับระบบ</em><span></span></h2>
      <div class="cpanel">
-       <div class="chint">เป้าหมาย ≥ 98% (Stock Diff &lt; 2%) · แท่งเขียว = ผ่าน · แท่งแดง = ต่ำกว่าเป้า</div>
+       <div class="chint">เป้าหมาย ≥ 98% (Stock Variance &lt; 2%) · แท่งเขียว = ผ่าน · แท่งแดง = ต่ำกว่าเป้า</div>
        <div class="cscroll"><div class="cbox" style="height:520px;min-width:${Math.max(900,mk.length*140)}px">
          <canvas id="c_diffmo"></canvas></div></div>
      </div>
@@ -1629,7 +1629,7 @@ function secDiff(){
        <th class="c-week">สัปดาห์</th><th style="width:250px">ช่วงวันที่</th>
        <th class="num">นับทั้งหมด</th><th class="num">ไม่ตรง</th>
        <th class="num">ผลต่าง (ชิ้น)</th><th class="num">% ตรง</th>
-       <th class="num">Stock Diff</th></tr></thead><tbody>`
+       <th class="num">Stock Variance</th></tr></thead><tbody>`
    +wk.map(k=>{const o=byW[k],v=wpct(o);
       return `<tr><td class="c-week"><b>Week ${o.w}</b>${multiYear?` <span style="color:var(--mute);font-weight:normal">${o.y}</span>`:''}</td>
         <td style="white-space:nowrap;color:var(--mute)">${weekRange(o.d0,o.d1)||'—'}</td>
@@ -1678,7 +1678,7 @@ function drawDiff(){
     o.scales.y.ticks.font={size:cf(26)};
     o.plugins.tooltip.callbacks={
       title:c=>meta[c[0].dataIndex].title,
-      label:c=>[`นับตรง ${(+c.raw).toFixed(2)}%  (Stock Diff ${(100-c.raw).toFixed(2)}%)`,
+      label:c=>[`นับตรง ${(+c.raw).toFixed(2)}%  (Stock Variance ${(100-c.raw).toFixed(2)}%)`,
                 `นับทั้งหมด ${fmt(meta[c.dataIndex].n)} · ไม่ตรง ${fmt(meta[c.dataIndex].bad)} รายการ`]};
     CH[key]=new Chart(el2,{type:'bar',
       data:{labels,datasets:[{data:vals,
@@ -3226,11 +3226,11 @@ function render(){
   const TITLE={overview:['ภาพรวม KPI ทุกแผนก','Warehouse · Delivery · Admin — TDFB'],
                ontime:['KPI On-Time Performance','Warehouse · แพ็คสินค้าเสร็จตามวันที่ต้องการ'],
                oos:['KPI Out Of Stock','Warehouse · WH ส่งของให้ Packing ตามกำหนด'],
-               diff:['Stock Diff','Warehouse · ความแม่นยำสต็อก · รายการที่นับไม่ตรง'],
-               dock:['Dock To Stock Time','Warehouse · GR → Putaway · รับเข้าและจัดเก็บตามเกณฑ์'],
+               diff:['KPI Stock Variance <2%','Warehouse · ความแม่นยำสต็อก · รายการที่นับไม่ตรง'],
+               dock:['KPI Dock Time To Stock','Warehouse · GR → Putaway · รับเข้าและจัดเก็บตามเกณฑ์'],
                repl:['Replenishment','Warehouse · รายการที่ต้องเติมสต็อก'],
                fc:['Forecast','Warehouse · พยากรณ์ยอดขาย สต็อก และอัตรากำลังคน'],
-               pick:['Picking','Warehouse · ภาพรวมการหยิบสินค้ารายคน'],
+               pick:['KPI Human Error On Picking <0.05%','Warehouse · ภาพรวมการหยิบสินค้ารายคน'],
                ret:['Return','Admin · งานตีคืน ยกเลิก และเคสค้าง']};
   const tt=TITLE[SEC]||TITLE.overview;
   el('kTitle').textContent=tt[0];
@@ -3329,7 +3329,7 @@ function render(){
   const allP=(inP!=null&&stP!=null)?(inP+stP)/2:null;
   const dayV=kNow&&kNow.dn?kNow.days/kNow.dn:null, dayP=kPrev&&kPrev.dn?kPrev.days/kPrev.dn:null;
 
-  el('whNote').textContent=`On-Time · Out of Stock · Stock Diff = ตามตัวกรอง`
+  el('whNote').textContent=`On-Time · Out of Stock · Stock Variance = ตามตัวกรอง`
     +(wkSel?` · Dock to Stock = รายสัปดาห์ (Week ${wkSel})`:'');
 
   const sub=(n,title,note)=>`<div class="subsec"><span class="no">${n}</span>${title}`
@@ -3349,7 +3349,7 @@ function render(){
       kpiCard({l:'Out of Stock',t:'Target ≥ 99%',wait:true,note:'ไม่มีข้อมูลในช่วงที่เลือก'}),
 
     sub(2,'Stock Accuracy','ชีตนับสต็อก · คอลัมน์ “เช็ค”'),
-    diffV!=null?kpiCard({l:'Stock Diff',t:'Target < 2% · สัดส่วนที่นับแล้ว “ไม่ตรง” กับระบบ',
+    diffV!=null?kpiCard({l:'Stock Variance',t:'Target < 2% · สัดส่วนที่นับแล้ว “ไม่ตรง” กับระบบ',
       disp:pct(diffV),v:diffV,bar:diffV*10,pass:diffV<2,
       delta:deltaHTML(diffV,diffP,false),
       base:(dNow.weighted
@@ -3357,7 +3357,7 @@ function render(){
             +` · ${fmt(dNow.badRows)} จาก ${fmt(dNow.rows)} แถว`
           : `ไม่ตรง ${fmt(dNow.bad)} จาก ${fmt(dNow.n)} รายการที่นับ`)
         +(lo?` · ช่วง ${showD(lo)} – ${showD(hi)}`:'')}):
-      kpiCard({l:'Stock Diff',t:'Target < 2%',wait:true,
+      kpiCard({l:'Stock Variance',t:'Target < 2%',wait:true,
         note:STATIC_ERR.diff?('อ่านชีตไม่ได้ — '+STATIC_ERR.diff):'ไม่มีรายการนับสต็อกในช่วงที่เลือก'}),
 
     sub(3,'GR to Putaway',`ชีต Dock to Stock · รายสัปดาห์${wkSel?' (Week '+wkSel+')':''} · เป้า ไม่ผ่านเกณฑ์ < 10%`),
@@ -3368,7 +3368,13 @@ function render(){
       base:`ไม่ผ่านเกณฑ์ ${pct1(100-allV)} (เป้า < 10%)`
         +` · ค่าเฉลี่ยของ ${pct1(inV)} (รับเข้า) และ ${pct1(stV)} (จัดเก็บ) · ${fmt(kNow.n)} ใบรับเข้า`}):
       kpiCard({l:'ON-TIME รวม (รับเข้า+จัดเก็บ)',t:'Dock to Stock · รายสัปดาห์',wait:true,
-        note:STATIC_ERR.dock?('อ่านชีตไม่ได้ — '+STATIC_ERR.dock):'ยังไม่มีข้อมูลของสัปดาห์นี้'})
+        note:STATIC_ERR.dock?('อ่านชีตไม่ได้ — '+STATIC_ERR.dock):'ยังไม่มีข้อมูลของสัปดาห์นี้'}),
+
+    /* v122: KPI ใหม่ — ยังไม่มีคอลัมน์ "หยิบผิด" ในชีต Picking จึงยังคำนวณไม่ได้
+       เตรียมช่องไว้แบบเดียวกับการ์ด Human Error ของฝั่ง Delivery */
+    sub(4,'Picking Accuracy','ชีต Picking · จำนวนครั้งที่หยิบผิด ÷ จำนวนที่หยิบทั้งหมด'),
+    kpiCard({l:'Human Error On Picking',t:'Target < 0.05%',wait:true,
+      note:'ยังไม่มีคอลัมน์บันทึกการหยิบผิดในชีต — เตรียมช่องไว้แล้ว'})
   ].join('');
 
   el('dl').innerHTML=kpiCard({l:'Human Error',t:'Target 0 เคส/เดือน',wait:true,
@@ -3377,7 +3383,7 @@ function render(){
     note:'ยังไม่ได้ระบุชีตต้นทาง — เตรียมช่องไว้แล้ว'});
 
   el('src').innerHTML='ชีต: On-Time/Out of Stock <b>'+SHEET_STATE.otp+'</b>'
-    +' · Stock Diff <b>'+SHEET_STATE.diff+'</b>'
+    +' · Stock Variance <b>'+SHEET_STATE.diff+'</b>'
     +' · Dock to Stock <b>'+SHEET_STATE.dock+'</b>'
     +' · Replenishment <b>'+SHEET_STATE.repl+'</b>'
     +' · Return <b>'+SHEET_STATE.ret+'</b>'
