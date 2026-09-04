@@ -2813,15 +2813,19 @@ function drawPack(){
       data:wkK.map(k=>S.wk[k][n]||0),backgroundColor:col(i),borderRadius:3}))},
     options:baseOpts(true)});
 
-  /* สัดส่วนรายคน */
+  /* สัดส่วนรายคน — plot เป็น % เพื่อให้ pieLbl เขียนตัวเลขลงบนวงได้ */
+  const shareVal=S.pArr.map(n=>S.per[n].count);
+  const sharePct=shareVal.map(v=>Math.round(v/S.total*1000)/10);
   destroy('pkShare');
   CH.pkShare=new Chart(document.getElementById('c_pkShare'),{type:'doughnut',
-    data:{labels:S.pArr,datasets:[{data:S.pArr.map(n=>S.per[n].count),
+    data:{labels:S.pArr,datasets:[{data:sharePct,
       backgroundColor:S.pArr.map((n,i)=>col(i)),borderWidth:0}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:'55%',
+    options:{responsive:true,maintainAspectRatio:false,cutout:'55%',layout:{padding:10},
       plugins:{legend:{position:'right',labels:{color:C.mute,font:{size:cf(20)},boxWidth:18}},
-        tooltip:{callbacks:{label:c=>c.label+': '+fmt(c.raw)
-          +' ('+(c.raw/S.total*100).toFixed(1)+'%)'}}}}});
+        pieLbl:{display:true,minPercent:3,size:38},
+        tooltip:{titleFont:{size:cf(22)},bodyFont:{size:cf(21)},padding:12,
+          callbacks:{label:c=>c.label+': '+c.formattedValue+'% ('
+            +fmt(shareVal[c.dataIndex])+' กล่อง)'}}}}});
 
   /* ช่องทางขาย แยกคน */
   destroy('pkChan');
