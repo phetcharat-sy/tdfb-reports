@@ -114,6 +114,8 @@ body.sopmode #vKPI .toolbar,
 body.sopmode #vKPI #kShot > header,
 body.sopmode #vKPI .foot{display:none}
 body.sopmode #vKPI .wrap{padding:0}
+body.sopmode #vKPI #kShot{padding:0;background:none;border:0;box-shadow:none}
+body.sopmode #vKPI #detail{margin:0}
 body.sopmode #vKPI .sopwrap{border:0;border-radius:0}
 body.sopmode #vKPI .sopframe{height:100vh}
 #vKPI .sopwrap{background:#fff;border:1px solid var(--line);border-radius:18px;
@@ -2571,13 +2573,36 @@ const PICK_PAL=[ '#4A7DE0','#3FA46A','#E0A33C','#D45B4A','#7B62C9','#3E8E8C','#8
 function secSOP(){
   return '<div class="sopwrap"><iframe id="sopFrame" class="sopframe" title="เงื่อนไขการส่งสินค้าแต่ละ Platform"></iframe></div>';
 }
+/* ขนาดฐานของเอกสารในกรอบ — ปรับตัวเลขนี้ตัวเดียวเพื่อย่อ/ขยายทั้งหน้า
+   16 = ขนาดเว็บปกติ · 27.7 = เท่าฐานแดชบอร์ด · 42 = อ่านจากไกลได้ */
+const SOP_ROOT_PX=42;
+function sopCSS(){
+  return 'html{font-size:'+SOP_ROOT_PX+'px!important}'
+    /* ปลดความกว้างที่ถูกล็อกไว้ ให้เนื้อหากินเต็มพื้นที่ข้างเมนู */
+    +'.view-panel,.max-w-5xl{max-width:none!important;margin-left:0!important;margin-right:0!important}'
+    /* เมนูในเอกสารเป็นแค่ปุ่มสลับแพลตฟอร์ม ไม่ต้องโตตามเนื้อหา */
+    +'aside{width:320px!important;flex:0 0 320px!important;font-size:17px!important}'
+    +'aside *{font-size:inherit!important}'
+    +'aside h1,aside .text-xl{font-size:23px!important}';
+}
 function drawSOP(){
   const f=document.getElementById('sopFrame'), t=document.getElementById('sopDoc');
   if(!f||!t||f.dataset.ready)return;
+  /* ยัด CSS เข้าไปใน <head> ของเอกสารตั้งแต่ต้น */
   let doc=t.content.textContent;   /* <template> ถอด entity ให้แล้ว ได้ HTML ต้นฉบับกลับมา */
-  /* เอกสารใช้ Tailwind ซึ่งวัดขนาดเป็น rem เกือบทั้งหมด
-     ดัน font-size ของ html ขึ้น = ขยายทั้งตัวอักษร ระยะห่าง และความกว้างคอลัมน์พร้อมกัน */
-  doc=doc.replace('</head>','<style>html{font-size:21px}</style></head>');
+  doc=doc.replace('</head>','<style id="sopScale">'+sopCSS()+'</style></head>');
+  /* แล้วยัดซ้ำอีกทีหลังโหลดเสร็จ — กันกรณี replace ไม่ติด และให้มาทีหลัง
+     สไตล์ที่ Tailwind CDN สร้างตอน runtime เสมอ (srcdoc = same-origin เข้าถึงได้) */
+  const inject=()=>{
+    try{
+      const d=f.contentDocument; if(!d||!d.head)return;
+      let st=d.getElementById('sopScaleLate');
+      if(!st){ st=d.createElement('style'); st.id='sopScaleLate'; d.head.appendChild(st); }
+      st.textContent=sopCSS();
+      d.head.appendChild(st);            /* ย้ายไปท้ายสุดเสมอ */
+    }catch(e){}
+  };
+  f.addEventListener('load',()=>{ inject(); setTimeout(inject,300); setTimeout(inject,1200); });
   f.srcdoc=doc;
   f.dataset.ready='1';
 }
