@@ -2596,8 +2596,9 @@ const SOP_TAB_FS=56;      /* ตัวหนังสือแท็บ — 56 �
 const SOP_TAB_PADY=44;    /* ความสูงส่วนเกินของกรอบปุ่ม (ข้างละ) */
 const SOP_TAB_PADX=39;    /* ความกว้างส่วนเกินของกรอบปุ่ม (ข้างละ) */
 const SOP_BAR_PADY=24;    /* ระยะขอบบน-ล่างของแถบทั้งแถบ */
+const SOP_TAB_RESERVE=380;/* ที่ว่างขวาที่กันไว้ให้ปุ่มโหมดพรีเซนต์ */
 const SOP_PAD_PX=22;      /* ระยะขอบรอบเนื้อหาในกรอบ */
-const SOP_CSS_VER='v129';
+const SOP_CSS_VER='v130';
 function sopCSS(){
   const F=SOP_TAB_FS;
   return 'html{font-size:'+SOP_ROOT_PX+'px!important}'
@@ -2624,12 +2625,18 @@ function sopCSS(){
     /* หัวกลุ่ม "ข้อกำหนดแพลตฟอร์ม" ไม่ต้องใช้ในแนวนอน */
     +'aside li.pt-4{display:none!important}'
     +'aside nav{flex:1!important;padding:0!important;overflow:visible!important}'
-    +'aside ul{display:flex!important;flex-direction:row!important;align-items:center!important;'
-             +'gap:'+Math.round(F*0.35)+'px!important;padding:'+SOP_BAR_PADY+'px '+Math.round(F*0.5)+'px!important;'
-             +'margin:0!important;flex-wrap:wrap!important}'
-    +'aside ul>li{margin:0!important}'
+    /* v130: ให้แท็บยืดเต็มความกว้างแถบ ไม่กองอยู่ซ้ายแล้วเหลือที่ว่างทางขวา
+       เว้นที่ขวาไว้ให้ปุ่ม "โหมดพรีเซนต์" ที่ลอยอยู่มุมขวาบน ไม่ให้ทับกัน */
+    +'aside ul{display:flex!important;flex-direction:row!important;align-items:stretch!important;'
+             +'width:100%!important;'
+             +'gap:'+Math.round(F*0.35)+'px!important;'
+             +'padding:'+SOP_BAR_PADY+'px '+SOP_TAB_RESERVE+'px '+SOP_BAR_PADY+'px '+Math.round(F*0.5)+'px!important;'
+             +'margin:0!important;flex-wrap:nowrap!important}'
+    +'aside ul>li{margin:0!important;flex:1 1 auto!important;'
+                +'min-width:max-content!important;display:flex!important}'
     +'aside ul>li+li{margin-top:0!important}'
-    +'aside button{width:auto!important;white-space:nowrap!important;line-height:1.15!important;'
+    +'aside button{width:100%!important;justify-content:center!important;'
+                 +'white-space:nowrap!important;line-height:1.15!important;'
                  +'padding:'+SOP_TAB_PADY+'px '+SOP_TAB_PADX+'px!important;'
                  +'border-radius:'+Math.round(F*0.28)+'px!important;'
                  +'gap:'+Math.round(F*0.35)+'px!important}'
@@ -2643,7 +2650,7 @@ function sopCSS(){
     /* กันแถบดำของแท็บล้นออกไปทางขวาแล้วเกิดแถบเลื่อนแนวนอน */
     +'body{overflow-x:hidden!important}'
     /* ป้ายบอกเวอร์ชัน CSS — ไว้ยืนยันว่าไฟล์ที่ deploy เป็นตัวใหม่จริง */
-    +'body::after{content:"SOP CSS '+SOP_CSS_VER+' · rem '+SOP_ROOT_PX+' · box '+SOP_TAB_FS+'/'+SOP_TAB_PADY+'x'+SOP_TAB_PADX+'";'
+    +'body::after{content:"SOP CSS '+SOP_CSS_VER+' · rem '+SOP_ROOT_PX+' · box '+SOP_TAB_FS+'/'+SOP_TAB_PADY+' · full-width";'
       +'position:fixed;bottom:6px;left:6px;z-index:99999;background:#111;color:#7CFC7C;'
       +'font:12px/1 monospace;padding:4px 8px;border-radius:5px;opacity:.9}';
 }
