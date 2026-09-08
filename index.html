@@ -109,6 +109,11 @@
 
 #vKPI .cpanel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:28px;margin-bottom:18px;
   box-shadow:0 1px 2px rgba(20,24,40,.04),0 8px 22px rgba(20,24,40,.05)}
+/* ปุ่มพรีเซนต์ลอยของหน้า SOP — โชว์เฉพาะหน้านี้ และซ่อนตอนพรีเซนต์อยู่แล้ว */
+#vKPI .sop-present{display:none}
+body.sopmode #vKPI .sop-present{display:block;position:fixed;top:14px;right:18px;z-index:9998;
+  box-shadow:0 3px 14px rgba(31,46,26,.22)}
+body.sopmode.present #vKPI .sop-present{display:none}
 /* หน้าเอกสาร SOP — เต็มจอ ไม่มีตัวกรอง/หัวเรื่อง/ท้ายหน้าเหมือนหน้าอื่น */
 body.sopmode #vKPI .toolbar,
 body.sopmode #vKPI #kShot > header,
@@ -118,6 +123,11 @@ body.sopmode #vKPI #kShot{padding:0;background:none;border:0;box-shadow:none}
 body.sopmode #vKPI #detail{margin:0}
 body.sopmode #vKPI .sopwrap{border:0;border-radius:0}
 body.sopmode #vKPI .sopframe{height:100vh}
+/* ตอนพรีเซนต์ กฎ body.present จะใส่ padding กลับมา ต้องทับให้เต็มจอเหมือนเดิม
+   (specificity สูงกว่าเพราะมี 2 คลาสบน body) */
+body.sopmode.present #vKPI .wrap{padding:0!important;max-width:none!important}
+body.sopmode.present #vKPI #kShot{padding:0!important}
+body.sopmode.present #vKPI .sopframe{height:100vh}
 #vKPI .sopwrap{background:#fff;border:1px solid var(--line);border-radius:18px;
   overflow:hidden;padding:0}
 #vKPI .sopframe{display:block;width:100%;height:1600px;border:0}
@@ -693,6 +703,9 @@ body.present #vKPI .tscroll{max-height:none}
   <button class="btn ghost" id="kPresent">🖥 โหมดพรีเซนต์</button>
   <div class="stat" id="kStat">กำลังดึงข้อมูล…</div>
 </div>
+
+<!-- v126: หน้า SOP ซ่อน toolbar ทั้งแถบ จึงต้องมีปุ่มพรีเซนต์ลอยไว้ให้แยก -->
+<button class="btn ghost sop-present" id="sopPresent">🖥 โหมดพรีเซนต์</button>
 
 <div id="kShot">
   <header>
@@ -2581,7 +2594,7 @@ const SOP_ROOT_PX=42;
    จะบวมจนไม่เหลือที่ให้ตัวหนังสือ แล้วข้อความตกบรรทัด */
 const SOP_TAB_FS=44;      /* ตัวหนังสือแถบเมนูด้านบน */
 const SOP_PAD_PX=22;      /* ระยะขอบรอบเนื้อหาในกรอบ */
-const SOP_CSS_VER='v125';
+const SOP_CSS_VER='v126';
 function sopCSS(){
   const F=SOP_TAB_FS;
   return 'html{font-size:'+SOP_ROOT_PX+'px!important}'
@@ -4103,6 +4116,7 @@ function kPresent(on){
   render();   /* วาดกราฟใหม่ด้วยขนาดฟอนต์ของโหมดนั้น */
 }
 el('kPresent').addEventListener('click',()=>kPresent(true));
+el('sopPresent').addEventListener('click',()=>kPresent(true));
 el('kExitPresent').addEventListener('click',()=>kPresent(false));
 document.addEventListener('fullscreenchange',()=>{
   if(!document.fullscreenElement)document.body.classList.remove('present');
