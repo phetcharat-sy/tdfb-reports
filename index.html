@@ -2579,39 +2579,37 @@ const SOP_ROOT_PX=42;
 /* เมนูในเอกสาร — คุมแยกจากเนื้อหา เพราะถ้าโตตาม rem จะกินที่ครึ่งจอ
    แต่ระยะห่างข้างในต้องกำหนดเป็น px เอง ไม่งั้น padding ที่วัดเป็น rem
    จะบวมจนไม่เหลือที่ให้ตัวหนังสือ แล้วข้อความตกบรรทัด */
-const SOP_ASIDE_PX=460;   /* ความกว้างเมนู */
-const SOP_ASIDE_FS=30;    /* ตัวหนังสือเมนู */
-const SOP_CSS_VER='v122';
+const SOP_TAB_FS=30;      /* ตัวหนังสือแถบเมนูด้านบน */
+const SOP_CSS_VER='v123';
 function sopCSS(){
-  const W=SOP_ASIDE_PX, F=SOP_ASIDE_FS;
+  const F=SOP_TAB_FS;
   return 'html{font-size:'+SOP_ROOT_PX+'px!important}'
-    /* ปลดความกว้างที่ถูกล็อกไว้ ให้เนื้อหากินเต็มพื้นที่ข้างเมนู */
+    /* ปลดความกว้างที่ถูกล็อกไว้ ให้เนื้อหากินเต็มพื้นที่ */
     +'.view-panel,.max-w-5xl{max-width:none!important;margin-left:0!important;margin-right:0!important}'
-    /* v122: ตัวการที่ทำให้เมนูถูกบีบแบน — main มี flex-1 และ min-width:auto
-       ซึ่งเท่ากับ min-content ของเนื้อหาที่ตัวโตมาก flexbox จึงไปเบียดเมนูแทน
-       ต้องสั่ง min-width:0 ให้ main ยอมบีบตัวเอง เมนูจะได้ความกว้างที่ขอไว้จริง */
-    +'main{min-width:0!important}'
-    /* --- เมนูซ้ายในเอกสาร --- */
-    +'aside{width:'+W+'px!important;min-width:'+W+'px!important;max-width:'+W+'px!important;'
-          +'flex:0 0 '+W+'px!important;font-size:'+F+'px!important}'
+    /* v123: ย้ายเมนูแพลตฟอร์มจากด้านซ้ายขึ้นไปเป็นแถบแท็บด้านบน
+       วางกองซ้อนแนวตั้ง: body เป็น column แล้ว aside กลายเป็นแถบเต็มความกว้าง */
+    +'body{flex-direction:column!important}'
+    +'aside{width:100%!important;max-width:none!important;min-width:0!important;'
+          +'height:auto!important;flex:0 0 auto!important;flex-direction:row!important;'
+          +'align-items:center!important;font-size:'+F+'px!important}'
     +'aside *{font-size:inherit!important;letter-spacing:normal!important}'
-    +'aside h1{font-size:'+(F+8)+'px!important;white-space:nowrap!important}'
-    +'aside p{font-size:'+(F-9)+'px!important;white-space:nowrap!important}'
-    /* ระยะห่างเป็น px คงที่ ไม่ให้บวมตาม rem */
-    +'aside>div:first-child{padding:'+Math.round(F*0.9)+'px!important;gap:'+Math.round(F*0.5)+'px!important}'
-    +'aside nav{padding:'+Math.round(F*0.6)+'px 0!important}'
-    +'aside ul{padding-left:'+Math.round(F*0.45)+'px!important;'
-             +'padding-right:'+Math.round(F*0.45)+'px!important}'
-    +'aside ul>li+li{margin-top:'+Math.round(F*0.25)+'px!important}'
-    +'aside button{padding:'+Math.round(F*0.6)+'px '+Math.round(F*0.7)+'px!important;'
-                 +'gap:'+Math.round(F*0.5)+'px!important;white-space:nowrap!important}'
-    +'aside li.pt-4{padding:'+Math.round(F*0.7)+'px '+Math.round(F*0.7)+'px '+Math.round(F*0.3)+'px!important;'
-                  +'font-size:'+(F-7)+'px!important;white-space:nowrap!important}'
-    /* ไอคอนกับโลโก้แพลตฟอร์ม */
-    +'aside img{width:'+Math.round(F*1.25)+'px!important;height:'+Math.round(F*1.25)+'px!important}'
-    +'aside i{font-size:'+Math.round(F*1.1)+'px!important;width:'+Math.round(F*1.25)+'px!important}'
+    /* กล่องโลโก้กับหัวกลุ่มไม่ต้องใช้ในแนวนอน */
+    +'aside>div:first-child,aside li.pt-4{display:none!important}'
+    +'aside nav{flex:1!important;padding:0!important;overflow:visible!important}'
+    +'aside ul{display:flex!important;flex-direction:row!important;align-items:center!important;'
+             +'gap:'+Math.round(F*0.4)+'px!important;padding:'+Math.round(F*0.4)+'px '+Math.round(F*0.6)+'px!important;'
+             +'margin:0!important;flex-wrap:wrap!important}'
+    +'aside ul>li{margin:0!important}'
+    +'aside ul>li+li{margin-top:0!important}'
+    +'aside button{width:auto!important;white-space:nowrap!important;'
+                 +'padding:'+Math.round(F*0.5)+'px '+Math.round(F*0.85)+'px!important;'
+                 +'gap:'+Math.round(F*0.45)+'px!important}'
+    +'aside img{width:'+Math.round(F*1.2)+'px!important;height:'+Math.round(F*1.2)+'px!important}'
+    +'aside i{font-size:'+Math.round(F*1.05)+'px!important;width:auto!important}'
+    /* main เดิมเป็น flex item แนวนอน ต้องปล่อยให้สูงเต็มที่เหลือ */
+    +'main{min-width:0!important;width:100%!important;flex:1 1 auto!important}'
     /* ป้ายบอกเวอร์ชัน CSS — ไว้ยืนยันว่าไฟล์ที่ deploy เป็นตัวใหม่จริง */
-    +'body::after{content:"SOP CSS '+SOP_CSS_VER+' · rem '+SOP_ROOT_PX+' · aside '+W+'";'
+    +'body::after{content:"SOP CSS '+SOP_CSS_VER+' · rem '+SOP_ROOT_PX+' · tabs top";'
       +'position:fixed;bottom:6px;left:6px;z-index:99999;background:#111;color:#7CFC7C;'
       +'font:12px/1 monospace;padding:4px 8px;border-radius:5px;opacity:.9}';
 }
