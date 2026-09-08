@@ -2579,8 +2579,8 @@ const SOP_ROOT_PX=42;
 /* เมนูในเอกสาร — คุมแยกจากเนื้อหา เพราะถ้าโตตาม rem จะกินที่ครึ่งจอ
    แต่ระยะห่างข้างในต้องกำหนดเป็น px เอง ไม่งั้น padding ที่วัดเป็น rem
    จะบวมจนไม่เหลือที่ให้ตัวหนังสือ แล้วข้อความตกบรรทัด */
-const SOP_TAB_FS=30;      /* ตัวหนังสือแถบเมนูด้านบน */
-const SOP_CSS_VER='v123';
+const SOP_TAB_FS=44;      /* ตัวหนังสือแถบเมนูด้านบน */
+const SOP_CSS_VER='v124';
 function sopCSS(){
   const F=SOP_TAB_FS;
   return 'html{font-size:'+SOP_ROOT_PX+'px!important}'
@@ -2609,7 +2609,7 @@ function sopCSS(){
     /* main เดิมเป็น flex item แนวนอน ต้องปล่อยให้สูงเต็มที่เหลือ */
     +'main{min-width:0!important;width:100%!important;flex:1 1 auto!important}'
     /* ป้ายบอกเวอร์ชัน CSS — ไว้ยืนยันว่าไฟล์ที่ deploy เป็นตัวใหม่จริง */
-    +'body::after{content:"SOP CSS '+SOP_CSS_VER+' · rem '+SOP_ROOT_PX+' · tabs top";'
+    +'body::after{content:"SOP CSS '+SOP_CSS_VER+' · rem '+SOP_ROOT_PX+' · tabs '+SOP_TAB_FS+'px";'
       +'position:fixed;bottom:6px;left:6px;z-index:99999;background:#111;color:#7CFC7C;'
       +'font:12px/1 monospace;padding:4px 8px;border-radius:5px;opacity:.9}';
 }
