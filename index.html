@@ -2576,14 +2576,44 @@ function secSOP(){
 /* ขนาดฐานของเอกสารในกรอบ — ปรับตัวเลขนี้ตัวเดียวเพื่อย่อ/ขยายทั้งหน้า
    16 = ขนาดเว็บปกติ · 27.7 = เท่าฐานแดชบอร์ด · 42 = อ่านจากไกลได้ */
 const SOP_ROOT_PX=42;
+/* เมนูในเอกสาร — คุมแยกจากเนื้อหา เพราะถ้าโตตาม rem จะกินที่ครึ่งจอ
+   แต่ระยะห่างข้างในต้องกำหนดเป็น px เอง ไม่งั้น padding ที่วัดเป็น rem
+   จะบวมจนไม่เหลือที่ให้ตัวหนังสือ แล้วข้อความตกบรรทัด */
+const SOP_ASIDE_PX=460;   /* ความกว้างเมนู */
+const SOP_ASIDE_FS=30;    /* ตัวหนังสือเมนู */
+const SOP_CSS_VER='v122';
 function sopCSS(){
+  const W=SOP_ASIDE_PX, F=SOP_ASIDE_FS;
   return 'html{font-size:'+SOP_ROOT_PX+'px!important}'
     /* ปลดความกว้างที่ถูกล็อกไว้ ให้เนื้อหากินเต็มพื้นที่ข้างเมนู */
     +'.view-panel,.max-w-5xl{max-width:none!important;margin-left:0!important;margin-right:0!important}'
-    /* เมนูในเอกสารเป็นแค่ปุ่มสลับแพลตฟอร์ม ไม่ต้องโตตามเนื้อหา */
-    +'aside{width:320px!important;flex:0 0 320px!important;font-size:17px!important}'
-    +'aside *{font-size:inherit!important}'
-    +'aside h1,aside .text-xl{font-size:23px!important}';
+    /* v122: ตัวการที่ทำให้เมนูถูกบีบแบน — main มี flex-1 และ min-width:auto
+       ซึ่งเท่ากับ min-content ของเนื้อหาที่ตัวโตมาก flexbox จึงไปเบียดเมนูแทน
+       ต้องสั่ง min-width:0 ให้ main ยอมบีบตัวเอง เมนูจะได้ความกว้างที่ขอไว้จริง */
+    +'main{min-width:0!important}'
+    /* --- เมนูซ้ายในเอกสาร --- */
+    +'aside{width:'+W+'px!important;min-width:'+W+'px!important;max-width:'+W+'px!important;'
+          +'flex:0 0 '+W+'px!important;font-size:'+F+'px!important}'
+    +'aside *{font-size:inherit!important;letter-spacing:normal!important}'
+    +'aside h1{font-size:'+(F+8)+'px!important;white-space:nowrap!important}'
+    +'aside p{font-size:'+(F-9)+'px!important;white-space:nowrap!important}'
+    /* ระยะห่างเป็น px คงที่ ไม่ให้บวมตาม rem */
+    +'aside>div:first-child{padding:'+Math.round(F*0.9)+'px!important;gap:'+Math.round(F*0.5)+'px!important}'
+    +'aside nav{padding:'+Math.round(F*0.6)+'px 0!important}'
+    +'aside ul{padding-left:'+Math.round(F*0.45)+'px!important;'
+             +'padding-right:'+Math.round(F*0.45)+'px!important}'
+    +'aside ul>li+li{margin-top:'+Math.round(F*0.25)+'px!important}'
+    +'aside button{padding:'+Math.round(F*0.6)+'px '+Math.round(F*0.7)+'px!important;'
+                 +'gap:'+Math.round(F*0.5)+'px!important;white-space:nowrap!important}'
+    +'aside li.pt-4{padding:'+Math.round(F*0.7)+'px '+Math.round(F*0.7)+'px '+Math.round(F*0.3)+'px!important;'
+                  +'font-size:'+(F-7)+'px!important;white-space:nowrap!important}'
+    /* ไอคอนกับโลโก้แพลตฟอร์ม */
+    +'aside img{width:'+Math.round(F*1.25)+'px!important;height:'+Math.round(F*1.25)+'px!important}'
+    +'aside i{font-size:'+Math.round(F*1.1)+'px!important;width:'+Math.round(F*1.25)+'px!important}'
+    /* ป้ายบอกเวอร์ชัน CSS — ไว้ยืนยันว่าไฟล์ที่ deploy เป็นตัวใหม่จริง */
+    +'body::after{content:"SOP CSS '+SOP_CSS_VER+' · rem '+SOP_ROOT_PX+' · aside '+W+'";'
+      +'position:fixed;bottom:6px;left:6px;z-index:99999;background:#111;color:#7CFC7C;'
+      +'font:12px/1 monospace;padding:4px 8px;border-radius:5px;opacity:.9}';
 }
 function drawSOP(){
   const f=document.getElementById('sopFrame'), t=document.getElementById('sopDoc');
