@@ -2592,9 +2592,11 @@ const SOP_ROOT_PX=42;
 /* เมนูในเอกสาร — คุมแยกจากเนื้อหา เพราะถ้าโตตาม rem จะกินที่ครึ่งจอ
    แต่ระยะห่างข้างในต้องกำหนดเป็น px เอง ไม่งั้น padding ที่วัดเป็น rem
    จะบวมจนไม่เหลือที่ให้ตัวหนังสือ แล้วข้อความตกบรรทัด */
-const SOP_TAB_FS=44;      /* ตัวหนังสือแถบเมนูด้านบน */
+const SOP_TAB_FS=56;      /* ตัวหนังสือแถบเมนูด้านบน */
+const SOP_TAB_PADY=26;    /* ความสูงส่วนเกินของปุ่ม (บน+ล่าง ข้างละเท่านี้) */
+const SOP_BAR_PADY=20;    /* ระยะขอบบน-ล่างของแถบทั้งแถบ */
 const SOP_PAD_PX=22;      /* ระยะขอบรอบเนื้อหาในกรอบ */
-const SOP_CSS_VER='v126';
+const SOP_CSS_VER='v127';
 function sopCSS(){
   const F=SOP_TAB_FS;
   return 'html{font-size:'+SOP_ROOT_PX+'px!important}'
@@ -2611,13 +2613,14 @@ function sopCSS(){
     +'aside>div:first-child,aside li.pt-4{display:none!important}'
     +'aside nav{flex:1!important;padding:0!important;overflow:visible!important}'
     +'aside ul{display:flex!important;flex-direction:row!important;align-items:center!important;'
-             +'gap:'+Math.round(F*0.4)+'px!important;padding:'+Math.round(F*0.4)+'px '+Math.round(F*0.6)+'px!important;'
+             +'gap:'+Math.round(F*0.35)+'px!important;padding:'+SOP_BAR_PADY+'px '+Math.round(F*0.5)+'px!important;'
              +'margin:0!important;flex-wrap:wrap!important}'
     +'aside ul>li{margin:0!important}'
     +'aside ul>li+li{margin-top:0!important}'
-    +'aside button{width:auto!important;white-space:nowrap!important;'
-                 +'padding:'+Math.round(F*0.5)+'px '+Math.round(F*0.85)+'px!important;'
-                 +'gap:'+Math.round(F*0.45)+'px!important}'
+    +'aside button{width:auto!important;white-space:nowrap!important;line-height:1.15!important;'
+                 +'padding:'+SOP_TAB_PADY+'px '+Math.round(F*0.75)+'px!important;'
+                 +'border-radius:'+Math.round(F*0.28)+'px!important;'
+                 +'gap:'+Math.round(F*0.4)+'px!important}'
     +'aside img{width:'+Math.round(F*1.2)+'px!important;height:'+Math.round(F*1.2)+'px!important}'
     +'aside i{font-size:'+Math.round(F*1.05)+'px!important;width:auto!important}'
     /* main เดิมเป็น flex item แนวนอน ต้องปล่อยให้สูงเต็มที่เหลือ
@@ -2628,7 +2631,7 @@ function sopCSS(){
     /* กันแถบดำของแท็บล้นออกไปทางขวาแล้วเกิดแถบเลื่อนแนวนอน */
     +'body{overflow-x:hidden!important}'
     /* ป้ายบอกเวอร์ชัน CSS — ไว้ยืนยันว่าไฟล์ที่ deploy เป็นตัวใหม่จริง */
-    +'body::after{content:"SOP CSS '+SOP_CSS_VER+' · rem '+SOP_ROOT_PX+' · tabs '+SOP_TAB_FS+' · pad '+SOP_PAD_PX+'";'
+    +'body::after{content:"SOP CSS '+SOP_CSS_VER+' · rem '+SOP_ROOT_PX+' · tabs '+SOP_TAB_FS+'/'+SOP_TAB_PADY+' · pad '+SOP_PAD_PX+'";'
       +'position:fixed;bottom:6px;left:6px;z-index:99999;background:#111;color:#7CFC7C;'
       +'font:12px/1 monospace;padding:4px 8px;border-radius:5px;opacity:.9}';
 }
