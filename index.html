@@ -1278,7 +1278,7 @@ const barPct={id:'barPct',
       x.beginPath();x.moveTo(ch.chartArea.left,y);x.lineTo(ch.chartArea.right,y);x.stroke();
       x.setLineDash([]);
     }
-    x.font="bold "+cf(29)+"px Tahoma";x.fillStyle='#22252C';x.textAlign='center';x.textBaseline='bottom';
+    x.font="bold "+cf(op.size||29)+"px Tahoma";x.fillStyle='#22252C';x.textAlign='center';x.textBaseline='bottom';
     ch.data.datasets.forEach((ds,di)=>{
       const m=ch.getDatasetMeta(di); if(m.hidden)return;
       let lastR=-1e9;                       /* ขอบขวาของป้ายก่อนหน้า — กันตัวเลขทับกัน */
@@ -2852,9 +2852,10 @@ function drawShip(){
   if(!SHIP_CTX)return;
   const S=SHIP_CTX;
 
-  /* รายวัน — โชว์ 60 วันล่าสุดเพื่อให้อ่านออก
-     ใส่ตัวเลขกำกับหัวแท่ง (barPct raw) ปลั๊กอินจะข้ามป้ายที่ไม่มีที่พอให้เอง */
-  const d=S.days.slice(-60);
+  /* รายวัน — v134: ลดเหลือ 30 วันล่าสุด + ย่อป้ายเป็น 18px
+     เพื่อให้ตัวเลขขึ้นครบทุกแท่ง (60 วันช่องแคบเกินไป ป้ายถูกข้ามกว่าครึ่ง) */
+  const SHIP_DAYS_SHOWN=30;
+  const d=S.days.slice(-SHIP_DAYS_SHOWN);
   destroy('shDay');
   CH.shDay=new Chart(document.getElementById('c_shDay'),{type:'bar',
     data:{labels:d,datasets:[{label:'ออเดอร์',data:d.map(k=>S.byDay[k].size),
@@ -2862,7 +2863,7 @@ function drawShip(){
     options:Object.assign(baseOpts(false),{
       plugins:Object.assign({},baseOpts(false).plugins,{
         legend:{display:false},
-        barPct:{display:true,raw:true}})})});
+        barPct:{display:true,raw:true,size:18}})})});
 
   /* โดนัทช่องทางขาย Top 5 — plot เป็น % ให้ pieLbl เขียนตัวเลขบนวงได้
      ที่เหลือรวมเป็น "อื่นๆ" กันชิ้นบางเรียงกันเป็นเสี้ยนรอบวง */
