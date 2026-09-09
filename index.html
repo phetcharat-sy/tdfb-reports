@@ -2815,19 +2815,23 @@ function secShip(){
   const S=shipStats(list);
   SHIP_CTX=S;
 
+  /* v132: ตรงเกณฑ์จัดส่ง ยกขึ้นเป็นวงใหญ่แบบหน้า Dock Time To Stock
+     ใช้ ringHTML ตัวเดียวกัน เกณฑ์ ≥ 98% */
+  const critTarget=98;
+  const ring=S.critPct!=null
+    ? ringHTML(S.critPct, critTarget,
+        `<span>ตรงเกณฑ์การจัดส่ง</span>`
+       +`<span>เป้าหมาย <b>&ge; ${critTarget}%</b> · ตอนนี้ <b>${pct1(S.critPct)}</b></span>`
+       +`<span style="opacity:.8">${fmt(S.rows)} รายการ · ${fmt(S.days.length)} วัน</span>`)
+    : '<div class="empty2">ไม่มีคอลัมน์เกณฑ์การจัดส่งให้คำนวณ</div>';
+
   return bar
+   + ring
    +`<div class="sgrid">
        ${card('ออเดอร์จัดส่งทั้งหมด',S.orders)}
        ${card('ค้างส่ง',S.pending,S.pending?'rose':'teal')}
-       ${card('% ค้างส่ง',pct1(S.pendingPct),(S.pendingPct||0)<=2?'teal':'rose')}
        ${card('ขนส่งที่ใช้มากสุด',esc(S.topCarrier),'plum')}
-       ${card('ตรงเกณฑ์จัดส่ง',pct1(S.critPct),(S.critPct||0)>=98?'teal':'amber')}</div>
-     <div class="sgrid">
-       ${card('วันล่าสุด ('+(S.last||'-')+')',S.lastQty,'teal')}
-       ${card('เฉลี่ยต่อวัน',S.avgDay,'amber')}
-       ${card('วันพีคสุด ('+(S.peak||'-')+')',S.peakQty,'plum')}
-       ${card('จำนวนวันที่มีงาน',S.days.length)}
-       ${card('แถวข้อมูลทั้งหมด',S.rows,'mute')}</div>
+       ${card('วันพีคสุด ('+(S.peak||'-')+')',S.peakQty,'amber')}</div>
 
      <h2 class="sec">ออเดอร์จัดส่งรายวัน <em>นับออเดอร์ไม่ซ้ำ ตาม Expected Delivery</em><span></span></h2>
      <div class="cpanel"><div class="cbox"><canvas id="c_shDay"></canvas></div></div>
