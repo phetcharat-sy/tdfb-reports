@@ -1360,7 +1360,10 @@ if(window.Chart&&!Chart.registry.plugins.get('linePt'))Chart.register(linePt);
 if(window.Chart&&!Chart.registry.plugins.get('pieLbl'))Chart.register(pieLbl);
 
 function ringHTML(pct_,target,caption){
-  const CIRC=565.48, miss=pct_<target;
+  const CIRC=565.48;
+  /* target = null แปลว่าหน้านั้นไม่มีเป้า — ไม่ตัดสินผ่าน/ไม่ผ่าน และไม่โชว์ป้าย */
+  const noTarget=(target==null);
+  const miss=noTarget?false:pct_<target;
   const off=CIRC*(1-Math.min(pct_,100)/100);
   return `<div class="ring${miss?' miss':''}">
     <div class="ringwrap">
@@ -1370,7 +1373,7 @@ function ringHTML(pct_,target,caption){
       <b class="${miss?'miss':''}">${pct_.toFixed(2)}<i>%</i></b>
     </div>
     <div class="cap">
-      <span class="tag ${miss?'miss':''}">${miss?'ต่ำกว่าเกณฑ์':'ผ่านเกณฑ์'}</span>
+      ${noTarget?'':`<span class="tag ${miss?'miss':''}">${miss?'ต่ำกว่าเกณฑ์':'ผ่านเกณฑ์'}</span>`}
       ${caption}</div></div>`;
 }
 
@@ -2815,13 +2818,11 @@ function secShip(){
   const S=shipStats(list);
   SHIP_CTX=S;
 
-  /* v132: ตรงเกณฑ์จัดส่ง ยกขึ้นเป็นวงใหญ่แบบหน้า Dock Time To Stock
-     ใช้ ringHTML ตัวเดียวกัน เกณฑ์ ≥ 98% */
-  const critTarget=98;
+  /* v133: หน้านี้ไม่มีเป้า KPI — ส่ง target เป็น null
+     วงจะไม่มีป้ายผ่าน/ไม่ผ่าน และไม่เปลี่ยนสีตามเกณฑ์ */
   const ring=S.critPct!=null
-    ? ringHTML(S.critPct, critTarget,
-        `<span>ตรงเกณฑ์การจัดส่ง</span>`
-       +`<span>เป้าหมาย <b>&ge; ${critTarget}%</b> · ตอนนี้ <b>${pct1(S.critPct)}</b></span>`
+    ? ringHTML(S.critPct, null,
+        `<span>จัดส่งตรงตามเกณฑ์ในชีต</span>`
        +`<span style="opacity:.8">${fmt(S.rows)} รายการ · ${fmt(S.days.length)} วัน</span>`)
     : '<div class="empty2">ไม่มีคอลัมน์เกณฑ์การจัดส่งให้คำนวณ</div>';
 
@@ -2837,28 +2838,19 @@ function secShip(){
      <div class="cpanel"><div class="cbox"><canvas id="c_shDay"></canvas></div></div>
 
      <div class="g2">
-       <div><h2 class="sec">ช่องทางขาย<span></span></h2>
+       <div><h2 class="sec">สัดส่วนร้านค้า/ช่องทาง <em>Top 5</em><span></span></h2>
          <div class="cpanel"><div class="cbox"><canvas id="c_shCh"></canvas></div></div></div>
-       <div><h2 class="sec">ขนส่งที่ใช้<span></span></h2>
-         <div class="cpanel"><div class="cbox"><canvas id="c_shCar"></canvas></div></div></div>
+       <div><h2 class="sec">สถานะพัสดุ <em>สำเร็จ vs ค้าง</em><span></span></h2>
+         <div class="cpanel"><div class="cbox"><canvas id="c_shSt"></canvas></div></div></div>
      </div>
 
-     <div class="g3">
-       <div><h2 class="sec">สถานะจัดส่ง<span></span></h2>
-         <div class="cpanel"><div class="cbox"><canvas id="c_shSt"></canvas></div></div></div>
-       <div><h2 class="sec">ด่วน / ปกติ<span></span></h2>
-         <div class="cpanel"><div class="cbox"><canvas id="c_shUrg"></canvas></div></div></div>
-       <div><h2 class="sec">แบรนด์<span></span></h2>
-         <div class="cpanel"><div class="cbox"><canvas id="c_shSend"></canvas></div></div></div>
-     </div>`;
+     <h2 class="sec">Top 10 ขนส่งที่ใช้งาน<span></span></h2>
+     <div class="cpanel"><div class="cbox"><canvas id="c_shCar"></canvas></div></div>`;
 }
 
 function drawShip(){
   if(!SHIP_CTX)return;
   const S=SHIP_CTX;
-  const PAL=[C.plum,C.teal,C.amber,C.rose,C.plumD,'#B4547F',C.tealD,'#C2703A',
-             '#7A6BB8','#6E9E4A'];
-  const col=i=>PAL[i%PAL.length];
 
   /* รายวัน — โชว์ 60 วันล่าสุดเพื่อให้อ่านออก */
   const d=S.days.slice(-60);
@@ -2868,19 +2860,50 @@ function drawShip(){
       backgroundColor:C.plum,borderRadius:4}]},
     options:baseOpts(false)});
 
-  const hbar=(id,key,ent,c,max)=>{
-    const e=ent.slice(0,max||10);
-    destroy(key);
-    CH[key]=new Chart(document.getElementById(id),{type:'bar',
-      data:{labels:e.map(x=>x[0]),datasets:[{data:e.map(x=>x[1]),
-        backgroundColor:c,borderRadius:4}]},
-      options:Object.assign(baseOpts(false),{indexAxis:'y'})});
-  };
-  hbar('c_shCh','shCh',S.chE,C.amber,8);
-  hbar('c_shCar','shCar',S.carrierE,C.tealD,10);
-  hbar('c_shSt','shSt',S.statusE,C.teal,8);
-  hbar('c_shUrg','shUrg',S.urgE,C.rose,6);
-  hbar('c_shSend','shSend',S.sendE,C.plumD,6);
+  /* โดนัทช่องทางขาย Top 5 — plot เป็น % ให้ pieLbl เขียนตัวเลขบนวงได้
+     ที่เหลือรวมเป็น "อื่นๆ" กันชิ้นบางเรียงกันเป็นเสี้ยนรอบวง */
+  const PAL=[C.amber,'#22252C',C.plumD,C.rose,C.plum,C.mute];
+  const top5=S.chE.slice(0,5);
+  const restSum=S.chE.slice(5).reduce((a,b)=>a+b[1],0);
+  const chLab=top5.map(x=>x[0]).concat(restSum?['อื่นๆ']:[]);
+  const chVal=top5.map(x=>x[1]).concat(restSum?[restSum]:[]);
+  const chTot=chVal.reduce((a,b)=>a+b,0)||1;
+  destroy('shCh');
+  CH.shCh=new Chart(document.getElementById('c_shCh'),{type:'doughnut',
+    data:{labels:chLab,datasets:[{data:chVal.map(v=>Math.round(v/chTot*1000)/10),
+      backgroundColor:chLab.map((n,i)=>PAL[i%PAL.length]),borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'58%',layout:{padding:10},
+      plugins:{legend:{position:'right',labels:{color:C.mute,font:{size:cf(22)},boxWidth:20}},
+        pieLbl:{display:true,minPercent:4,size:24,fit:true},
+        tooltip:{titleFont:{size:cf(22)},bodyFont:{size:cf(21)},padding:12,
+          callbacks:{label:c=>c.label+': '+c.formattedValue+'% ('+fmt(chVal[c.dataIndex])+' ออเดอร์)'}}}}});
+
+  /* โดนัทสถานะพัสดุ — สำเร็จ vs ค้างส่ง พร้อม % ตรงกลางวง */
+  const done=Math.max(0,S.orders-S.pending);
+  const stTot=done+S.pending||1;
+  const donePct=Math.round(done/stTot*1000)/10;
+  destroy('shSt');
+  CH.shSt=new Chart(document.getElementById('c_shSt'),{type:'doughnut',
+    data:{labels:['จัดส่งสำเร็จ','ค้างส่ง'],datasets:[{
+      data:[Math.round(done/stTot*1000)/10, Math.round(S.pending/stTot*1000)/10],
+      backgroundColor:[C.good,C.rose],borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',layout:{padding:10},
+      plugins:{legend:{position:'right',labels:{color:C.mute,font:{size:cf(22)},boxWidth:20}},
+        donutMid:{display:true,top:pct1(donePct),bot:'จัดส่งสำเร็จ'},
+        tooltip:{titleFont:{size:cf(22)},bodyFont:{size:cf(21)},padding:12,
+          callbacks:{label:c=>c.label+': '+c.formattedValue+'% ('
+            +fmt(c.dataIndex===0?done:S.pending)+' ออเดอร์)'}}}}});
+
+  /* Top 10 ขนส่ง — แท่งตั้ง มีตัวเลขกำกับบนหัวแท่ง (barPct โหมด raw) */
+  const car=S.carrierE.slice(0,10);
+  destroy('shCar');
+  CH.shCar=new Chart(document.getElementById('c_shCar'),{type:'bar',
+    data:{labels:car.map(x=>x[0]),datasets:[{data:car.map(x=>x[1]),
+      backgroundColor:car.map((n,i)=>PAL[i%PAL.length]),borderRadius:6}]},
+    options:Object.assign(baseOpts(false),{
+      plugins:Object.assign({},baseOpts(false).plugins,{
+        legend:{display:false},
+        barPct:{display:true,raw:true}})})});
 }
 
 /* ================= Delivery · Packing =================
