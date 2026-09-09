@@ -659,6 +659,7 @@ body.present #vKPI .tscroll{max-height:none}
       <div class="grp">Admin</div>
       <button data-view="report" data-team="admin">รายงานประจำวัน</button>
       <button data-view="kpi" data-sec="ret">Return</button>
+      <button data-view="kpi" data-sec="ship">การจัดส่ง (Shipping)</button>
 
       <div class="grp">วิธีการปฏิบัติงาน</div>
       <button data-view="kpi" data-sec="sop">เงื่อนไขการส่งสินค้าแต่ละ Platform</button>
@@ -804,8 +805,10 @@ const S_OTP='1WkCx6lRNm-4LyX8CY9EEPSb2NuZPxZV0YE_z3ayu8ys';   /* KPI On-Time / O
 const S_DIFF='1PW5l0CVt2uIGBXWOHeDjyyTil2o5O0IsseBR_2drrm4'; /* Stock Diff */
 const S_DOCK='1wE-ElRc3EtMshE54wnK_B2xBtD_cKyo-k5hWTy3zOrY'; /* Dock to Stock */
 /* v123: Delivery · Packing — ชีต "รายงานการปฏิบัติงานประจำวันฝ่าย Packing 2026" หน้า Data */
-const S_PACK='1gfLMDO1wqi_Rf4XCyp-fVUgSqaSaVF4NCAMX-Pxm0p0';
-const G_PACK='0';
+/* ชีต "รายงานการปฏิบัติงานประจำวันฝ่าย Packing 2026" หน้า Data
+   ใช้ทั้งหน้า Shipping (Admin) — คอลัมน์ตรงกับที่ Logistics Central ใช้พอดี */
+const S_SHIP='1gfLMDO1wqi_Rf4XCyp-fVUgSqaSaVF4NCAMX-Pxm0p0';
+const G_SHIP='0';
 const S_RET='12C-YRzItKvcZ0ThZkY25F50s663zItob27ByEsH3U3c'; /* Return / Case Admin — gid ของแต่ละหัวข้ออยู่ใน RET_TABS */
 const G_DOCK='1625574187';
 
@@ -933,7 +936,7 @@ function parseDMY(s){
 /* dashboard เดิมโหลดทั้งชีตด้วย /export?format=csv แล้วคำนวณในเบราว์เซอร์
    ทำแบบเดียวกันเป๊ะ จะได้ตัวเลขตรงกันทุกตัว ไม่ต้องพึ่งการกรองวันที่ฝั่ง Google */
 let RAW=[], COLS=null, NO_DATE=0, SEC='overview', REPL=null, REPL_ERR='';
-const SHEET_STATE={otp:'รอโหลด',diff:'รอโหลด',dock:'รอโหลด',repl:'ยังไม่เปิด',ret:'ยังไม่เปิด',pick:'ยังไม่เปิด',pack:'ยังไม่เปิด'};
+const SHEET_STATE={otp:'รอโหลด',diff:'รอโหลด',dock:'รอโหลด',repl:'ยังไม่เปิด',ret:'ยังไม่เปิด',pick:'ยังไม่เปิด',pack:'ยังไม่เปิด',ship:'ยังไม่เปิด'};
 
 /* ดาวน์โหลดตรงๆ ด้วย r.text() — วิธีเดียวกับ dashboard เดิมที่ใช้งานได้จริง
    (เคยลองอ่านทีละก้อนเพื่อโชว์ MB แล้วทำให้ช้าจนเหมือนค้าง จึงถอยกลับมา) */
@@ -2681,6 +2684,201 @@ function drawSOP(){
   f.dataset.ready='1';
 }
 
+/* ================= Admin · การจัดส่ง (Shipping) =================
+   ต้นทาง: ชีต Packing 2026 หน้า Data
+   คอลัมน์ (0-based) ตรงกับที่หน้า Logistics Central ใช้:
+     0  A = Expected Delivery   (วันที่)
+     4  E = Delivery Status     (สถานะจัดส่งของระบบ)
+     6  G = Order Reference     (เลขออเดอร์ — ใช้นับไม่ซ้ำ)
+     9  J = Sender Name         (แบรนด์)
+     10 K = Source              (ช่องทางขาย)
+     12 M = Urgent              (ด่วน / ปกติ)
+     15 P = เกณฑ์การจัดส่ง       (ตรงเกณฑ์หรือไม่)
+     16 Q = เช็คค้างส่ง          (สถานะค้างส่ง — ใช้ตัดสินว่า pending)
+     17 R = รูปแบบการจัดส่ง      (ขนส่ง)
+   นับ "ค้างส่ง" ด้วยคำใน Q แบบเดียวกับต้นฉบับ: ค้าง|รอ|pending|fail|ยกเลิก|ไม่สำเร็จ */
+let SHIP=null, SHIP_ERR='', SHIP_LOADING=false;
+const SHIP_PENDING_RE=/ค้าง|รอ|pending|fail|ยกเลิก|ไม่สำเร็จ/i;
+
+function shipDateKey(v){
+  const s=String(v||'').trim();
+  let m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if(m)return m[1]+'-'+String(m[2]).padStart(2,'0')+'-'+String(m[3]).padStart(2,'0');
+  m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if(m)return m[3]+'-'+String(m[2]).padStart(2,'0')+'-'+String(m[1]).padStart(2,'0');
+  return '';
+}
+
+async function loadShip(force){
+  if(force){ SHIP=null; SHIP_ERR=''; }
+  if(SHIP||SHIP_LOADING)return SHIP;
+  SHIP_LOADING=true;
+  try{
+    const rows=await smallSheet(S_SHIP,G_SHIP,s=>SHEET_STATE.ship=s);
+    if(!rows||rows.length<2)throw new Error('ได้ข้อมูลว่าง');
+    const A=0,E=4,G=6,J=9,K=10,M=12,P=15,Q=16,R=17;
+    const g=(r,i)=>i<r.length&&r[i]!=null?String(r[i]).trim():'';
+    const clean=v=>{
+      const s=String(v==null?'':v).trim();
+      return (!s||s==='-'||s.toLowerCase()==='null')?'ไม่ระบุ':s;
+    };
+    const list=[];
+    rows.slice(1).forEach(r=>{
+      if(!r||!r.length)return;
+      const ref=g(r,G);
+      let day=shipDateKey(g(r,A));
+      if(!day){ for(let i=0;i<r.length&&!day;i++) day=shipDateKey(g(r,i)); }
+      if(!ref&&!day)return;
+      if(!day)return;
+      const q=g(r,Q);
+      list.push({ day, ref,
+        dst:clean(g(r,E)), send:clean(g(r,J)), ch:clean(g(r,K)),
+        urg:clean(g(r,M)), crit:clean(g(r,P)), q:clean(q),
+        carrier:clean(g(r,R)),
+        pending:SHIP_PENDING_RE.test(q) });
+    });
+    if(!list.length)throw new Error('อ่านได้ 0 แถว (เช็คคอลัมน์วันที่ / เลขออเดอร์)');
+    SHIP={list};
+    SHEET_STATE.ship=fmt(list.length)+' แถว';
+  }catch(e){ SHIP=null; SHIP_ERR=e.message; SHEET_STATE.ship='ผิดพลาด — '+e.message; }
+  SHIP_LOADING=false;
+  return SHIP;
+}
+
+/* สถิติ — ตรรกะเดียวกับ applyShipFilter ของ Logistics Central
+   จุดสำคัญ: ทุกตัวนับ "ออเดอร์ไม่ซ้ำ" ด้วย Set ของ Order Reference
+   ไม่ใช่นับจำนวนแถว เพราะ 1 ออเดอร์อาจมีหลายบรรทัด (หลายสินค้า) */
+function shipStats(list){
+  const ords=new Set(), pend=new Set();
+  const byDay={}, byCh={}, byCarrier={}, byStatus={}, byUrg={}, bySend={}, byCrit={};
+  list.forEach((x,i)=>{
+    const o=x.ref||('r'+i);
+    ords.add(o);
+    if(x.pending)pend.add(o);
+    (byDay[x.day]=byDay[x.day]||new Set()).add(o);
+    (byCh[x.ch]=byCh[x.ch]||new Set()).add(o);
+    byCarrier[x.carrier]=(byCarrier[x.carrier]||0)+1;
+    byStatus[x.dst]=(byStatus[x.dst]||0)+1;
+    byUrg[x.urg]=(byUrg[x.urg]||0)+1;
+    (bySend[x.send]=bySend[x.send]||new Set()).add(o);
+    byCrit[x.crit]=(byCrit[x.crit]||0)+1;
+  });
+  const days=Object.keys(byDay).sort();
+  const setEnt=o=>Object.entries(o).filter(([k])=>k!=='ไม่ระบุ')
+                    .map(([k,v])=>[k,v.size]).sort((a,b)=>b[1]-a[1]);
+  const numEnt=o=>Object.entries(o).filter(([k])=>k!=='ไม่ระบุ')
+                    .sort((a,b)=>b[1]-a[1]);
+  const peak=days.length?days.reduce((a,b)=>byDay[b].size>byDay[a].size?b:a,days[0]):null;
+  const carrierE=numEnt(byCarrier);
+  const isOK=v=>/สำเร็จ|ตรง|ผ่าน|on ?time|delivered/i.test(v||'');
+  const okCrit=list.filter(x=>isOK(x.crit)).length;
+  return {
+    orders:ords.size, pending:pend.size,
+    pendingPct:ords.size?pend.size/ords.size*100:null,
+    days, byDay, peak, peakQty:peak?byDay[peak].size:0,
+    last:days[days.length-1]||null,
+    lastQty:days.length?byDay[days[days.length-1]].size:0,
+    avgDay:days.length?Math.round(ords.size/days.length):0,
+    chE:setEnt(byCh), sendE:setEnt(bySend),
+    carrierE, topCarrier:carrierE[0]?carrierE[0][0]:'-',
+    statusE:numEnt(byStatus), urgE:numEnt(byUrg),
+    critPct:list.length?okCrit/list.length*100:null,
+    rows:list.length
+  };
+}
+
+let SHIP_CTX=null;
+function secShip(){
+  if(!SHIP){
+    if(!SHIP_ERR)return '<div class="empty2">กำลังโหลดข้อมูล…</div>';
+    return `<div class="empty2">อ่านชีตไม่ได้ — ${esc(SHIP_ERR)}</div>`
+      +`<div class="cpanel" style="max-width:1100px;margin:0 auto">
+        <div class="chname2">วิธีแก้</div>
+        <div style="font-size:31px;line-height:1.7;color:var(--ink)">
+          เปิดชีต → <b>แชร์</b> → “การเข้าถึงทั่วไป” เป็น <b>ทุกคนที่มีลิงก์ · ผู้อ่าน</b>
+          → บันทึก แล้วกด <b>ดึงข้อมูลใหม่</b>
+        </div></div>`;
+  }
+
+  const all0=SHIP.list.filter(r=>!fYear()||r.day.slice(0,4)===fYear());
+  const chs=[...new Set(all0.map(r=>r.ch))].filter(c=>c!=='ไม่ระบุ').sort();
+  const sends=[...new Set(all0.map(r=>r.send))].filter(c=>c!=='ไม่ระบุ').sort();
+  const chSel=String(sf('sh_ch','')).split('|').filter(Boolean);
+  const sdSel=String(sf('sh_send','')).split('|').filter(Boolean);
+  const bar=(chs.length>1?chipMulti('sh_ch','ช่องทางขาย',chs.map(c=>[c,c]),chSel):'')
+          +(sends.length>1?chipMulti('sh_send','แบรนด์',sends.map(c=>[c,c]),sdSel):'');
+  let list=all0;
+  if(chSel.length)list=list.filter(r=>chSel.includes(r.ch));
+  if(sdSel.length)list=list.filter(r=>sdSel.includes(r.send));
+  if(!list.length)return bar+'<div class="empty2">ไม่มีข้อมูลตามตัวกรองนี้</div>';
+
+  const S=shipStats(list);
+  SHIP_CTX=S;
+
+  return bar
+   +`<div class="sgrid">
+       ${card('ออเดอร์จัดส่งทั้งหมด',S.orders)}
+       ${card('ค้างส่ง',S.pending,S.pending?'rose':'teal')}
+       ${card('% ค้างส่ง',pct1(S.pendingPct),(S.pendingPct||0)<=2?'teal':'rose')}
+       ${card('ขนส่งที่ใช้มากสุด',esc(S.topCarrier),'plum')}
+       ${card('ตรงเกณฑ์จัดส่ง',pct1(S.critPct),(S.critPct||0)>=98?'teal':'amber')}</div>
+     <div class="sgrid">
+       ${card('วันล่าสุด ('+(S.last||'-')+')',S.lastQty,'teal')}
+       ${card('เฉลี่ยต่อวัน',S.avgDay,'amber')}
+       ${card('วันพีคสุด ('+(S.peak||'-')+')',S.peakQty,'plum')}
+       ${card('จำนวนวันที่มีงาน',S.days.length)}
+       ${card('แถวข้อมูลทั้งหมด',S.rows,'mute')}</div>
+
+     <h2 class="sec">ออเดอร์จัดส่งรายวัน <em>นับออเดอร์ไม่ซ้ำ ตาม Expected Delivery</em><span></span></h2>
+     <div class="cpanel"><div class="cbox"><canvas id="c_shDay"></canvas></div></div>
+
+     <div class="g2">
+       <div><h2 class="sec">ช่องทางขาย<span></span></h2>
+         <div class="cpanel"><div class="cbox"><canvas id="c_shCh"></canvas></div></div></div>
+       <div><h2 class="sec">ขนส่งที่ใช้<span></span></h2>
+         <div class="cpanel"><div class="cbox"><canvas id="c_shCar"></canvas></div></div></div>
+     </div>
+
+     <div class="g3">
+       <div><h2 class="sec">สถานะจัดส่ง<span></span></h2>
+         <div class="cpanel"><div class="cbox"><canvas id="c_shSt"></canvas></div></div></div>
+       <div><h2 class="sec">ด่วน / ปกติ<span></span></h2>
+         <div class="cpanel"><div class="cbox"><canvas id="c_shUrg"></canvas></div></div></div>
+       <div><h2 class="sec">แบรนด์<span></span></h2>
+         <div class="cpanel"><div class="cbox"><canvas id="c_shSend"></canvas></div></div></div>
+     </div>`;
+}
+
+function drawShip(){
+  if(!SHIP_CTX)return;
+  const S=SHIP_CTX;
+  const PAL=[C.plum,C.teal,C.amber,C.rose,C.plumD,'#B4547F',C.tealD,'#C2703A',
+             '#7A6BB8','#6E9E4A'];
+  const col=i=>PAL[i%PAL.length];
+
+  /* รายวัน — โชว์ 60 วันล่าสุดเพื่อให้อ่านออก */
+  const d=S.days.slice(-60);
+  destroy('shDay');
+  CH.shDay=new Chart(document.getElementById('c_shDay'),{type:'bar',
+    data:{labels:d,datasets:[{label:'ออเดอร์',data:d.map(k=>S.byDay[k].size),
+      backgroundColor:C.plum,borderRadius:4}]},
+    options:baseOpts(false)});
+
+  const hbar=(id,key,ent,c,max)=>{
+    const e=ent.slice(0,max||10);
+    destroy(key);
+    CH[key]=new Chart(document.getElementById(id),{type:'bar',
+      data:{labels:e.map(x=>x[0]),datasets:[{data:e.map(x=>x[1]),
+        backgroundColor:c,borderRadius:4}]},
+      options:Object.assign(baseOpts(false),{indexAxis:'y'})});
+  };
+  hbar('c_shCh','shCh',S.chE,C.amber,8);
+  hbar('c_shCar','shCar',S.carrierE,C.tealD,10);
+  hbar('c_shSt','shSt',S.statusE,C.teal,8);
+  hbar('c_shUrg','shUrg',S.urgE,C.rose,6);
+  hbar('c_shSend','shSend',S.sendE,C.plumD,6);
+}
+
 /* ================= Delivery · Packing =================
    ต้นทาง: published CSV เดียวกับหน้า Logistics Central (gid=640931357)
    คอลัมน์ (0-based ตามที่หน้าเดิมใช้):
@@ -3738,6 +3936,7 @@ function render(){
                pick:['KPI Human Error On Picking <0.05%','Warehouse · ภาพรวมการหยิบสินค้ารายคน'],
                pack:['Packing','Delivery · ผลงานพนักงานแพ็ค สถานี และเวลาหนาแน่น'],
                sop:['เงื่อนไขการส่งสินค้าแต่ละ Platform','วิธีการปฏิบัติงาน · รอบตัดคำสั่งซื้อ Shopee · Lazada · TikTok'],
+               ship:['การจัดส่ง (Shipping)','Admin · ปริมาณจัดส่ง ค้างส่ง ช่องทาง และขนส่ง'],
                ret:['Return','Admin · งานตีคืน ยกเลิก และเคสค้าง']};
   const tt=TITLE[SEC]||TITLE.overview;
   el('kTitle').textContent=tt[0];
@@ -3749,6 +3948,7 @@ function render(){
                            : SEC==='fc'?secForecast()
                            : SEC==='pick'?secPick()
                            : SEC==='pack'?secPack()
+                           : SEC==='ship'?secShip()
                            : SEC==='sop'?secSOP()
                            : SEC==='ret'?secReturn() : secRepl();
     fitScrolls();
@@ -3759,6 +3959,7 @@ function render(){
            else if(SEC==='fc')drawForecast();
            else if(SEC==='pick')drawPick();
            else if(SEC==='pack')drawPack();
+           else if(SEC==='ship')drawShip();
            else if(SEC==='sop')drawSOP();
            else if(SEC==='ret')drawReturn(); else drawRepl(); }
       catch(e){ console.warn('chart',e); }
@@ -3900,7 +4101,8 @@ function render(){
     +' · Replenishment <b>'+SHEET_STATE.repl+'</b>'
     +' · Return <b>'+SHEET_STATE.ret+'</b>'
     +' · Picking <b>'+SHEET_STATE.pick+'</b>'
-    +' · Packing <b>'+SHEET_STATE.pack+'</b>';
+    +' · Packing <b>'+SHEET_STATE.pack+'</b>'
+    +' · Shipping <b>'+SHEET_STATE.ship+'</b>';
   const now=new Date();
   el('kTs').textContent=`ข้อมูล ณ ${now.getDate()} ${MONTHS[now.getMonth()]} ${now.getFullYear()} `
     +`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')} น.`;
@@ -4159,6 +4361,7 @@ window.KPI_SEC=async(sec)=>{
   if((SEC==='repl'||SEC==='fc')&&!REPL){ await loadRepl(); render(); }
   if(SEC==='pick'&&!PICK){ await loadPick(); render(); }
   if(SEC==='pack'&&!PACK){ await loadPack(); render(); }
+  if(SEC==='ship'&&!SHIP){ await loadShip(); render(); }
   if(SEC==='ret'){ const g=(RET_TABS.find(t=>t.k===sf('ret_t','cancel'))||RET_TABS[0]).gid;
     if(!RET[g]){ await loadRet(g); render(); } }
 };
@@ -4168,6 +4371,7 @@ if(/^#kpi-(repl|fc)/.test(location.hash||'')) loadRepl().then(()=>{ if(SEC==='re
 if(/^#kpi-ret/.test(location.hash||'')) loadRet(RET_TABS[0].gid).then(()=>{ if(SEC==='ret')render(); });
 if(/^#kpi-pick/.test(location.hash||'')) loadPick().then(()=>{ if(SEC==='pick')render(); });
 if(/^#kpi-pack/.test(location.hash||'')) loadPack().then(()=>{ if(SEC==='pack')render(); });
+if(/^#kpi-ship/.test(location.hash||'')) loadShip().then(()=>{ if(SEC==='ship')render(); });
 
 boot();
 
