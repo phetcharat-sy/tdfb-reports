@@ -2852,13 +2852,17 @@ function drawShip(){
   if(!SHIP_CTX)return;
   const S=SHIP_CTX;
 
-  /* รายวัน — โชว์ 60 วันล่าสุดเพื่อให้อ่านออก */
+  /* รายวัน — โชว์ 60 วันล่าสุดเพื่อให้อ่านออก
+     ใส่ตัวเลขกำกับหัวแท่ง (barPct raw) ปลั๊กอินจะข้ามป้ายที่ไม่มีที่พอให้เอง */
   const d=S.days.slice(-60);
   destroy('shDay');
   CH.shDay=new Chart(document.getElementById('c_shDay'),{type:'bar',
     data:{labels:d,datasets:[{label:'ออเดอร์',data:d.map(k=>S.byDay[k].size),
       backgroundColor:C.plum,borderRadius:4}]},
-    options:baseOpts(false)});
+    options:Object.assign(baseOpts(false),{
+      plugins:Object.assign({},baseOpts(false).plugins,{
+        legend:{display:false},
+        barPct:{display:true,raw:true}})})});
 
   /* โดนัทช่องทางขาย Top 5 — plot เป็น % ให้ pieLbl เขียนตัวเลขบนวงได้
      ที่เหลือรวมเป็น "อื่นๆ" กันชิ้นบางเรียงกันเป็นเสี้ยนรอบวง */
