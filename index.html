@@ -133,6 +133,7 @@ body.sopmode.present #vKPI .sopframe{height:100vh}
 #vKPI .sopframe{display:block;width:100%;height:1600px;border:0}
 @media(max-width:1500px){#vKPI .sopframe{height:1400px}}
 #vKPI .cbox{position:relative;height:520px}
+#vKPI .cbox.xl{height:760px}          /* กราฟแนวโน้ม — ใหญ่พิเศษ ให้อ่านง่าย */
 /* ---- Delivery · Packing ---- */
 /* สองแผงคู่กัน สูงเท่ากันเสมอ ไม่ว่าฝั่งไหนจะมีของมากกว่า */
 #vKPI .pkpair{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:stretch}
@@ -612,6 +613,7 @@ body.present #vKPI .ring .cap>span{white-space:nowrap;overflow:hidden;
   text-overflow:ellipsis;max-width:100%}
 body.present #vKPI .ring .cap .tag{margin-bottom:2px}
 body.present #vKPI .cbox{height:600px}
+body.present #vKPI .cbox.xl{height:880px}
 body.present #vKPI .subsec{font-size:36.5px}
 body.present #vKPI .chname{font-size:35.3px}
 body.present #vKPI .chpct{font-size:52.4px}
@@ -1345,6 +1347,34 @@ const linePt={id:'linePt',
     x.restore();
   }};
 if(window.Chart&&!Chart.registry.plugins.get('barPct'))Chart.register(barPct);
+/* ยอดรวมของแต่ละแท่งในโหมดซ้อน — วางไว้เหนือแท่งบนสุด */
+const stackTot={id:'stackTot',
+  beforeLayout(ch,a,op){ if(!op||!op.display)return;
+    const need=Math.round(48*CFZ); const p=ch.options.layout&&ch.options.layout.padding;
+    if(typeof p==='object'&&p){ if((p.top||0)<need)p.top=need; }
+    else ch.options.layout={padding:{top:need}}; },
+  afterDatasetsDraw(ch,a,op){
+    if(!op||!op.display)return;
+    const x=ch.ctx; x.save();
+    x.font='bold '+cf(op.size||26)+'px Tahoma'; x.fillStyle='#22252C';
+    x.textAlign='center'; x.textBaseline='bottom';
+    let lastR=-1e9;
+    (ch.data.labels||[]).forEach((_,i)=>{
+      let sum=0, top=Infinity, px=null;
+      ch.data.datasets.forEach((ds,di)=>{
+        const m=ch.getDatasetMeta(di); if(m.hidden)return;
+        const el=m.data[i]; if(!el)return;
+        sum+=+ds.data[i]||0; if(el.y<top)top=el.y; px=el.x;
+      });
+      if(!sum||px==null)return;
+      const t=fmt(Math.round(sum)), w=x.measureText(t).width;
+      if(px-w/2<lastR+8)return;            /* ไม่มีที่พอ — ข้ามป้ายนี้ */
+      lastR=px+w/2;
+      x.fillText(t,px,Math.max(16,top-8));
+    });
+    x.restore();
+  }};
+if(window.Chart&&!Chart.registry.plugins.get('stackTot'))Chart.register(stackTot);
 /* เขียน % ลงบนชิ้นพายโดยตรง เฉพาะชิ้นที่ใหญ่พอ ชิ้นเล็กให้ไปอ่านจาก legend ข้างๆ */
 const pieLbl={id:'pieLbl',
   afterDatasetsDraw(ch,a,op){
@@ -1427,6 +1457,13 @@ function chipMulti(key,label,items,sel){
         class="${on.size?'':'on'}">${box(!on.size)}ทั้งหมด</button>`
     +items.map(([v,t])=>`<button type="button" data-sf="${key}" data-multi="1" data-v="${esc(v)}"
         class="${on.has(v)?'on':''}">${box(on.has(v))}${esc(t)}</button>`).join('')
+    +`</div>`;
+}
+/* ชิปแบบเลือกได้อันเดียว — ใช้สลับมุมมองของกราฟ */
+function chipOne(key,label,items,cur){
+  return `<div class="fbar"><span class="fl">${label}</span>`
+    +items.map(([v,t])=>`<button type="button" data-sf="${key}" data-v="${esc(v)}"
+        class="${cur===v?'on':''}">${esc(t)}</button>`).join('')
     +`</div>`;
 }
 function detailTable(rows,mode){
@@ -3015,7 +3052,7 @@ async function loadPack(force){
 
 /* รวมสถิติทั้งหมด — สูตรเดียวกับหน้า Logistics Central */
 function packStats(list){
-  const days=new Set(), st={}, ch={}, hrs={}, per={}, wk={}, daily={};
+  const days=new Set(), st={}, ch={}, hrs={}, per={}, wk={}, mo={}, daily={};
   list.forEach(x=>{
     days.add(x.d.fd);
     if(!daily[x.d.fd])daily[x.d.fd]={orders:0,packers:new Set()};
@@ -3031,6 +3068,7 @@ function packStats(list){
     o.st[x.st]=(o.st[x.st]||0)+1;
     o.hr[x.hr]=(o.hr[x.hr]||0)+1;
     (wk[x.d.w]=wk[x.d.w]||{})[x.p]=(wk[x.d.w][x.p]||0)+1;
+    (mo[x.d.m]=mo[x.d.m]||{})[x.p]=(mo[x.d.m][x.p]||0)+1;
   });
 
   /* ความเร็วทีม — นับเฉพาะชั่วโมงที่แพ็ค >= 12 ใบ (ตัดเศษท้ายกะ) */
@@ -3080,7 +3118,7 @@ function packStats(list){
           avgDay:dArr.length?Math.round(list.length/dArr.length):0,
           speed, util, per, pArr, stArr, stDays:st, periodDays:Math.max(1,dArr.length),
           chArr:Object.keys(ch).filter(k=>k!=='ไม่ระบุ').sort((a,b)=>ch[b]-ch[a]),
-          wk, hrs, cards};
+          wk, mo, hrs, cards};
 }
 
 let PACK_CTX=null;
@@ -3104,6 +3142,10 @@ function secPack(){
   if(!list.length)return bar+'<div class="empty2">ไม่มีข้อมูลตามตัวกรองนี้</div>';
 
   const S=packStats(list);
+  /* มุมมองกราฟแนวโน้ม — ค่าตั้งต้น: รายเดือน + ซ้อนแท่ง (อ่านง่ายกว่า 37 สัปดาห์ × 13 คน) */
+  const tSpan=sf('pk2_span','m')==='w'?'w':'m';
+  const tStack=sf('pk2_stack','1')!=='0';
+  S.tSpan=tSpan; S.tStack=tStack;
   PACK_CTX=S;
 
   const uCls=v=>v>=100?'teal':(v>=80?'plum':(v>=50?'amber':'rose'));
@@ -3156,8 +3198,10 @@ function secPack(){
          <div class="cpanel"><div id="pkStations" class="pkstations"></div></div></div>
      </div>
 
-     <h2 class="sec">แนวโน้มแพ็ครายสัปดาห์<span></span></h2>
-     <div class="cpanel"><div class="cbox"><canvas id="c_pkWk"></canvas></div></div>
+     <h2 class="sec">แนวโน้มการแพ็ค <em>${tSpan==='w'?'รายสัปดาห์':'รายเดือน'} · ${tStack?'ซ้อนแท่ง = ยอดรวมทีม':'แยกแท่งรายคน'}</em><span></span></h2>
+     ${chipOne('pk2_span','ช่วงเวลา',[['m','รายเดือน'],['w','รายสัปดาห์']],tSpan)}
+     ${chipOne('pk2_stack','รูปแบบ',[['1','ซ้อนแท่ง (ดูยอดรวม)'],['0','แยกแท่ง (เทียบรายคน)']],tStack?'1':'0')}
+     <div class="cpanel"><div class="cbox xl"><canvas id="c_pkWk"></canvas></div></div>
 
      <div class="g2">
        <div><h2 class="sec">สัดส่วนการแพ็ค (เทียบรายบุคคล)<span></span></h2>
@@ -3203,13 +3247,37 @@ function drawPack(){
     });
   }
 
-  /* รายสัปดาห์ — แท่งแยกคน */
-  const wkK=Object.keys(S.wk).sort();
+  /* แนวโน้มการแพ็ค — รายเดือน (ค่าตั้งต้น) หรือรายสัปดาห์ · ซ้อนแท่งหรือแยกแท่ง */
+  const byMonth=S.tSpan!=='w';
+  const src=byMonth?S.mo:S.wk;
+  const keys=Object.keys(src).sort();
+  const yrs=new Set(keys.map(k=>k.slice(0,4)));
+  const lab=k=>{
+    if(!byMonth)return 'W'+k.slice(6);                 /* 2026-W03 → W03 */
+    const t=MON_S[(+k.slice(5,7))-1]||k;
+    return yrs.size>1?t+' '+k.slice(2,4):t;            /* ปีเดียว = ไม่ต้องใส่ปี */
+  };
+  const oWk=baseOpts(true);
+  oWk.scales.x.stacked=S.tStack; oWk.scales.y.stacked=S.tStack;
+  oWk.scales.x.ticks.font={size:cf(byMonth?26:20)};
+  oWk.scales.y.ticks.callback=v=>fmt(v);
+  oWk.plugins.legend.labels.boxWidth=18;
+  oWk.plugins.tooltip.mode='index'; oWk.plugins.tooltip.intersect=false;
+  oWk.plugins.tooltip.itemSort=(a,b)=>b.parsed.y-a.parsed.y;
+  oWk.plugins.tooltip.filter=c=>c.parsed.y>0;          /* คนที่ไม่ได้แพ็คเดือนนั้น ไม่ต้องขึ้น */
+  oWk.plugins.tooltip.callbacks={
+    label:c=>c.dataset.label+': '+fmt(c.parsed.y),
+    footer:its=>'รวม '+fmt(its.reduce((s,c)=>s+(c.parsed.y||0),0))+' กล่อง'};
+  oWk.plugins.tooltip.footerFont={size:cf(21)};
+  oWk.plugins.stackTot={display:S.tStack};
+  oWk.interaction={mode:'index',intersect:false};
   destroy('pkWk');
   CH.pkWk=new Chart(document.getElementById('c_pkWk'),{type:'bar',
-    data:{labels:wkK,datasets:S.pArr.map((n,i)=>({label:n,
-      data:wkK.map(k=>S.wk[k][n]||0),backgroundColor:col(i),borderRadius:3}))},
-    options:baseOpts(true)});
+    data:{labels:keys.map(lab),datasets:S.pArr.map((n,i)=>({label:n,
+      data:keys.map(k=>src[k][n]||0),backgroundColor:col(i),
+      borderRadius:S.tStack?0:3,
+      maxBarThickness:byMonth?(S.tStack?96:26):(S.tStack?34:10)}))},
+    options:oWk});
 
   /* สัดส่วนรายคน — plot เป็น % เพื่อให้ pieLbl เขียนตัวเลขลงบนวงได้ */
   const shareVal=S.pArr.map(n=>S.per[n].count);
