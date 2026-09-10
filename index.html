@@ -133,7 +133,7 @@ body.sopmode.present #vKPI .sopframe{height:100vh}
 #vKPI .sopframe{display:block;width:100%;height:1600px;border:0}
 @media(max-width:1500px){#vKPI .sopframe{height:1400px}}
 #vKPI .cbox{position:relative;height:520px}
-#vKPI .cbox.xl{height:760px}          /* กราฟแนวโน้ม — ใหญ่พิเศษ ให้อ่านง่าย */
+#vKPI .cbox.xl{height:1040px}         /* กราฟแนวโน้ม — ใหญ่พิเศษ ให้อ่านง่าย */
 /* ---- Delivery · Packing ---- */
 /* สองแผงคู่กัน สูงเท่ากันเสมอ ไม่ว่าฝั่งไหนจะมีของมากกว่า */
 #vKPI .pkpair{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:stretch}
@@ -613,7 +613,7 @@ body.present #vKPI .ring .cap>span{white-space:nowrap;overflow:hidden;
   text-overflow:ellipsis;max-width:100%}
 body.present #vKPI .ring .cap .tag{margin-bottom:2px}
 body.present #vKPI .cbox{height:600px}
-body.present #vKPI .cbox.xl{height:880px}
+body.present #vKPI .cbox.xl{height:1180px}
 body.present #vKPI .subsec{font-size:36.5px}
 body.present #vKPI .chname{font-size:35.3px}
 body.present #vKPI .chpct{font-size:52.4px}
@@ -3271,14 +3271,19 @@ function drawPack(){
     footer:its=>'รวม '+fmt(its.reduce((s,c)=>s+(c.parsed.y||0),0))+' กล่อง'};
   oWk.plugins.tooltip.footerFont={size:cf(21)};
   oWk.plugins.stackTot={display:S.tStack};
-  if(!S.tStack){ oWk.datasets={bar:{categoryPercentage:.86,barPercentage:.94}}; }
+  /* แท่งในกลุ่มเดียวกันชิดกัน — เว้นเฉพาะระหว่างเดือน (barPercentage 1 = ไม่เว้นในกลุ่ม) */
+  oWk.datasets={bar:S.tStack?{categoryPercentage:.7,barPercentage:1}
+                            :{categoryPercentage:.9,barPercentage:1}};
   oWk.interaction={mode:'index',intersect:false};
+  /* ตัดคนที่ไม่มียอดเลยในช่วงนี้ออก จะได้ไม่มีช่องแท่งว่าง ๆ คั่นกลาง */
+  const dsets=S.pArr.map((n,i)=>({n,i,d:keys.map(k=>src[k][n]||0)}))
+    .filter(x=>x.d.some(v=>v>0));
   destroy('pkWk');
   CH.pkWk=new Chart(document.getElementById('c_pkWk'),{type:'bar',
-    data:{labels:keys.map(lab),datasets:S.pArr.map((n,i)=>({label:n,
-      data:keys.map(k=>src[k][n]||0),backgroundColor:col(i),
-      borderRadius:S.tStack?0:3,
-      maxBarThickness:byMonth?(S.tStack?96:34):(keys.length<=6?(S.tStack?96:34):(S.tStack?34:11))}))},
+    data:{labels:keys.map(lab),datasets:dsets.map(x=>({label:x.n,
+      data:x.d,backgroundColor:col(x.i),
+      borderRadius:S.tStack?0:2,
+      maxBarThickness:S.tStack?110:60}))},
     options:oWk});
 
   /* สัดส่วนรายคน — plot เป็น % เพื่อให้ pieLbl เขียนตัวเลขลงบนวงได้ */
