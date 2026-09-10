@@ -3564,9 +3564,9 @@ function drawPick(){
    skip = คอลัมน์ที่ไม่ต้องเอามาทำสัดส่วน (ระบุเป็นชื่อคอลัมน์ หรือตัวอักษรคอลัมน์ชีต) */
 const RET_TABS=[
   {k:'cancel',t:'ยกเลิกในวัน',   d:'ออเดอร์ที่ถูกยกเลิกภายในวัน',    gid:'34728630',  skip:['I','J','K','L','M']},
-  {k:'back',  t:'งานตีคืน',      d:'พัสดุที่ตีคืนกลับมาที่คลัง',       gid:'64747860',  skip:['J','K','เจ้าของ']},
-  {k:'idle',  t:'สถานะไม่เคลื่อนไหว',d:'พัสดุที่สถานะค้างไม่ขยับตามกำหนด',gid:'1668452287',skip:['ผู้จัดทำ','เลขคำร้อง','การแก้ไข']},
-  {k:'lost',  t:'เคสของหาย',     d:'เคสพัสดุสูญหายระหว่างขนส่ง',      gid:'1212673143',skip:[]}
+  {k:'back',  t:'งานตีคืน',      d:'พัสดุที่ตีคืนกลับมาที่คลัง',       gid:'1835322718',skip:['Product','รายละเอียด']},
+  {k:'idle',  t:'สถานะไม่เคลื่อนไหว',d:'พัสดุที่สถานะค้างไม่ขยับตามกำหนด',gid:'1929259126',skip:['Product','รายละเอียด','คำร้อง','มูลค่า']},
+  {k:'lost',  t:'เคสของหาย',     d:'เคสพัสดุสูญหายระหว่างขนส่ง',      gid:'1094010409',skip:['Product','รายละเอียด']}
 ];
 const RET={};
 const RET_LOADING={};
@@ -3606,10 +3606,22 @@ async function loadRet(gid){
     if(!t)throw new Error('หาหัวตารางไม่เจอ');
     /* ค้นหัวคอลัมน์แบบไม่สนตัวพิมพ์เล็ก-ใหญ่ (ชีตเขียน Platform / platform ไม่เหมือนกัน) */
     const HL=t.H.map(v=>String(v).toLowerCase());
+    /* บางแท็บมีคอลัมน์ที่ชื่อเข้าเงื่อนไขแต่ไม่มีใครกรอก (เช่น "ขนส่ง" ว่าง ข้อมูลจริงอยู่ใน Platform)
+       จึงเลือกคอลัมน์ที่ "มีข้อมูลจริง" ก่อน ถ้าไม่มีเลยค่อยใช้คอลัมน์แรกที่ชื่อตรง */
+    const fill=i=>t.rows.reduce((n,r)=>n+(String(r[i]||'').replace(/[\u200b\s]/g,'')!==''?1:0),0);
+    const enough=i=>fill(i)>=Math.max(1,t.rows.length*0.3);   /* กรอกจริงเกิน 30% ของแถว */
     const colCI=(...p)=>{
-      for(const x of p){const q=String(x).toLowerCase();
-        const i=HL.findIndex(v=>v.includes(q)); if(i>=0)return i;}
-      return -1;};
+      let first=-1;
+      for(const x of p){
+        const q=String(x).toLowerCase(), hits=[];
+        HL.forEach((v,i)=>{ if(v.includes(q))hits.push(i); });
+        if(!hits.length)continue;
+        if(first<0)first=hits[0];
+        /* ถ้าชื่อตรงหลายคอลัมน์ เอาคอลัมน์ที่กรอกมากที่สุด */
+        const best=hits.slice().sort((a,b)=>fill(b)-fill(a))[0];
+        if(enough(best))return best;
+      }
+      return first;};
     const c={
       w:  colCI('Week','สัปดาห์'),
       d:  colCI('วันที่ได้รับ','วันที่รับ','วันที่'),
@@ -3626,12 +3638,20 @@ async function loadRet(gid){
       cx: colCI('เวลาที่ลูกค้ายกเลิก','ลูกค้ายกเลิก','เวลายกเลิก'),
       n:  colCI('หมายเหตุ','โน๊ต','โน้ต','Note','Remark')
     };
-    const g=(r,i)=>i>=0?String(r[i]||'').trim():'';
+    const g=(r,i)=>i>=0?String(r[i]||'').replace(/\u200b/g,'').trim():'';
+    /* บางแท็บไม่มีคอลัมน์ Week หรือมีแต่ไม่ได้กรอก — คิดเลขสัปดาห์จากวันที่ให้เอง
+       ไม่งั้นกราฟรายสัปดาห์และตัวกรอง Week จะว่างเปล่า */
+    const isoW=v=>{const d=dparse(v); if(!d||isNaN(d))return '';
+      const t2=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
+      const dn=t2.getUTCDay()||7; t2.setUTCDate(t2.getUTCDate()+4-dn);
+      const y0=new Date(Date.UTC(t2.getUTCFullYear(),0,1));
+      return String(Math.ceil(((t2-y0)/86400000+1)/7));};
     const list=t.rows.map(r=>{
       const o={w:g(r,c.w), d:g(r,c.d), o:g(r,c.o), s:g(r,c.s), dl:g(r,c.dl),
                st:g(r,c.st), end:g(r,c.e), r:g(r,c.r), n:g(r,c.n),
                fx:g(r,c.fx), cl:g(r,c.cl),
                pk:g(r,c.pk), cx:g(r,c.cx), raw:r};
+      if(!o.w)o.w=isoW(o.d);                     /* ไม่มี Week ในชีต = คิดจากวันที่ */
       /* จำนวนวันที่ใช้ปิดเคส = วันที่สิ้นสุด − วันที่ได้รับ */
       const a=dparse(o.d), b=dparse(o.end);
       o.days=(!isNaN(a)&&!isNaN(b))?Math.round((b-a)/86400000):null;
