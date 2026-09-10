@@ -133,7 +133,7 @@ body.sopmode.present #vKPI .sopframe{height:100vh}
 #vKPI .sopframe{display:block;width:100%;height:1600px;border:0}
 @media(max-width:1500px){#vKPI .sopframe{height:1400px}}
 #vKPI .cbox{position:relative;height:520px}
-#vKPI .cbox.xl{height:900px}          /* กราฟแนวโน้ม — ใหญ่กว่ากราฟอื่น แต่ไม่ยาวเกินหน้าจอ */
+#vKPI .cbox.xl{height:min(620px,70vh)}  /* กราฟแนวโน้ม — ไม่เกิน 70% ของความสูงจอ จบในหน้าจอเดียว */
 /* ---- Delivery · Packing ---- */
 /* สองแผงคู่กัน สูงเท่ากันเสมอ ไม่ว่าฝั่งไหนจะมีของมากกว่า */
 #vKPI .pkpair{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:stretch}
@@ -613,7 +613,7 @@ body.present #vKPI .ring .cap>span{white-space:nowrap;overflow:hidden;
   text-overflow:ellipsis;max-width:100%}
 body.present #vKPI .ring .cap .tag{margin-bottom:2px}
 body.present #vKPI .cbox{height:600px}
-body.present #vKPI .cbox.xl{height:1000px}
+body.present #vKPI .cbox.xl{height:min(700px,78vh)}
 body.present #vKPI .subsec{font-size:36.5px}
 body.present #vKPI .chname{font-size:35.3px}
 body.present #vKPI .chpct{font-size:52.4px}
@@ -1375,6 +1375,31 @@ const stackTot={id:'stackTot',
     x.restore();
   }};
 if(window.Chart&&!Chart.registry.plugins.get('stackTot'))Chart.register(stackTot);
+/* ป้ายชื่อกลุ่มใต้แกน X + เส้นคั่นกลุ่ม — ใช้กับกราฟที่ 1 แท่ง = 1 คน
+   (แท่งของเดือนเดียวกันเรียงติดกัน ไม่มีช่องว่างของคนที่ยอดเป็น 0) */
+const grpLbl={id:'grpLbl',
+  beforeLayout(ch,a,op){ if(!op||!op.display)return;
+    const need=Math.round(46*CFZ); const p=ch.options.layout&&ch.options.layout.padding;
+    if(typeof p==='object'&&p){ if((p.bottom||0)<need)p.bottom=need; }
+    else ch.options.layout={padding:{bottom:need}}; },
+  afterDraw(ch,a,op){
+    if(!op||!op.display||!op.groups)return;
+    const x=ch.ctx, sx=ch.scales.x, ar=ch.chartArea;
+    x.save();
+    (op.groups||[]).forEach((g,gi)=>{
+      const p1=sx.getPixelForValue(g.from), p2=sx.getPixelForValue(g.to);
+      if(gi){                                   /* เส้นคั่นบาง ๆ ระหว่างกลุ่ม */
+        const d=(sx.getPixelForValue(g.from)+sx.getPixelForValue(g.from-1))/2;
+        x.strokeStyle='rgba(34,37,44,.10)'; x.lineWidth=1;
+        x.beginPath(); x.moveTo(d,ar.top); x.lineTo(d,ar.bottom); x.stroke();
+      }
+      x.font='bold '+cf(op.size||26)+'px Tahoma'; x.fillStyle=C.mute;
+      x.textAlign='center'; x.textBaseline='top';
+      x.fillText(g.t,(p1+p2)/2,ar.bottom+12);
+    });
+    x.restore();
+  }};
+if(window.Chart&&!Chart.registry.plugins.get('grpLbl'))Chart.register(grpLbl);
 /* เขียน % ลงบนชิ้นพายโดยตรง เฉพาะชิ้นที่ใหญ่พอ ชิ้นเล็กให้ไปอ่านจาก legend ข้างๆ */
 const pieLbl={id:'pieLbl',
   afterDatasetsDraw(ch,a,op){
@@ -3259,34 +3284,65 @@ function drawPack(){
     return yrs.size>1?t+' '+k.slice(2,4):t;            /* ปีเดียว = ไม่ต้องใส่ปี */
   };
   const oWk=baseOpts(true);
-  oWk.scales.x.stacked=S.tStack; oWk.scales.y.stacked=S.tStack;
-  oWk.scales.x.ticks.font={size:cf(byMonth?26:20)};
   oWk.scales.y.ticks.callback=v=>fmt(v);
   oWk.plugins.legend.labels.boxWidth=18;
-  oWk.plugins.tooltip.mode='index'; oWk.plugins.tooltip.intersect=false;
-  oWk.plugins.tooltip.itemSort=(a,b)=>b.parsed.y-a.parsed.y;
-  oWk.plugins.tooltip.filter=c=>c.parsed.y>0;          /* คนที่ไม่ได้แพ็คเดือนนั้น ไม่ต้องขึ้น */
-  oWk.plugins.tooltip.callbacks={
-    label:c=>c.dataset.label+': '+fmt(c.parsed.y),
-    footer:its=>'รวม '+fmt(its.reduce((s,c)=>s+(c.parsed.y||0),0))+' กล่อง'};
   oWk.plugins.tooltip.footerFont={size:cf(21)};
-  oWk.plugins.stackTot={display:S.tStack};
-  /* แท่งในกลุ่มเดียวกันชิดกัน — เว้นเฉพาะระหว่างเดือน (barPercentage 1 = ไม่เว้นในกลุ่ม) */
-  oWk.datasets={bar:S.tStack?{categoryPercentage:.7,barPercentage:1}
-                            :{categoryPercentage:.9,barPercentage:1}};
-  oWk.interaction={mode:'index',intersect:false};
-  /* ตัดคนที่ไม่มียอดเลยในช่วงนี้ออก จะได้ไม่มีช่องแท่งว่าง ๆ คั่นกลาง */
-  /* เดือนที่คนนั้นไม่มียอด = null (ไม่ใช่ 0) + skipNull
-     Chart.js จะไม่จองช่องให้ แท่งในเดือนนั้นเลยชิดกันสนิท ไม่มีช่องขาวคั่น */
-  const dsets=S.pArr.map((n,i)=>({n,i,d:keys.map(k=>src[k][n]||null)}))
-    .filter(x=>x.d.some(v=>v>0));
   destroy('pkWk');
-  CH.pkWk=new Chart(document.getElementById('c_pkWk'),{type:'bar',
-    data:{labels:keys.map(lab),datasets:dsets.map(x=>({label:x.n,
-      data:x.d,backgroundColor:col(x.i),skipNull:true,
-      borderRadius:S.tStack?0:2,
-      maxBarThickness:S.tStack?140:90}))},
-    options:oWk});
+
+  if(S.tStack){
+    /* ซ้อนแท่ง — 1 แท่ง = 1 ช่วงเวลา ยอดรวมทีมกำกับบนหัวแท่ง */
+    oWk.scales.x.stacked=true; oWk.scales.y.stacked=true;
+    oWk.scales.x.ticks.font={size:cf(byMonth?26:20)};
+    oWk.plugins.tooltip.mode='index'; oWk.plugins.tooltip.intersect=false;
+    oWk.plugins.tooltip.itemSort=(a,b)=>b.parsed.y-a.parsed.y;
+    oWk.plugins.tooltip.filter=c=>c.parsed.y>0;
+    oWk.plugins.tooltip.callbacks={
+      label:c=>c.dataset.label+': '+fmt(c.parsed.y),
+      footer:its=>'รวม '+fmt(its.reduce((s,c)=>s+(c.parsed.y||0),0))+' กล่อง'};
+    oWk.plugins.stackTot={display:true};
+    oWk.datasets={bar:{categoryPercentage:.72,barPercentage:1}};
+    oWk.interaction={mode:'index',intersect:false};
+    const dsets=S.pArr.map((n,i)=>({n,i,d:keys.map(k=>src[k][n]||0)}))
+      .filter(x=>x.d.some(v=>v>0));
+    CH.pkWk=new Chart(document.getElementById('c_pkWk'),{type:'bar',
+      data:{labels:keys.map(lab),datasets:dsets.map(x=>({label:x.n,
+        data:x.d,backgroundColor:col(x.i),maxBarThickness:140}))},
+      options:oWk});
+  }else{
+    /* แยกแท่งรายคน — 1 แท่ง = 1 คนในเดือนนั้น
+       คนที่เดือนนั้นยอดเป็น 0 จะไม่มีแท่ง และไม่จองช่องว่างไว้ด้วย
+       (ไม่ได้ใช้ dataset ต่อคนแล้ว เพราะ Chart.js จะจองช่องให้ทุกคนทุกเดือนเสมอ)
+       เว้นช่องหนึ่งแท่งระหว่างเดือน เพื่อให้เห็นว่าเป็นคนละเดือน */
+    const cats=[], grp=[];
+    keys.forEach((k,ki)=>{
+      if(ki)cats.push({sp:1});
+      const from=cats.length;
+      S.pArr.forEach((n,i)=>{ const v=src[k][n]||0;
+        if(v>0)cats.push({v,c:col(i),p:n,m:lab(k),g:grp.length}); });
+      if(cats.length===from)cats.push({sp:1});
+      grp.push({t:lab(k),from,to:cats.length-1});
+    });
+    const gTot=grp.map((g,gi)=>cats.reduce((t,c)=>t+(!c.sp&&c.g===gi?c.v:0),0));
+    const present=new Set(cats.filter(c=>!c.sp).map(c=>c.p));
+    oWk.scales.x.ticks.display=false;
+    oWk.datasets={bar:{categoryPercentage:1,barPercentage:1}};
+    oWk.plugins.grpLbl={display:true,groups:grp,size:byMonth?27:22};
+    oWk.plugins.legend.onClick=()=>{};              /* ป้ายสีไว้ดูอย่างเดียว */
+    oWk.plugins.legend.labels.generateLabels=()=>S.pArr
+      .map((n,i)=>({n,i})).filter(x=>present.has(x.n))
+      .map(x=>({text:x.n,fillStyle:col(x.i),strokeStyle:col(x.i),lineWidth:0,
+                fontColor:C.mute,hidden:false,datasetIndex:0}));
+    oWk.plugins.tooltip.callbacks={
+      title:its=>cats[its[0].dataIndex].m,
+      label:c=>cats[c.dataIndex].p+': '+fmt(c.parsed.y),
+      footer:its=>'รวมทั้งเดือน '+fmt(gTot[cats[its[0].dataIndex].g])+' กล่อง'};
+    CH.pkWk=new Chart(document.getElementById('c_pkWk'),{type:'bar',
+      data:{labels:cats.map((c,i)=>String(i)),
+        datasets:[{label:'กล่อง',data:cats.map(c=>c.sp?null:c.v),
+          backgroundColor:cats.map(c=>c.sp?'rgba(0,0,0,0)':c.c),
+          borderRadius:2,maxBarThickness:90}]},
+      options:oWk});
+  }
 
   /* สัดส่วนรายคน — plot เป็น % เพื่อให้ pieLbl เขียนตัวเลขลงบนวงได้ */
   const shareVal=S.pArr.map(n=>S.per[n].count);
