@@ -133,9 +133,7 @@ body.sopmode.present #vKPI .sopframe{height:100vh}
 #vKPI .sopframe{display:block;width:100%;height:1600px;border:0}
 @media(max-width:1500px){#vKPI .sopframe{height:1400px}}
 #vKPI .cbox{position:relative;height:520px}
-#vKPI .cbox.xl{height:1400px}         /* กราฟแนวโน้ม — ใหญ่พิเศษ ให้อ่านง่าย */
-/* ให้กราฟแนวโน้มสูงตามจอเสมอ ถ้าจอสูงกว่านี้ก็ยืดตาม (อย่างน้อย 1400px) */
-#vKPI .cbox.xl{height:max(1400px,88vh)}
+#vKPI .cbox.xl{height:900px}          /* กราฟแนวโน้ม — ใหญ่กว่ากราฟอื่น แต่ไม่ยาวเกินหน้าจอ */
 /* ---- Delivery · Packing ---- */
 /* สองแผงคู่กัน สูงเท่ากันเสมอ ไม่ว่าฝั่งไหนจะมีของมากกว่า */
 #vKPI .pkpair{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:stretch}
@@ -615,7 +613,7 @@ body.present #vKPI .ring .cap>span{white-space:nowrap;overflow:hidden;
   text-overflow:ellipsis;max-width:100%}
 body.present #vKPI .ring .cap .tag{margin-bottom:2px}
 body.present #vKPI .cbox{height:600px}
-body.present #vKPI .cbox.xl{height:max(1600px,92vh)}
+body.present #vKPI .cbox.xl{height:1000px}
 body.present #vKPI .subsec{font-size:36.5px}
 body.present #vKPI .chname{font-size:35.3px}
 body.present #vKPI .chpct{font-size:52.4px}
@@ -3278,14 +3276,16 @@ function drawPack(){
                             :{categoryPercentage:.9,barPercentage:1}};
   oWk.interaction={mode:'index',intersect:false};
   /* ตัดคนที่ไม่มียอดเลยในช่วงนี้ออก จะได้ไม่มีช่องแท่งว่าง ๆ คั่นกลาง */
-  const dsets=S.pArr.map((n,i)=>({n,i,d:keys.map(k=>src[k][n]||0)}))
+  /* เดือนที่คนนั้นไม่มียอด = null (ไม่ใช่ 0) + skipNull
+     Chart.js จะไม่จองช่องให้ แท่งในเดือนนั้นเลยชิดกันสนิท ไม่มีช่องขาวคั่น */
+  const dsets=S.pArr.map((n,i)=>({n,i,d:keys.map(k=>src[k][n]||null)}))
     .filter(x=>x.d.some(v=>v>0));
   destroy('pkWk');
   CH.pkWk=new Chart(document.getElementById('c_pkWk'),{type:'bar',
     data:{labels:keys.map(lab),datasets:dsets.map(x=>({label:x.n,
-      data:x.d,backgroundColor:col(x.i),
+      data:x.d,backgroundColor:col(x.i),skipNull:true,
       borderRadius:S.tStack?0:2,
-      maxBarThickness:S.tStack?140:80}))},
+      maxBarThickness:S.tStack?140:90}))},
     options:oWk});
 
   /* สัดส่วนรายคน — plot เป็น % เพื่อให้ pieLbl เขียนตัวเลขลงบนวงได้ */
