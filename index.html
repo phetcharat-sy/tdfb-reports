@@ -1050,8 +1050,12 @@ function table(rows,re){
   return {H,col,rows:rows.slice(hi+1)};
 }
 const dnum=s=>{const m=String(s==null?'':s).match(/-?[\d.]+/);return m?parseFloat(m[0]):NaN;};
-const dparse=s=>{const m=String(s==null?'':s).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-  return m?Date.UTC(+m[3],+m[2]-1,+m[1]):NaN;};
+const dparse=s=>{const v=String(s==null?'':s).trim();
+  const m=v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if(m)return Date.UTC(+m[3],+m[2]-1,+m[1]);
+  const i=v.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);   /* บางแท็บเขียนวันที่แบบ 2026-09-01 */
+  if(i)return Date.UTC(+i[1],+i[2]-1,+i[3]);
+  return NaN;};
 
 let STATIC_ERR={diff:'',dock:''};
 
@@ -3563,7 +3567,11 @@ function drawPick(){
    ชีตต้นทาง: Case Admin (S_RET) · แต่ละหัวข้อเป็นแท็บของตัวเอง (gid แยกกัน)
    skip = คอลัมน์ที่ไม่ต้องเอามาทำสัดส่วน (ระบุเป็นชื่อคอลัมน์ หรือตัวอักษรคอลัมน์ชีต) */
 const RET_TABS=[
-  {k:'cancel',t:'ยกเลิกในวัน',   d:'ออเดอร์ที่ถูกยกเลิกภายในวัน',    gid:'34728630',  skip:['I','J','K','L','M']},
+  {k:'cancel',t:'ออเดอร์ยกเลิก',  d:'ออเดอร์ที่ถูกยกเลิกในคลัง แยกตามขั้นที่ยกเลิก', gid:'1213140401',
+   skip:['เหตุผล','เลขงาน','ธงเตือน','เริ่มงาน','งานสุดท้าย','เวลาปิด'],
+   stCol:'หมวด',                                  /* ใช้คอลัมน์ G (หมวด) เป็น "สถานะ" ของหน้านี้ */
+   grp:true,                                      /* โชว์การ์ดแยกยอดตามหมวด */
+   drop:{col:'หมวด',vals:['ไม่ใช่ออเดอร์ลูกค้า']}   /* งานภายในคลัง ไม่ใช่ออเดอร์ขาย — ไม่นับ */},
   {k:'back',  t:'งานตีคืน',      d:'พัสดุที่ตีคืนกลับมาที่คลัง',       gid:'1835322718',skip:['Product','รายละเอียด']},
   {k:'idle',  t:'สถานะไม่เคลื่อนไหว',d:'พัสดุที่สถานะค้างไม่ขยับตามกำหนด',gid:'1929259126',skip:['Product','รายละเอียด','คำร้อง','มูลค่า']},
   {k:'lost',  t:'เคสของหาย',     d:'เคสพัสดุสูญหายระหว่างขนส่ง',      gid:'1094010409',skip:['Product','รายละเอียด']}
@@ -3638,27 +3646,37 @@ async function loadRet(gid){
       cx: colCI('เวลาที่ลูกค้ายกเลิก','ลูกค้ายกเลิก','เวลายกเลิก'),
       n:  colCI('หมายเหตุ','โน๊ต','โน้ต','Note','Remark')
     };
+    const TAB=RET_TABS.find(x=>String(x.gid)===String(gid))||{};
+    if(TAB.stCol){const i=colCI(TAB.stCol); if(i>=0)c.st=i;}   /* บางแท็บใช้คอลัมน์อื่นเป็นสถานะ */
     const g=(r,i)=>i>=0?String(r[i]||'').replace(/\u200b/g,'').trim():'';
     /* บางแท็บไม่มีคอลัมน์ Week หรือมีแต่ไม่ได้กรอก — คิดเลขสัปดาห์จากวันที่ให้เอง
        ไม่งั้นกราฟรายสัปดาห์และตัวกรอง Week จะว่างเปล่า */
-    const isoW=v=>{const d=dparse(v); if(!d||isNaN(d))return '';
-      const t2=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
+    /* dparse คืนค่าเป็น timestamp (ตัวเลข) ไม่ใช่ Date — ห้ามเรียก .getFullYear() ตรงๆ */
+    const isoW=v=>{const ms=dparse(v); if(isNaN(ms))return '';
+      const t2=new Date(ms);
       const dn=t2.getUTCDay()||7; t2.setUTCDate(t2.getUTCDate()+4-dn);
-      const y0=new Date(Date.UTC(t2.getUTCFullYear(),0,1));
-      return String(Math.ceil(((t2-y0)/86400000+1)/7));};
+      const y0=Date.UTC(t2.getUTCFullYear(),0,1);
+      return String(Math.ceil(((t2.getTime()-y0)/86400000+1)/7));};
     const list=t.rows.map(r=>{
       const o={w:g(r,c.w), d:g(r,c.d), o:g(r,c.o), s:g(r,c.s), dl:g(r,c.dl),
                st:g(r,c.st), end:g(r,c.e), r:g(r,c.r), n:g(r,c.n),
                fx:g(r,c.fx), cl:g(r,c.cl),
                pk:g(r,c.pk), cx:g(r,c.cx), raw:r};
-      if(!o.w)o.w=isoW(o.d);                     /* ไม่มี Week ในชีต = คิดจากวันที่ */
+      /* คอลัมน์สัปดาห์บางแท็บเป็นช่วงวันที่ ("2026-08-31 ถึง 09-06") ไม่ใช่เลขสัปดาห์
+         ถ้าไม่ใช่เลข 1-53 ให้คิดเลขสัปดาห์จากวันที่เอง ไม่งั้น parseInt จะได้ปี 2026 */
+      if(!/^\d{1,2}$/.test(o.w)){const w2=isoW(o.d); if(w2)o.w=w2;}
       /* จำนวนวันที่ใช้ปิดเคส = วันที่สิ้นสุด − วันที่ได้รับ */
       const a=dparse(o.d), b=dparse(o.end);
       o.days=(!isNaN(a)&&!isNaN(b))?Math.round((b-a)/86400000):null;
       /* เก็บเป็น "นาทีนับจากเที่ยงคืน" เพื่อหาค่าเฉลี่ยว่าเหตุการณ์เกิดช่วงเวลาไหนของวัน */
       o.pkMin=tod(o.pk); o.cxMin=tod(o.cx);
       return o;
-    }).filter(x=>x.o||x.d||x.w);
+    }).filter(x=>x.o||x.d||x.w)
+      /* ตัดแถวที่แท็บนี้ไม่ต้องการนับ (เช่น หมวด "ไม่ใช่ออเดอร์ลูกค้า") */
+      .filter(x=>{ if(!TAB.drop)return true;
+        const di=colCI(TAB.drop.col); if(di<0)return true;
+        const v=String(x.raw[di]||'');
+        return !TAB.drop.vals.some(k=>v.includes(k)); });
 
     /* หาคอลัมน์ที่เหมาะเอามาทำสัดส่วน
        กันออกแค่ Week / วันที่ / วันที่สิ้นสุด / เลขออเดอร์ / หมายเหตุ
@@ -3839,6 +3857,15 @@ function secReturn(){
   const stBar=(stOpts.length&&!(cur==='idle'&&stOpts.length>12))?chipMulti('ret_s','สถานะ',stOpts.map(v=>[v,v]),stSel):'';
 
   const tot=list.length;
+  /* แยกยอดตามหมวด (คอลัมน์ G ของแท็บออเดอร์ยกเลิก) — ให้เห็นทันทีว่ายกเลิกที่ขั้นไหน */
+  const grpCards=!tab.grp?'':(()=>{
+    const o={}; list.forEach(r=>{const v=r.st||'(ไม่ระบุ)'; o[v]=(o[v]||0)+1;});
+    const tone=v=>/ก่อนหยิบ/.test(v)?'teal':/ก่อนแพ็ค/.test(v)?'amber'
+                 :/หลังแพ็ค/.test(v)?'rose':/ค้าง/.test(v)?'plum':'';
+    return Object.entries(o).sort((a,b)=>b[1]-a[1])
+      .map(([k,n])=>card(esc(k)+' · '+(tot?(Math.round(n/tot*1000)/10):0)+'%',fmt(n),tone(k)))
+      .join('');
+  })();
   const skip=new Set(tab.skip);
   const dims=d.dims.filter(x=>!skip.has(x.letter)&&!skip.has(x.h)
     &&![...skip].some(s=>x.h.includes(s)));
@@ -3894,6 +3921,7 @@ function secReturn(){
   return bars+stBar
    +`<div class="sgrid">
       ${card(tab.t,fmt(tot))}
+      ${grpCards}
       ${card('สัปดาห์ที่มีเคส'+(wkKeys.length?` (W${wkKeys[0]}–W${wkKeys[wkKeys.length-1]})`:''),
              wkKeys.length,'teal')}
       ${timeCards}
