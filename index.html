@@ -1254,6 +1254,25 @@ function baseOpts(legend){
     scales:{x:{ticks:{color:C.mute,font:{size:cf(24)}},grid:{display:false}},
       y:{ticks:{color:C.mute,font:{size:cf(24)}},grid:{color:'rgba(34,37,44,.06)'},beginAtZero:true}}};
 }
+/* ---------- % สำหรับกราฟแท่งที่ต้องตรงกับวงแหวน ----------
+   ของเดิมใช้ Math.round(v/t*1000)/10 = ทศนิยม 1 ตำแหน่ง
+   ทำให้ 99.95% ถูกปัดเป็น 100% และ 0.05% (ล่าช้า 59 ออเดอร์) ถูกปัดเป็น 0%
+   ซึ่งขัดกับวงแหวนด้านบนและการ์ด "แพ็คล่าช้า"
+   ของใหม่: เริ่มที่ 2 ตำแหน่ง (เท่าวงแหวน) แล้วเพิ่มทศนิยมให้พอ
+   จนตัวที่มีค่า > 0 ไม่ถูกปัดเป็น 0% และตัวที่ยังไม่ครบทั้งหมดไม่ถูกปัดเป็น 100% */
+function pctSet(parts,total,minDigits){
+  const t=total||1;
+  const raw=parts.map(v=>v/t*100);
+  let d=(minDigits==null?2:minDigits);
+  for(;d<4;d++){
+    const ok=raw.every((v,i)=>{
+      const r=+v.toFixed(d);
+      return !((parts[i]>0&&r===0)||(parts[i]<t&&r>=100));
+    });
+    if(ok)break;
+  }
+  return {digits:d,data:raw.map(v=>+v.toFixed(d))};
+}
 function pctOpts(target){
   const o=baseOpts(false);
   o.scales.y.max=100;
@@ -1285,7 +1304,8 @@ const barPct={id:'barPct',
       m.data.forEach((bar,i)=>{
         const v=ds.data[i]; if(v==null||Number.isNaN(+v))return;
         const t=op.raw?Number(v).toLocaleString('en-US')
-                      :(op.digits!=null?(+v).toFixed(op.digits)
+                      :(+v===0?'0'                       /* ศูนย์จริง — ไม่ต้องโชว์ 0.00 */
+                        :op.digits!=null?(+v).toFixed(op.digits)
                         :(Number.isInteger(+v)?v:(+v).toFixed(1)))+'%';
         const w=x.measureText(t).width;
         if(bar.x-w/2 < lastR+6) return;     /* ไม่มีที่พอ — ข้ามป้ายนี้ไป */
@@ -1363,14 +1383,18 @@ function ringHTML(pct_,target,caption){
   const CIRC=565.48;
   /* target = null แปลว่าหน้านั้นไม่มีเป้า — ไม่ตัดสินผ่าน/ไม่ผ่าน และไม่โชว์ป้าย */
   const noTarget=(target==null);
-  const miss=noTarget?false:pct_<target;
+  /* ตัดสินผ่าน/ไม่ผ่านที่ทศนิยม 2 ตำแหน่งเหมือนเดิม
+     แต่ตัวเลขที่โชว์จะเพิ่มทศนิยมให้ ถ้ายังไม่ถึง 100% จริง แต่ปัดแล้วได้ 100.00 */
+  const p2=+pct_.toFixed(2);
+  const miss=noTarget?false:p2<target;
+  let rd=2; while(rd<4 && pct_<100 && +pct_.toFixed(rd)>=100) rd++;
   const off=CIRC*(1-Math.min(pct_,100)/100);
   return `<div class="ring${miss?' miss':''}">
     <div class="ringwrap">
       <svg viewBox="0 0 220 220"><circle class="tr" cx="110" cy="110" r="90"></circle>
       <circle class="fl${miss?' miss':''}" cx="110" cy="110" r="90"
         stroke-dasharray="${CIRC}" stroke-dashoffset="${off}"></circle></svg>
-      <b class="${miss?'miss':''}">${pct_.toFixed(2)}<i>%</i></b>
+      <b class="${miss?'miss':''}">${pct_.toFixed(rd)}<i>%</i></b>
     </div>
     <div class="cap">
       ${noTarget?'':`<span class="tag ${miss?'miss':''}">${miss?'ต่ำกว่าเกณฑ์':'ผ่านเกณฑ์'}</span>`}
@@ -1462,7 +1486,7 @@ function secOnTime(){
   const onT=ord.filter(r=>r._worst==='ontime'||r._worst==='early').length;
   const late=ord.filter(r=>r._worst==='late').length;
   const pend=ord.filter(r=>isPending(r.dstat)).length;
-  const denom=onT+late||1, p=Math.round(onT/denom*10000)/100;
+  const denom=onT+late||1, p=onT/denom*100;   /* ไม่ปัดตรงนี้ — ให้ ringHTML จัดการทศนิยม */
 
   const cust=new Set(ord.map(r=>r.customer).filter(Boolean)).size;
   const plat=ord.filter(r=>isPlatform(r.source)).length;
@@ -1518,10 +1542,12 @@ function drawOnTime(){
 
   /* Packing On-Time */
   const tot=onT+late||1;
+  const pk=pctSet([onT,late],tot);   /* ตรงกับวงแหวน — ไม่ปัดเป็น 100% / 0% */
   destroy('pack');
   const oPack=pctOpts(98);
+  oPack.plugins.barPct.digits=pk.digits;
   CH.pack=new Chart(document.getElementById('c_pack'),{type:'bar',
-    data:{labels:['Yes','No'],datasets:[{data:[Math.round(onT/tot*1000)/10,Math.round(late/tot*1000)/10],
+    data:{labels:['Yes','No'],datasets:[{data:pk.data,
       backgroundColor:[C.teal,C.rose],borderRadius:6,maxBarThickness:96}]},options:oPack});
 
   /* Platform vs Walk-in */
@@ -1584,7 +1610,7 @@ function secOOS(){
     const c=classify(r.wh);
     if(c==='ontime')on+=q; else if(c==='early')ea+=q; else la+=q;});
   const ord=uniqOrders(rows);
-  const p=Math.round(((on+ea)/(tq||1))*10000)/100;
+  const p=((on+ea)/(tq||1))*100;   /* ไม่ปัดตรงนี้ — ให้ ringHTML จัดการทศนิยม */
   OOS_CTX={rows,on,ea,la};
 
   const totQ=all0.reduce((s,r)=>s+r.qty,0);
@@ -1638,9 +1664,11 @@ function drawOOS(){
   const oO=pctOpts(99);
   oO.onClick=(e,els)=>{ if(els.length){ SUBF.oos_st=['ontime','early','late'][els[0].index]; render(); } };
   oO.onHover=(e,els)=>{e.native.target.style.cursor=els.length?'pointer':'default';};
+  const os=pctSet([on,ea,la],t);   /* ตรงกับวงแหวน — ไม่ปัดเป็น 100% / 0% */
+  oO.plugins.barPct.digits=os.digits;
   CH.oos=new Chart(document.getElementById('c_oos'),{type:'bar',
     data:{labels:['On time','Early','Late'],datasets:[{
-      data:[Math.round(on/t*1000)/10,Math.round(ea/t*1000)/10,Math.round(la/t*1000)/10],
+      data:os.data,
       backgroundColor:[C.teal,C.tealD,C.rose],borderRadius:6,maxBarThickness:74}]},
     options:oO});
 }
