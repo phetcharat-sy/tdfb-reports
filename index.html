@@ -3142,9 +3142,10 @@ function secPack(){
   if(!list.length)return bar+'<div class="empty2">ไม่มีข้อมูลตามตัวกรองนี้</div>';
 
   const S=packStats(list);
-  /* มุมมองกราฟแนวโน้ม — ค่าตั้งต้น: รายเดือน + ซ้อนแท่ง (อ่านง่ายกว่า 37 สัปดาห์ × 13 คน) */
-  const tSpan=sf('pk2_span','m')==='w'?'w':'m';
-  const tStack=sf('pk2_stack','1')!=='0';
+  /* มุมมองกราฟแนวโน้ม — รายเดือนเสมอ · จะเป็นรายสัปดาห์ก็ต่อเมื่อเลือกฟิลเตอร์ Week ด้านบน
+     (เลือกไว้กี่สัปดาห์ ก็แสดงเท่านั้น) */
+  const tSpan=WKSEL.length?'w':'m';
+  const tStack=sf('pk2_stack','0')==='1';
   S.tSpan=tSpan; S.tStack=tStack;
   PACK_CTX=S;
 
@@ -3198,9 +3199,8 @@ function secPack(){
          <div class="cpanel"><div id="pkStations" class="pkstations"></div></div></div>
      </div>
 
-     <h2 class="sec">แนวโน้มการแพ็ค <em>${tSpan==='w'?'รายสัปดาห์':'รายเดือน'} · ${tStack?'ซ้อนแท่ง = ยอดรวมทีม':'แยกแท่งรายคน'}</em><span></span></h2>
-     ${chipOne('pk2_span','ช่วงเวลา',[['m','รายเดือน'],['w','รายสัปดาห์']],tSpan)}
-     ${chipOne('pk2_stack','รูปแบบ',[['1','ซ้อนแท่ง (ดูยอดรวม)'],['0','แยกแท่ง (เทียบรายคน)']],tStack?'1':'0')}
+     <h2 class="sec">แนวโน้มการแพ็ค <em>${tSpan==='w'?'รายสัปดาห์ — ตามฟิลเตอร์ '+fWeekLabel():'รายเดือน'} · ${tStack?'ซ้อนแท่ง = ยอดรวมทีม':'แยกแท่งรายคน'}</em><span></span></h2>
+     ${chipOne('pk2_stack','รูปแบบ',[['0','แยกแท่ง (เทียบรายคน)'],['1','ซ้อนแท่ง (ดูยอดรวม)']],tStack?'1':'0')}
      <div class="cpanel"><div class="cbox xl"><canvas id="c_pkWk"></canvas></div></div>
 
      <div class="g2">
@@ -3250,7 +3250,8 @@ function drawPack(){
   /* แนวโน้มการแพ็ค — รายเดือน (ค่าตั้งต้น) หรือรายสัปดาห์ · ซ้อนแท่งหรือแยกแท่ง */
   const byMonth=S.tSpan!=='w';
   const src=byMonth?S.mo:S.wk;
-  const keys=Object.keys(src).sort();
+  const keys=Object.keys(src).sort()
+    .filter(k=>byMonth||weekOK(k.slice(6)));   /* รายสัปดาห์ = เฉพาะสัปดาห์ที่ติ๊กไว้ */
   const yrs=new Set(keys.map(k=>k.slice(0,4)));
   const lab=k=>{
     if(!byMonth)return 'W'+k.slice(6);                 /* 2026-W03 → W03 */
@@ -3270,13 +3271,14 @@ function drawPack(){
     footer:its=>'รวม '+fmt(its.reduce((s,c)=>s+(c.parsed.y||0),0))+' กล่อง'};
   oWk.plugins.tooltip.footerFont={size:cf(21)};
   oWk.plugins.stackTot={display:S.tStack};
+  if(!S.tStack){ oWk.datasets={bar:{categoryPercentage:.86,barPercentage:.94}}; }
   oWk.interaction={mode:'index',intersect:false};
   destroy('pkWk');
   CH.pkWk=new Chart(document.getElementById('c_pkWk'),{type:'bar',
     data:{labels:keys.map(lab),datasets:S.pArr.map((n,i)=>({label:n,
       data:keys.map(k=>src[k][n]||0),backgroundColor:col(i),
       borderRadius:S.tStack?0:3,
-      maxBarThickness:byMonth?(S.tStack?96:26):(S.tStack?34:10)}))},
+      maxBarThickness:byMonth?(S.tStack?96:34):(keys.length<=6?(S.tStack?96:34):(S.tStack?34:11))}))},
     options:oWk});
 
   /* สัดส่วนรายคน — plot เป็น % เพื่อให้ pieLbl เขียนตัวเลขลงบนวงได้ */
