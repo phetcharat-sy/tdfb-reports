@@ -650,7 +650,8 @@ body.present #vKPI .tscroll{max-height:none}
       <button data-view="kpi" data-sec="oos">KPI Out Of Stock</button>
       <button data-view="kpi" data-sec="diff">KPI Stock Variance &lt;2%</button>
       <button data-view="kpi" data-sec="dock">KPI Dock Time To Stock</button>
-      <button data-view="kpi" data-sec="pick">KPI Human Error On Picking &lt;0.05%</button>
+      <button data-view="kpi" data-sec="pick">Picking</button>
+      <button data-view="kpi" data-sec="perr">KPI Human Error On Picking &lt;0.05%</button>
       <button data-view="kpi" data-sec="repl">Replenishment</button>
       <button data-view="report" data-team="warehouse">รายงานประจำวัน</button>
 
@@ -4007,6 +4008,25 @@ function secReturn(){
     :'<div class="empty2">ไม่มีรายการตามตัวกรองนี้</div>');
 }
 
+/* KPI Human Error On Picking — ยังไม่มีชีตต้นทาง
+   ชีต Picking ที่ใช้อยู่ไม่มีคอลัมน์บันทึก "หยิบผิด" จึงยังคำนวณ KPI นี้ไม่ได้
+   ภาพรวมการหยิบรายคนย้ายไปเมนู "Picking" แล้ว หน้านี้เตรียมช่องไว้ก่อน */
+function secPickErr(){
+  return `<div class="sgrid">
+      ${card('อัตราการหยิบผิด (เป้า &lt; 0.05%)','—')}
+      ${card('จำนวนครั้งที่หยิบผิด','—','rose')}
+      ${card('จำนวนที่หยิบทั้งหมด','—','teal')}
+      ${card('สถานะข้อมูล','ยังไม่เชื่อมชีต','amber')}</div>
+    <div class="empty2">ยังไม่มีข้อมูลสำหรับ KPI นี้
+      <div style="font-size:26px;color:var(--mute);line-height:1.7;margin-top:14px">
+        ชีต Picking ปัจจุบันไม่มีคอลัมน์ที่บันทึกการหยิบผิด · ต้องมีอย่างน้อย:
+        <b>วันที่ · ผู้หยิบ · เลขใบหยิบหรือออเดอร์ · จำนวนที่หยิบ · จำนวนครั้งที่หยิบผิด</b>
+        (ใส่สาเหตุมาด้วยได้ จะแยกสัดส่วนสาเหตุให้)<br>
+        ส่งลิงก์ชีตพร้อม gid มาได้เลย เดี๋ยวต่อข้อมูลให้<br>
+        ภาพรวมการหยิบสินค้ารายคนย้ายไปที่เมนู <b>Picking</b> แล้ว
+      </div></div>`;
+}
+
 /* ================= Replenishment ================= */
 const BLOCKED=['ไม่มีโควต้า','ไม่มีโควตา','ไม่มี raw material','ไม่มีraw material'];
 const isBlocked=r=>{const s=(r.remark||'').toLowerCase();return !!s&&BLOCKED.some(k=>s.includes(k));};
@@ -4174,7 +4194,8 @@ function render(){
                dock:['KPI Dock Time To Stock','Warehouse · GR → Putaway · รับเข้าและจัดเก็บตามเกณฑ์'],
                repl:['Replenishment','Warehouse · รายการที่ต้องเติมสต็อก'],
                fc:['Forecast','Warehouse · พยากรณ์ยอดขาย สต็อก และอัตรากำลังคน'],
-               pick:['KPI Human Error On Picking <0.05%','Warehouse · ภาพรวมการหยิบสินค้ารายคน'],
+               pick:['Picking','Warehouse · ภาพรวมการหยิบสินค้ารายคน ผลงาน และเวลาหนาแน่น'],
+               perr:['KPI Human Error On Picking <0.05%','Warehouse · หยิบผิด ÷ จำนวนที่หยิบทั้งหมด · เป้า < 0.05%'],
                pack:['Packing','Delivery · ผลงานพนักงานแพ็ค สถานี และเวลาหนาแน่น'],
                sop:['เงื่อนไขการส่งสินค้าแต่ละ Platform','วิธีการปฏิบัติงาน · รอบตัดคำสั่งซื้อ Shopee · Lazada · TikTok'],
                ship:['การจัดส่ง (Shipping)','Admin · ปริมาณจัดส่ง ค้างส่ง ช่องทาง และขนส่ง'],
@@ -4188,6 +4209,7 @@ function render(){
                            : SEC==='diff'?secDiff() : SEC==='dock'?secDock()
                            : SEC==='fc'?secForecast()
                            : SEC==='pick'?secPick()
+                           : SEC==='perr'?secPickErr()
                            : SEC==='pack'?secPack()
                            : SEC==='ship'?secShip()
                            : SEC==='sop'?secSOP()
