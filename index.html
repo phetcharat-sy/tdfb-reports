@@ -3123,7 +3123,7 @@ function packStats(list){
   const last=dArr[dArr.length-1]||null;
   const lastQty=last?list.filter(x=>x.d.fd===last).length:0;
 
-  const pArr=Object.keys(per).sort((a,b)=>per[b].count-per[a].count);
+  const pArr=Object.keys(per).filter(p=>per[p].count>0).sort((a,b)=>per[b].count-per[a].count);
   const stArr=Object.keys(st).sort((a,b)=>
     (parseInt((a.match(/\d+/)||[99])[0],10))-(parseInt((b.match(/\d+/)||[99])[0],10)));
 
@@ -3423,7 +3423,7 @@ function secPick(){
   list.forEach(r=>{const o=by[r.who]=by[r.who]||{who:r.who,qty:0,min:0,bat:new Set()};
     o.qty+=r.qty; o.min+=r.min||0; if(r.bat)o.bat.add(r.bat);});
   const per=Object.values(by).map(o=>({...o,batches:o.bat.size,
-    rate:o.min>0?o.qty/(o.min/60):null})).sort((a,b)=>b.qty-a.qty);
+    rate:o.min>0?o.qty/(o.min/60):null})).filter(o=>o.qty>0).sort((a,b)=>b.qty-a.qty);
   const top=per[0];
 
   /* รายวัน · รายชั่วโมง */
