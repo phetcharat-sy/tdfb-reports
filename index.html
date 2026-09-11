@@ -1466,7 +1466,7 @@ const card=(l,v,cls)=>`<div class="scard"><div class="sl">${l}</div>
 
 /* ตาราง Order Detail — เฉพาะรายการที่ไม่ใช่ "ส่งในวัน" ตัดซ้ำด้วย Order Reference */
 /* ---------- ตัวกรองย่อยรายหน้า (chip) ----------
-   เก็บค่าไว้ใน SUBF · กดชิปหรือคลิกบนกราฟ แล้วเรียก render() ใหม่
+   เก็บค่าไว้ใน SUBF · กดชิปหรือคลิกบนกราฟ แล้วเรียก renderKPI() ใหม่
    ค่าเริ่มต้นของแต่ละคีย์คือตัวเลือกแรกในลิสต์ */
 const SUBF={};
 const sf=(k,d)=>SUBF[k]!==undefined?SUBF[k]:d;
@@ -1729,7 +1729,7 @@ function drawOOS(){
   const t=on+ea+la||1;
   destroy('oos');
   const oO=pctOpts(99);
-  oO.onClick=(e,els)=>{ if(els.length){ SUBF.oos_st=['ontime','early','late'][els[0].index]; render(); } };
+  oO.onClick=(e,els)=>{ if(els.length){ SUBF.oos_st=['ontime','early','late'][els[0].index]; renderKPI(); } };
   oO.onHover=(e,els)=>{e.native.target.style.cursor=els.length?'pointer':'default';};
   const os=pctSet([on,ea,la],t);   /* ตรงกับวงแหวน — ไม่ปัดเป็น 100% / 0% */
   oO.plugins.barPct.digits=os.digits;
@@ -4159,20 +4159,20 @@ el('detail').addEventListener('click',async e=>{
     const cur=new Set(String(SUBF[k]||'').split('|').filter(Boolean));
     if(v==='')cur.clear(); else cur.has(v)?cur.delete(v):cur.add(v);
     SUBF[k]=[...cur].join('|');
-    render(); return;
+    renderKPI(); return;
   }
   if(k==='__w'){                       /* ชิปสัปดาห์ในหน้า Return — กดซ้ำเพื่อยกเลิก */
     WKSEL=WKSEL.includes(v)?WKSEL.filter(x=>x!==v):[...WKSEL,v];
-    DAYSEL=''; calYM=null; fillFilters(); render(); return;
+    DAYSEL=''; calYM=null; fillFiltersKPI(); renderKPI(); return;
   }
   SUBF[k]=v;
   if(k==='ret_t'){                     /* เปลี่ยนหัวข้อ = อาจต้องโหลดแท็บใหม่ */
     const g=(RET_TABS.find(t=>t.k===v)||RET_TABS[0]).gid;
-    render();
-    if(!RET[g]){ await loadRet(g); render(); }
+    renderKPI();
+    if(!RET[g]){ await loadRet(g); renderKPI(); }
     return;
   }
-  render();
+  renderKPI();
 });
 
 /* ตารางสั้น (ไม่ถึง 10 แถว) ไม่ต้องมีกล่องเลื่อน — แสดงยาวรวดเดียวไปเลย */
@@ -4183,7 +4183,7 @@ function fitScrolls(){
   });
 }
 
-function render(){
+function renderKPI(){
   const isOv = SEC==='overview';
   el('ovBox').hidden=!isOv;
   el('detail').hidden=isOv;
@@ -4464,13 +4464,13 @@ el('kWPop').addEventListener('click',e=>{
     WKSEL=WKSEL.includes(v)?WKSEL.filter(x=>x!==v):[...WKSEL,v];
   }
   DAYSEL=''; calYM=null;
-  buildWeekPop(); fillFilters(); render();     /* เปิดค้างไว้ให้ติ๊กต่อได้ */
+  buildWeekPop(); fillFiltersKPI(); renderKPI();     /* เปิดค้างไว้ให้ติ๊กต่อได้ */
 });
 document.addEventListener('click',()=>openWeekPop(false));
 document.addEventListener('keydown',e=>{if(e.key==='Escape')openWeekPop(false);});
 
 let YEAR_INIT=false;
-function fillFilters(){
+function fillFiltersKPI(){
   /* ปีมาจากทั้งชีต On-Time และชีตนับสต็อก (ชีตนับสต็อกมีข้อมูลย้อนหลังหลายปี) */
   const years=[...new Set([...RAW,...(DIFF||[])].map(yrOf).filter(y=>y&&y.length===4))]
     .sort((a,b)=>b.localeCompare(a));
@@ -4540,35 +4540,35 @@ el('kCal').addEventListener('click',e=>{
   e.stopPropagation();
   const b=e.target.closest('button[data-k]');if(!b)return;
   DAYSEL=DAYSEL===b.dataset.k?'':b.dataset.k;
-  openCal(false);fillFilters();render();
+  openCal(false);fillFiltersKPI();renderKPI();
 });
 el('kPrev').addEventListener('click',()=>{const ms=calMonths();calYM=ms[Math.max(0,ms.indexOf(calYM)-1)];drawCal();});
 el('kNext').addEventListener('click',()=>{const ms=calMonths();calYM=ms[Math.min(ms.length-1,ms.indexOf(calYM)+1)];drawCal();});
-el('kCalAll').addEventListener('click',()=>{DAYSEL='';openCal(false);fillFilters();render();});
+el('kCalAll').addEventListener('click',()=>{DAYSEL='';openCal(false);fillFiltersKPI();renderKPI();});
 document.addEventListener('click',()=>openCal(false));
 document.addEventListener('keydown',e=>{if(e.key==='Escape')openCal(false);});
 
 ['kY','kM'].forEach(id=>el(id).addEventListener('change',()=>{
   if(id==='kY'){el('kM').value='';WKSEL=[];}
   if(id==='kM')WKSEL=[];
-  DAYSEL='';calYM=null;fillFilters();render();
+  DAYSEL='';calYM=null;fillFiltersKPI();renderKPI();
 }));
 el('kClear').addEventListener('click',()=>{
-  el('kY').value='';el('kM').value='';WKSEL=[];DAYSEL='';calYM=null;fillFilters();render();
+  el('kY').value='';el('kM').value='';WKSEL=[];DAYSEL='';calYM=null;fillFiltersKPI();renderKPI();
 });
 
 async function boot(){
   el('kStat').className='stat';el('kReload').disabled=true;
   el('kStat').textContent='กำลังเชื่อมต่อชีต…';
   /* Stock Diff / Dock to Stock เป็นชีตเล็ก โหลดคู่ขนานไปเลย ไม่ต้องรอชีตใหญ่ */
-  const tick=setInterval(()=>{ if(el('src'))render(); },2500);   /* ให้บรรทัดสถานะขยับตามจริง */
+  const tick=setInterval(()=>{ if(el('src'))renderKPI(); },2500);   /* ให้บรรทัดสถานะขยับตามจริง */
   const staticJob=loadStatic().finally(()=>clearInterval(tick));
   try{
     const n=await loadOTP();
     if(!DATES.length)throw new Error('อ่านคอลัมน์ “วันที่ต้องการจัดส่ง” ไม่ได้');
     el('kStat').innerHTML=`อ่านวันที่ได้ ${DATES.length} วัน `
       +`(${showD(DATES[0])} – ${showD(DATES[DATES.length-1])}) · ${fmt(n)} บรรทัด · กำลังคำนวณ…`;
-    fillFilters();render();
+    fillFiltersKPI();renderKPI();
     const s=LAST_STATS;
     el('kStat').innerHTML='เชื่อมกับ Google Sheet แล้ว · <b>ข้อมูลสด</b>'
       +(NO_DATE?` · <span style="color:var(--rose)">${fmt(NO_DATE)} แถววันที่อ่านไม่ออก</span>`:'')
@@ -4581,8 +4581,8 @@ async function boot(){
   }
   el('kReload').disabled=false;
   await staticJob;
-  fillFilters();     /* ชีตนับสต็อกเพิ่งโหลดเสร็จ — เติมปีที่มีเฉพาะในชีตนั้นเข้า dropdown */
-  render();
+  fillFiltersKPI();     /* ชีตนับสต็อกเพิ่งโหลดเสร็จ — เติมปีที่มีเฉพาะในชีตนั้นเข้า dropdown */
+  renderKPI();
 }
 el('kReload').addEventListener('click',boot);
 el('kSave').addEventListener('click',async()=>{
@@ -4605,7 +4605,7 @@ function kPresent(on){
   if(!on&&document.fullscreenElement)document.exitFullscreen?.();
   /* กราฟต้องวาดใหม่ตามกล่องที่เปลี่ยนขนาด */
   CFZ=on?1.6:1.18;
-  render();   /* วาดกราฟใหม่ด้วยขนาดฟอนต์ของโหมดนั้น */
+  renderKPI();   /* วาดกราฟใหม่ด้วยขนาดฟอนต์ของโหมดนั้น */
 }
 el('kPresent').addEventListener('click',()=>kPresent(true));
 el('sopPresent').addEventListener('click',()=>kPresent(true));
@@ -4620,21 +4620,21 @@ document.addEventListener('keydown',e=>{
 /* เรียกจากแถบเมนูข้าง — สลับหน้าย่อยของ Warehouse */
 window.KPI_SEC=async(sec)=>{
   SEC=sec||'overview';
-  render();
-  if((SEC==='repl'||SEC==='fc')&&!REPL){ await loadRepl(); render(); }
-  if(SEC==='pick'&&!PICK){ await loadPick(); render(); }
-  if(SEC==='pack'&&!PACK){ await loadPack(); render(); }
-  if(SEC==='ship'&&!SHIP){ await loadShip(); render(); }
+  renderKPI();
+  if((SEC==='repl'||SEC==='fc')&&!REPL){ await loadRepl(); renderKPI(); }
+  if(SEC==='pick'&&!PICK){ await loadPick(); renderKPI(); }
+  if(SEC==='pack'&&!PACK){ await loadPack(); renderKPI(); }
+  if(SEC==='ship'&&!SHIP){ await loadShip(); renderKPI(); }
   if(SEC==='ret'){ const g=(RET_TABS.find(t=>t.k===sf('ret_t','cancel'))||RET_TABS[0]).gid;
-    if(!RET[g]){ await loadRet(g); render(); } }
+    if(!RET[g]){ await loadRet(g); renderKPI(); } }
 };
 
 /* ให้หน้า Replenishment เริ่มโหลดชีตของตัวเองทันที ไม่ต้องรอชีต On-Time ที่ใหญ่กว่ามาก */
-if(/^#kpi-(repl|fc)/.test(location.hash||'')) loadRepl().then(()=>{ if(SEC==='repl'||SEC==='fc')render(); });
-if(/^#kpi-ret/.test(location.hash||'')) loadRet(RET_TABS[0].gid).then(()=>{ if(SEC==='ret')render(); });
-if(/^#kpi-pick/.test(location.hash||'')) loadPick().then(()=>{ if(SEC==='pick')render(); });
-if(/^#kpi-pack/.test(location.hash||'')) loadPack().then(()=>{ if(SEC==='pack')render(); });
-if(/^#kpi-ship/.test(location.hash||'')) loadShip().then(()=>{ if(SEC==='ship')render(); });
+if(/^#kpi-(repl|fc)/.test(location.hash||'')) loadRepl().then(()=>{ if(SEC==='repl'||SEC==='fc')renderKPI(); });
+if(/^#kpi-ret/.test(location.hash||'')) loadRet(RET_TABS[0].gid).then(()=>{ if(SEC==='ret')renderKPI(); });
+if(/^#kpi-pick/.test(location.hash||'')) loadPick().then(()=>{ if(SEC==='pick')renderKPI(); });
+if(/^#kpi-pack/.test(location.hash||'')) loadPack().then(()=>{ if(SEC==='pack')renderKPI(); });
+if(/^#kpi-ship/.test(location.hash||'')) loadShip().then(()=>{ if(SEC==='ship')renderKPI(); });
 
 boot();
 
@@ -4755,7 +4755,7 @@ function tableHTML(rows,empty){
     <td class="num">${fmt(sum)}</td></tr></tfoot></table>`;
 }
 
-function render(){
+function renderReport(){
   const c=cfg();
   el('title').textContent=c.title;
   el('subtitle').textContent=c.sub;
@@ -4809,7 +4809,7 @@ function opts(sel,list,label,all){
   sel.innerHTML=`<option value="">${all}</option>`+list.map(v=>`<option value="${v}">${label(v)}</option>`).join('');
   sel.value=list.includes(cur)?cur:'';sel.disabled=!list.length;
 }
-function fillFilters(){
+function fillFiltersReport(){
   const rows=allRows().filter(r=>r.date);
   const uniq=(a,f)=>[...new Set(a.map(f).filter(Boolean))].sort();
   opts($('fy'),uniq(rows,r=>r.y),v=>'ปี '+v,'ทุกปี');
@@ -4848,10 +4848,10 @@ function openCal(o){el('cal').hidden=!o;el('fdBtn').setAttribute('aria-expanded'
 el('fdBtn').addEventListener('click',e=>{e.stopPropagation();openCal(el('cal').hidden);});
 el('cal').addEventListener('click',e=>{e.stopPropagation();
   const b=e.target.closest('button[data-k]');if(!b)return;
-  FD.value=FD.value===b.dataset.k?'':b.dataset.k;openCal(false);fillFilters();render();});
+  FD.value=FD.value===b.dataset.k?'':b.dataset.k;openCal(false);fillFiltersReport();renderReport();});
 el('calPrev').addEventListener('click',()=>{const ms=calMonths();calYM=ms[Math.max(0,ms.indexOf(calYM)-1)];drawCal();});
 el('calNext').addEventListener('click',()=>{const ms=calMonths();calYM=ms[Math.min(ms.length-1,ms.indexOf(calYM)+1)];drawCal();});
-el('calAll').addEventListener('click',()=>{FD.value='';openCal(false);fillFilters();render();});
+el('calAll').addEventListener('click',()=>{FD.value='';openCal(false);fillFiltersReport();renderReport();});
 document.addEventListener('click',()=>openCal(false));
 
 function stamp(){const d=new Date();
@@ -4873,7 +4873,7 @@ async function load(){
   if(!bad.length){el('stat').innerHTML='เชื่อมกับ Google Sheet แล้ว · <b>ข้อมูลสด</b>';}
   else{el('stat').className='stat err';
     el('stat').innerHTML=`<b>ดึงไม่ได้: ${bad.join(', ')}</b>${live?' · ส่วนที่เหลือเป็นข้อมูลสด':''}`;}
-  el('reload').disabled=false;fillFilters();render();stamp();
+  el('reload').disabled=false;fillFiltersReport();renderReport();stamp();
 }
 
 /* ---------- สลับทีม ---------- */
@@ -4887,8 +4887,8 @@ function team(name){
 document.querySelectorAll('.teams button').forEach(b=>
   b.addEventListener('click',()=>team(b.dataset.team)));
 
-['fy','fm','fw'].forEach(i=>el(i).addEventListener('change',()=>{fillFilters();render();}));
-el('clear').addEventListener('click',()=>{['fy','fm','fw'].forEach(i=>el(i).value='');FD.value='';calYM=null;fillFilters();render();});
+['fy','fm','fw'].forEach(i=>el(i).addEventListener('change',()=>{fillFiltersReport();renderReport();}));
+el('clear').addEventListener('click',()=>{['fy','fm','fw'].forEach(i=>el(i).value='');FD.value='';calYM=null;fillFiltersReport();renderReport();});
 el('reload').addEventListener('click',load);
 
 /* ---------- โหมดพรีเซนต์ ---------- */
