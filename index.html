@@ -3164,7 +3164,9 @@ function secPack(){
         </div></div>`;
   }
 
-  const all0=PACK.list.filter(r=>!fYear()||r.d.y===fYear());
+  const getMonthNum=()=>!fMonth()?'':String(MONTH_ORDER.indexOf(fMonth())+1).padStart(2,'0');
+  const packYM=fYear()&&getMonthNum()?fYear()+'-'+getMonthNum():'';
+  const all0=PACK.list.filter(r=>(!fYear()||r.d.y===fYear())&&(!packYM||r.d.m===packYM));
   const people=[...new Set(all0.map(r=>r.p))].sort();
   const sel=String(sf('pk2_who','')).split('|').filter(Boolean);
   const bar=people.length>1?chipMulti('pk2_who','พนักงานแพ็ค',people.map(p=>[p,p]),sel):'';
@@ -3402,7 +3404,8 @@ function secPick(){
 
   /* ตัดแถวที่ไม่มีชื่อพนักงานออก (ช่องว่าง / "-" / ไม่ระบุ) — ไม่รู้ว่าเป็นของใคร */
   const noName=v=>!v||/^[-–—]$/.test(v)||v==='ไม่ระบุ';
-  const all0=PICK.list.filter(r=>!noName(r.who)&&(!fYear()||(r.date||'').slice(0,4)===fYear()));
+  const pickYM=fYear()&&fMonth()?fYear()+'-'+String(MONTH_ORDER.indexOf(fMonth())+1).padStart(2,'0'):'';
+  const all0=PICK.list.filter(r=>!noName(r.who)&&(!fYear()||(r.date||'').slice(0,4)===fYear())&&(!pickYM||(r.date||'').slice(0,7)===pickYM));
   const people=[...new Set(all0.map(r=>r.who))].sort();
   /* เลือกได้หลายคนพร้อมกัน */
   const who=String(sf('pk_who','')).split('|').filter(Boolean);
