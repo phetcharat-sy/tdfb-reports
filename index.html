@@ -3166,7 +3166,16 @@ function secPack(){
 
   const getMonthNum=()=>!fMonth()?'':String(MONTH_ORDER.indexOf(fMonth())+1).padStart(2,'0');
   const packYM=fYear()&&getMonthNum()?fYear()+'-'+getMonthNum():'';
-  const all0=PACK.list.filter(r=>(!fYear()||r.d.y===fYear())&&(!packYM||r.d.m===packYM));
+  /* v132: เหมือนหน้า Picking — เดิมไม่เช็ค WEEK/DAY เลย เลือกวันที่/สัปดาห์แล้วข้อมูลไม่ขยับ */
+  const packDateOK=r=>{
+    if(!r.d||!r.d.fd)return false;
+    if(fYear()&&r.d.y!==fYear())return false;
+    if(DAYSEL)return r.d.fd===DAYSEL;
+    if(WKSEL.length&&!weekOK(isoWeek(r.d.fd)))return false;
+    if(packYM&&r.d.m!==packYM)return false;
+    return true;
+  };
+  const all0=PACK.list.filter(packDateOK);
   const people=[...new Set(all0.map(r=>r.p))].sort();
   const sel=String(sf('pk2_who','')).split('|').filter(Boolean);
   const bar=people.length>1?chipMulti('pk2_who','พนักงานแพ็ค',people.map(p=>[p,p]),sel):'';
@@ -3405,7 +3414,17 @@ function secPick(){
   /* ตัดแถวที่ไม่มีชื่อพนักงานออก (ช่องว่าง / "-" / ไม่ระบุ) — ไม่รู้ว่าเป็นของใคร */
   const noName=v=>!v||/^[-–—]$/.test(v)||v==='ไม่ระบุ';
   const pickYM=fYear()&&fMonth()?fYear()+'-'+String(MONTH_ORDER.indexOf(fMonth())+1).padStart(2,'0'):'';
-  const all0=PICK.list.filter(r=>!noName(r.who)&&(!fYear()||(r.date||'').slice(0,4)===fYear())&&(!pickYM||(r.date||'').slice(0,7)===pickYM));
+  /* v132: ตัวกรอง WEEK และ DAY (ปฏิทิน) เดิมไม่ได้ถูกใช้ในหน้า Picking เลย
+     ทำให้เลือกวันที่/สัปดาห์แล้วข้อมูลไม่ขยับ — เพิ่มเงื่อนไขให้ตรงกับ matchRow() ที่หน้าอื่นใช้ */
+  const pickDateOK=d=>{
+    if(!d)return false;
+    if(fYear()&&d.slice(0,4)!==fYear())return false;
+    if(DAYSEL)return d===DAYSEL;
+    if(WKSEL.length&&!weekOK(isoWeek(d)))return false;
+    if(pickYM&&d.slice(0,7)!==pickYM)return false;
+    return true;
+  };
+  const all0=PICK.list.filter(r=>!noName(r.who)&&pickDateOK(r.date));
   const people=[...new Set(all0.map(r=>r.who))].sort();
   /* เลือกได้หลายคนพร้อมกัน */
   const who=String(sf('pk_who','')).split('|').filter(Boolean);
