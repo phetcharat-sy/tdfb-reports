@@ -484,6 +484,8 @@ body.sopmode.present #vKPI .sopframe{height:100vh}
 #vKPI .wsel-p::-webkit-scrollbar{width:12px}
 #vKPI .wsel-p::-webkit-scrollbar-thumb{background:#C6CCD6;border-radius:6px;border:3px solid #fff}
 #vKPI #kWBtn[data-on="1"]{background:var(--teal);color:#fff;border-color:var(--teal);font-weight:bold}
+/* ตัวกรอง "ชื่อคน" แบบดรอปดาวน์ — คนเยอะแล้วเรียงเป็นแถวยาวอ่านยาก จึงกดเปิด/ปิดแทน */
+#vKPI .ddbtn[data-on="1"]{background:var(--teal);color:#fff;border-color:var(--teal);font-weight:bold}
 
 body.cap #vKPI .tscroll{max-height:none!important;overflow:visible}
 
@@ -1488,6 +1490,29 @@ function chipMulti(key,label,items,sel){
     +items.map(([v,t])=>`<button type="button" data-sf="${key}" data-multi="1" data-v="${esc(v)}"
         class="${on.has(v)?'on':''}">${box(on.has(v))}${esc(t)}</button>`).join('')
     +`</div>`;
+}
+/* ตัวกรองรายชื่อคน — แบบเดียวกับ chipMulti (ติ๊กได้หลายคน เก็บใน SUBF)
+   แต่แสดงเป็นปุ่มเดียวกดเปิด/ปิดรายการแทนการเรียงชื่อเป็นแถวยาว (เหมือนตัวเลือก WEEK ด้านบน)
+   OPEN_DD เก็บว่าตอนนี้เปิดดรอปดาวน์ตัวไหนอยู่ — คงค่าไว้ข้าม renderKPI() แต่ละครั้ง */
+let OPEN_DD='';
+function chipDropdown(key,label,items,sel){
+  const on=new Set(sel||[]);
+  const open=OPEN_DD===key;
+  const box=c=>`<i class="ck${c?' on':''}">${c?'✓':''}</i>`;
+  const btnLabel=!on.size?'ทั้งหมด':on.size===1?[...on][0]:on.size+' คน';
+  return `<div class="fbar"><span class="fl">${label}</span>
+    <div class="wsel">
+      <button type="button" class="btn ghost ddbtn" data-dd="${key}" data-on="${on.size?'1':'0'}"
+        aria-haspopup="listbox" aria-expanded="${open?'true':'false'}">${esc(btnLabel)} ▾</button>
+      <div class="wsel-p" role="listbox" ${open?'':'hidden'}>
+        <div class="wsel-h"><span>ติ๊กได้หลายคน</span></div>
+        <button type="button" data-sf="${key}" data-multi="1" data-v=""
+          class="${on.size?'':'on'}">${box(!on.size)}ทั้งหมด</button>
+        ${items.map(([v,t])=>`<button type="button" data-sf="${key}" data-multi="1" data-v="${esc(v)}"
+          class="${on.has(v)?'on':''}">${box(on.has(v))}${esc(t)}</button>`).join('')}
+        <div class="wsel-f">ไม่เลือก = แสดงทั้งหมด</div>
+      </div>
+    </div></div>`;
 }
 /* ชิปแบบเลือกได้อันเดียว — ใช้สลับมุมมองของกราฟ */
 function chipOne(key,label,items,cur){
@@ -3190,7 +3215,7 @@ function secPack(){
   const all0=PACK.list.filter(packDateOK);
   const people=[...new Set(all0.map(r=>r.p))].sort();
   const sel=String(sf('pk2_who','')).split('|').filter(Boolean);
-  const bar=people.length>1?chipMulti('pk2_who','พนักงานแพ็ค',people.map(p=>[p,p]),sel):'';
+  const bar=people.length>1?chipDropdown('pk2_who','พนักงานแพ็ค',people.map(p=>[p,p]),sel):'';
   const list=sel.length?all0.filter(r=>sel.includes(r.p)):all0;
   if(!list.length)return bar+'<div class="empty2">ไม่มีข้อมูลตามตัวกรองนี้</div>';
 
@@ -3440,7 +3465,7 @@ function secPick(){
   const people=[...new Set(all0.map(r=>r.who))].sort();
   /* เลือกได้หลายคนพร้อมกัน */
   const who=String(sf('pk_who','')).split('|').filter(Boolean);
-  const bar=people.length>1?chipMulti('pk_who','พนักงาน',people.map(p=>[p,p]),who):'';
+  const bar=people.length>1?chipDropdown('pk_who','พนักงาน',people.map(p=>[p,p]),who):'';
   const list=who.length?all0.filter(r=>who.includes(r.who)):all0;
   if(!list.length)return bar+'<div class="empty2">ไม่มีข้อมูลตามตัวกรองนี้</div>';
 
@@ -3461,6 +3486,9 @@ function secPick(){
   const days=[...new Set(list.map(r=>r.date).filter(Boolean))].sort();
   const dayBy={}; per.forEach(p=>dayBy[p.who]=days.map(()=>0));
   list.forEach(r=>{const i=days.indexOf(r.date); if(i>=0&&dayBy[r.who])dayBy[r.who][i]+=r.qty;});
+  /* วันที่คนนั้นไม่ได้หยิบเลย = ไม่มีข้อมูล ไม่ใช่ 0 — เปลี่ยนเป็น null ให้เส้นกราฟเว้นช่วงแทนที่จะจิกลงมาที่ 0
+     (spanGaps:true ตอนวาดกราฟรออยู่แล้ว แต่ต้องมี null ให้มันข้ามจริงๆ) */
+  per.forEach(p=>{dayBy[p.who]=dayBy[p.who].map(v=>v||null);});
   const hrs=[...new Set(list.map(r=>r.hour).filter(v=>v!=null))].sort((a,b)=>a-b);
   const hrBy={}; per.forEach(p=>hrBy[p.who]=hrs.map(()=>0));
   list.forEach(r=>{const i=hrs.indexOf(r.hour); if(i>=0&&hrBy[r.who])hrBy[r.who][i]+=r.qty;});
@@ -4202,7 +4230,12 @@ el('detail').addEventListener('change',e=>{
 
 /* กดชิปตัวกรองย่อย หรือคลิกแถวใน legend ของกราฟวงกลม */
 el('detail').addEventListener('click',async e=>{
+  const dd=e.target.closest('[data-dd]');   /* ปุ่มเปิด/ปิดดรอปดาวน์รายชื่อคน */
+  if(dd){ e.stopPropagation(); OPEN_DD=OPEN_DD===dd.dataset.dd?'':dd.dataset.dd; renderKPI(); return; }
   const b=e.target.closest('[data-sf]'); if(!b)return;
+  /* ปุ่มอยู่ในพาเนลดรอปดาวน์ (chipDropdown) — กันไม่ให้ click ไปโดน document listener
+     แล้วปิดพาเนลทันทีหลังเลือก จะได้ติ๊กเลือกได้หลายคนต่อกันโดยพาเนลไม่หุบ */
+  if(b.closest('.wsel-p'))e.stopPropagation();
   const k=b.dataset.sf, v=b.dataset.v;
   if(b.dataset.multi){              /* ชิปเลือกหลายอัน — กดสลับติ๊ก/ไม่ติ๊ก */
     const cur=new Set(String(SUBF[k]||'').split('|').filter(Boolean));
@@ -4517,6 +4550,9 @@ el('kWPop').addEventListener('click',e=>{
 });
 document.addEventListener('click',()=>openWeekPop(false));
 document.addEventListener('keydown',e=>{if(e.key==='Escape')openWeekPop(false);});
+/* ปิดดรอปดาวน์รายชื่อคน (chipDropdown) เมื่อคลิกนอกกล่อง — ปุ่ม/รายการข้างในกันไว้ด้วย stopPropagation แล้ว */
+document.addEventListener('click',()=>{ if(OPEN_DD){ OPEN_DD=''; renderKPI(); } });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&OPEN_DD){ OPEN_DD=''; renderKPI(); } });
 
 let YEAR_INIT=false;
 function fillFiltersKPI(){
@@ -4669,6 +4705,7 @@ document.addEventListener('keydown',e=>{
 /* เรียกจากแถบเมนูข้าง — สลับหน้าย่อยของ Warehouse */
 window.KPI_SEC=async(sec)=>{
   SEC=sec||'overview';
+  OPEN_DD='';
   renderKPI();
   if((SEC==='repl'||SEC==='fc')&&!REPL){ await loadRepl(); renderKPI(); }
   if(SEC==='pick'&&!PICK){ await loadPick(); renderKPI(); }
