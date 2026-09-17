@@ -2898,7 +2898,19 @@ function secShip(){
         </div></div>`;
   }
 
-  const all0=SHIP.list.filter(r=>!fYear()||r.day.slice(0,4)===fYear());
+  /* v134: เดิมกรองแค่ปี ไม่เช็ค MONTH/WEEK/DAY เลย เลือกวันที่/สัปดาห์/เดือนแล้วข้อมูลไม่ขยับ
+     ทำให้ตรงกับ packDateOK/pickDateOK ที่หน้า Packing/Picking ใช้อยู่แล้ว */
+  const getMonthNumSh=()=>!fMonth()?'':String(MONTH_ORDER.indexOf(fMonth())+1).padStart(2,'0');
+  const shipYM=fYear()&&getMonthNumSh()?fYear()+'-'+getMonthNumSh():'';
+  const shipDateOK=r=>{
+    if(!r.day)return false;
+    if(fYear()&&r.day.slice(0,4)!==fYear())return false;
+    if(DAYSEL)return r.day===DAYSEL;
+    if(WKSEL.length&&!weekOK(isoWeek(r.day)))return false;
+    if(shipYM&&r.day.slice(0,7)!==shipYM)return false;
+    return true;
+  };
+  const all0=SHIP.list.filter(shipDateOK);
   const chs=[...new Set(all0.map(r=>r.ch))].filter(c=>c!=='ไม่ระบุ').sort();
   const sends=[...new Set(all0.map(r=>r.send))].filter(c=>c!=='ไม่ระบุ').sort();
   const chSel=String(sf('sh_ch','')).split('|').filter(Boolean);
@@ -3868,10 +3880,25 @@ function secReturn(){
   if(!d)return bars+'<div class="empty2">กำลังโหลดข้อมูล…</div>';
   if(d.err)return bars+`<div class="empty2">อ่านชีตไม่ได้ — ${esc(d.err)}</div>`;
 
+  /* v134: เดิมกรองแค่ WEEK ตัวเดียว ไม่เช็ค YEAR/MONTH/DAY เลย
+     เลือกปี/เดือน/วันที่จากแถบบนแล้วข้อมูลหน้า Return ไม่ขยับตาม — เพิ่มให้ตรงกับหน้าอื่น */
+  const getMonthNumRet=()=>!fMonth()?'':String(MONTH_ORDER.indexOf(fMonth())+1).padStart(2,'0');
+  const retYM=fYear()&&getMonthNumRet()?fYear()+'-'+getMonthNumRet():'';
+  const retDateKey=v=>{const ms=dparse(v); return isNaN(ms)?'':new Date(ms).toISOString().slice(0,10);};
+  const retDateOK=r=>{
+    if(!fYear()&&!fMonth()&&!DAYSEL)return true;   /* ไม่ได้กรองวันที่ = ผ่านหมด เหมือนเดิม */
+    const dk=retDateKey(r.d);
+    if(!dk)return false;
+    if(fYear()&&dk.slice(0,4)!==fYear())return false;
+    if(DAYSEL)return dk===DAYSEL;
+    if(retYM&&dk.slice(0,7)!==retYM)return false;
+    return true;
+  };
+
   /* ตัวกรองสถานะ — ทำแบบเดียวกับ ตรง/ไม่ตรง ของหน้า Stock Diff */
   const stOpts=[...new Set(d.list.map(r=>r.st).filter(Boolean))].sort();
   const stSel=String(sf('ret_s','')).split('|').filter(Boolean);
-  let list=d.list;
+  let list=d.list.filter(retDateOK);
   if(WKSEL.length)list=list.filter(r=>weekOK(r.w));
   if(stSel.length)list=list.filter(r=>stSel.includes(r.st));
 
