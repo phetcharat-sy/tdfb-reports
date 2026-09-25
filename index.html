@@ -769,20 +769,23 @@ body.present #vKPI .tscroll{max-height:none}
       <button data-view="kpi" data-sec="overview" class="on">KPI ทุกแผนก</button>
 
       <div class="grp">Warehouse</div>
+      <button data-view="kpi" data-sec="ontime">KPI On-Time Performance</button>
       <button data-view="kpi" data-sec="oos">KPI Out Of Stock</button>
       <button data-view="kpi" data-sec="diff">KPI Stock Variance &lt;2%</button>
       <button data-view="kpi" data-sec="dock">KPI Dock Time To Stock</button>
       <button data-view="kpi" data-sec="pick">Picking</button>
       <button data-view="kpi" data-sec="perr">KPI Human Error On Picking &lt;0.05%</button>
       <button data-view="kpi" data-sec="repl">Replenishment</button>
+      <button data-view="report" data-team="warehouse">รายงานประจำวัน</button>
 
       <div class="grp">Delivery</div>
       <button data-view="kpi" data-sec="pack">Packing</button>
-      <button data-view="kpi" data-sec="ret">Return</button>
+      <button data-view="report" data-team="delivery">รายงานประจำวัน</button>
 
       <div class="grp">Admin</div>
-      <button data-view="kpi" data-sec="ontime">KPI On-Time Performance</button>
+      <button data-view="kpi" data-sec="ret">Return</button>
       <button data-view="kpi" data-sec="ship">การจัดส่ง (Shipping)</button>
+      <button data-view="report" data-team="admin">รายงานประจำวัน</button>
 
       <div class="grp">วิธีการปฏิบัติงาน</div>
       <button data-view="kpi" data-sec="sop">เงื่อนไขการส่งสินค้าแต่ละ Platform</button>
@@ -5050,7 +5053,7 @@ function renderKPI(){
   el('ovBox').hidden=!isOv;
   el('detail').hidden=isOv;
   const TITLE={overview:['ภาพรวม KPI ทุกแผนก','Warehouse · Delivery · Admin — TDFB'],
-               ontime:['KPI On-Time Performance','Admin · แพ็คสินค้าเสร็จตามวันที่ต้องการ'],
+               ontime:['KPI On-Time Performance','Warehouse · แพ็คสินค้าเสร็จตามวันที่ต้องการ'],
                oos:['KPI Out Of Stock','Warehouse · WH ส่งของให้ Packing ตามกำหนด'],
                diff:['KPI Stock Variance <2%','Warehouse · ความแม่นยำสต็อก · รายการที่นับไม่ตรง'],
                dock:['KPI Dock Time To Stock','Warehouse · GR → Putaway · รับเข้าและจัดเก็บตามเกณฑ์'],
@@ -5061,7 +5064,7 @@ function renderKPI(){
                pack:['Packing','Delivery · ผลงานพนักงานแพ็ค สถานี และเวลาหนาแน่น'],
                sop:['เงื่อนไขการส่งสินค้าแต่ละ Platform','วิธีการปฏิบัติงาน · รอบตัดคำสั่งซื้อ Shopee · Lazada · TikTok'],
                ship:['การจัดส่ง (Shipping)','Admin · ปริมาณจัดส่ง ค้างส่ง ช่องทาง และขนส่ง'],
-               ret:['Return','Delivery · งานตีคืน ยกเลิก และเคสค้าง']};
+               ret:['Return','Admin · งานตีคืน ยกเลิก และเคสค้าง']};
   const tt=TITLE[SEC]||TITLE.overview;
   el('kTitle').textContent=tt[0];
   el('kSub').textContent=tt[1];
