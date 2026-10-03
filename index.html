@@ -6269,6 +6269,12 @@ const JOB='1bLDgYE8bXZ_iLdEG6FeBLyNf4OhcXKjMZq8Cks7jJmc';   /* Job Dairy Deliver
    → Delivery เห็นทุกเคสที่ตัวเองแจ้ง · Warehouse เห็นเคสของในรถ/กล่องผิด · Admin เห็นเคส Tracking Label / ใบปะหน้า
    แก้กติกาแบ่งแผนกได้ที่ DEPT_OF ข้างล่าง */
 const DLV_GID='1897671003';
+/* v133: ออเดอร์ยกเลิก — ชีต Case Admin แท็บ "Cancel จาก Odoo" (ชุดเดียวกับหน้า Cancel) */
+const CAN_SHEET='12C-YRzItKvcZ0ThZkY25F50s663zItob27ByEsH3U3c',CAN_GID='1213140401';
+/* v134: Return — ชุดเดียวกับหน้า Return (Return จาก Odoo) · ถ้า export ไม่ได้ ใช้ลิงก์เผยแพร่ของชีตเดียวกัน */
+const RET_GID='902439572';
+const PUB_CSV=g=>`https://docs.google.com/spreadsheets/d/e/2PACX-1vT91y2Hh3wgzuk5AvadFevKYMtzqWsGbgvXoDILmhIfEHDJQCh3c79v81SB-MjYmwjOg-PfkC6R7-sE/pub?gid=${g}&single=true&output=csv`;
+const CAN_CATS=['ยกเลิกก่อนหยิบ','ยกเลิกก่อนแพ็ค','ยกเลิกหลังแพ็ค'];
 const LABEL_RE=/tracking|label|ลาเบล|แทร็ก|แทรก|แท็ก|ใบปะหน้า|ใบปปะหน้า/i;
 const DEPT_OF=r=>{
   /* เคสฉลาก/ใบปะหน้า → Admin เว้นแต่รายละเอียดบอกชัดว่าคลังเป็นคนพลาด */
@@ -6302,13 +6308,18 @@ const TEAMS={
   },
   admin:{
     title:'รายงานทีม Admin',
-    sub:'การแจ้งปัญหาประจำวัน · ปัญหา Tracking Label ที่ทีม Delivery แจ้ง',
-    source:'แจ้งรายการมีปัญหาประจำวันของ Operation (แท็บ Admin และแท็บ Delivery. เฉพาะเคส Tracking Label / ใบปะหน้า)',
+    sub:'ออเดอร์ยกเลิก · Return · การแจ้งปัญหาประจำวัน',
+    source:'Case Admin (Cancel จาก Odoo และ Return จาก Odoo — ชุดเดียวกับหน้า Cancel / Return) และ แจ้งรายการมีปัญหาประจำวันของ Operation (แท็บ Admin)',
     panels:[
+      {k:'cancel',t:'ออเดอร์ยกเลิก', c:'ป้ายสี = ขั้นที่ยกเลิก', hd:'d', unit:'ออเดอร์',
+       sheet:CAN_SHEET, gid:CAN_GID, cancel:true, noQty:true, dayCount:true,
+       cols:['วันที่','ขั้นที่ยกเลิก · เลขออเดอร์ · ช่องทาง'], empty:'ไม่มีออเดอร์ยกเลิกในช่วงนี้'},
+      {k:'ret',t:'Return', c:'ป้ายสี = สาเหตุ', hd:'b', unit:'ออเดอร์',
+       sheet:CAN_SHEET, gid:RET_GID, ret:true, noQty:true, dayCount:true,
+       cols:['วันที่ได้รับคืน','สาเหตุ · เลขออเดอร์ · สินค้า'], empty:'ไม่มี Return ในช่วงนี้'},
       {k:'issue',t:'แจ้งปัญหาประจำวัน', c:'ป้ายสี = ประเภทสาเหตุ', hd:'c', unit:'เคส',
-       sheet:OPS, gid:'1007119536', empty:'ไม่มีการแจ้งปัญหาในช่วงนี้'},
-      {k:'label',t:'Delivery แจ้ง: Tracking Label', c:'ป้ายสี = เกณฑ์', hd:'b', unit:'เคส',
-       sheet:OPS, gid:DLV_GID, form:true, dept:'admin', empty:'ไม่มีเคส Tracking Label ในช่วงนี้'}
+       sheet:OPS, gid:'1007119536', noQty:true,
+       cols:['วันที่','ประเภทสาเหตุ · ปัญหาที่พบ'], empty:'ไม่มีการแจ้งปัญหาในช่วงนี้'}
     ]
   }
 };
@@ -6390,13 +6401,50 @@ function toFormRows(csv){
     return row;
   }).filter(Boolean).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
 }
+function toCancelRows(csv){
+  const raw=parseCSV(csv);let hi=-1;
+  for(let i=0;i<Math.min(6,raw.length);i++) if(raw[i].some(c=>/เลขออเดอร์/.test(c))){hi=i;break;}
+  if(hi<0)return [];
+  const H=raw[hi].map(c=>String(c).trim());
+  const iD=H.indexOf('วันที่'),iO=H.indexOf('เลขออเดอร์'),iC=H.indexOf('ช่องทางการขาย'),iK=H.indexOf('หมวด');
+  return raw.slice(hi+1).map(r=>{
+    const cat=(r[iK]||'').trim(),d=toKey(r[iD]);
+    if(!d||!CAN_CATS.includes(cat))return null;   /* หน้า Cancel ก็นับเฉพาะ 3 หมวดนี้ */
+    const ord=(r[iO]||'').trim(),ch=(r[iC]||'').trim();
+    return {date:d,y:d.slice(0,4),m:d.slice(5,7),wk:isoWk(d),tag:cat,qty:null,
+            item:`<b>${esc(ord||'—')}</b>${ch?` <span style="opacity:.65">· ${esc(ch)}</span>`:''}`};
+  }).filter(Boolean).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
+}
+function toReturnRows(csv){
+  const raw=parseCSV(csv);let hi=-1;
+  for(let i=0;i<Math.min(6,raw.length);i++) if(raw[i].some(c=>/วันที่ได้รับสินค้า/.test(c))){hi=i;break;}
+  if(hi<0)return [];
+  const H=raw[hi].map(c=>String(c).trim()),ix=n=>H.indexOf(n);
+  const iD=ix('วันที่ได้รับสินค้า'),iO=ix('Order Reference'),iP=ix('Platform'),iC=ix('สาเหตุ'),iPr=ix('Product');
+  return raw.slice(hi+1).map(r=>{
+    const d=toKey(r[iD]);if(!d)return null;
+    const ord=(r[iO]||'').trim(),pf=(r[iP]||'').trim(),pr=(r[iPr]||'').trim();
+    return {date:d,y:d.slice(0,4),m:d.slice(5,7),wk:isoWk(d),tag:(r[iC]||'').trim()||'ไม่ระบุสาเหตุ',qty:null,
+            item:`<b>${esc(ord||'—')}</b>${pf?` <span style="opacity:.65">· ${esc(pf)}</span>`:''}`
+                 +(pr?`<br><span style="opacity:.65;font-size:.85em">${esc(pr)}</span>`:'')};
+  }).filter(Boolean).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
+}
 const CSV_CACHE={};
 async function grab(p){
   const key=p.sheet+'|'+p.gid;
-  if(!CSV_CACHE[key])CSV_CACHE[key]=fetch(`https://docs.google.com/spreadsheets/d/${p.sheet}/gviz/tq?tqx=out:csv&gid=${p.gid}`)
-    .then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.text();});
+  /* ชีตยกเลิกมีหลายพันแถว ใช้ export csv (คืนทุกแถว) แล้วค่อยถอยไป gviz */
+  const viaGviz=()=>fetch(`https://docs.google.com/spreadsheets/d/${p.sheet}/gviz/tq?tqx=out:csv&gid=${p.gid}`);
+  const viaPub=()=>fetch(PUB_CSV(p.gid));
+  const okCSV=r=>r.ok?r.text().then(t=>{if(t.trim().startsWith('<'))throw new Error('not csv');return t;})
+                     :Promise.reject(new Error('HTTP '+r.status));
+  if(!CSV_CACHE[key])CSV_CACHE[key]=(p.cancel||p.ret)
+      ? fetch(`https://docs.google.com/spreadsheets/d/${p.sheet}/export?format=csv&gid=${p.gid}`).then(okCSV)
+          .catch(()=>viaPub().then(okCSV)).catch(()=>viaGviz().then(okCSV))
+      : viaGviz().then(okCSV);
   let txt;
   try{txt=await CSV_CACHE[key];}catch(e){delete CSV_CACHE[key];throw e;}
+  if(p.cancel)return toCancelRows(txt);
+  if(p.ret)return toReturnRows(txt);
   if(!p.form)return toRows(txt);
   return toFormRows(txt)
     .filter(r=>!p.dept||r.dept===p.dept)
@@ -6449,15 +6497,17 @@ function shipTableHTML(rows,empty){
     <tfoot><tr><td colspan="3">รวมค้างส่ง ${rows.length} ออเดอร์</td></tr></tfoot></table>`;
 }
 
-function tableHTML(rows,empty,noQty){
+function tableHTML(rows,empty,noQty,p){
+  p=p||{};const perDay={};rows.forEach(r=>perDay[r.date]=(perDay[r.date]||0)+1);
   if(!rows.length)return `<div class="empty"><b>${empty}</b></div>`;
   let last='',b='';
   rows.forEach(r=>{const n=r.date!==last;
-    b+=`<tr class="${n?'newday':''}"><td class="d">${n?show(r.date):''}</td>
+    b+=`<tr class="${n?'newday':''}"><td class="d">${n?show(r.date)+(p.dayCount?`<br><b style="color:var(--ink);font-size:1.1em">${perDay[r.date]}</b> <span style="font-size:.85em">${p.unit}</span>`:''):''}</td>
         <td>${r.tag?`<span class="tag">${r.tag}</span><br>`:''}${r.item}</td>
         ${noQty?'':`<td class="num">${r.qty!=null?fmt(r.qty):'—'}</td>`}</tr>`;last=r.date;});
-  if(noQty)return `<table><thead><tr><th style="width:112px">วันที่พบปัญหา</th><th>เกณฑ์ · รายละเอียด</th></tr></thead>
-    <tbody>${b}</tbody><tfoot><tr><td colspan="2">รวม ${rows.length} เคส</td></tr></tfoot></table>`;
+  const hd=p.cols||['วันที่พบปัญหา','เกณฑ์ · รายละเอียด'];
+  if(noQty)return `<table><thead><tr><th style="width:112px">${hd[0]}</th><th>${hd[1]}</th></tr></thead>
+    <tbody>${b}</tbody><tfoot><tr><td colspan="2">รวม ${rows.length} ${p.unit||'เคส'}</td></tr></tfoot></table>`;
   const sum=rows.reduce((s,r)=>s+(r.qty||0),0);
   const blank=rows.filter(r=>r.qty==null).length;
   return `<table><thead><tr><th style="width:112px">วันที่</th><th>รายละเอียด</th>
@@ -6481,9 +6531,15 @@ function renderReport(){
   const total=work.reduce((n,s)=>n+s.rows.length,0);
   let k=work.map((s,i)=>{
     const q=s.rows.reduce((a,r)=>a+(r.qty||0),0);
+    if(s.p.cancel){const c={};s.rows.forEach(r=>c[r.tag]=(c[r.tag]||0)+1);
+      const bits=CAN_CATS.filter(x=>c[x]).map(x=>`${x.replace('ยกเลิก','')} ${c[x]}`);
+      return {l:s.p.t,v:s.rows.length,cls:'rose',n:bits.join(' · ')||'ออเดอร์'};}
+    if(s.p.ret){const c={};s.rows.forEach(r=>c[r.tag]=(c[r.tag]||0)+1);
+      const top=Object.entries(c).sort((x,y)=>y[1]-x[1]).slice(0,2).map(([t,n])=>`${t} ${n}`);
+      return {l:s.p.t,v:s.rows.length,cls:'c2',n:top.join(' · ')||'ออเดอร์'};}
     return {l:s.p.t.replace('ประจำวัน',''),v:s.rows.length,n:q?`รวม ${fmt(q)} ${s.p.k==='issue'?'order':'ชิ้น'}`:s.p.unit};
   });
-  if(TEAM!=='delivery') k.push({l:'วันที่มีงาน',v:days.size,
+  if(TEAM==='warehouse') k.push({l:'วันที่มีงาน',v:days.size,
     n:days.size?`เฉลี่ย ${(total/days.size).toFixed(1)} รายการ/วัน`:'วัน'});
   if(TEAM==='delivery'){
     const kMO=k[0], kIS=k[1];      /* MO, แจ้งปัญหา (เรียงตาม panels ที่ไม่ใช่ออเดอร์) */
@@ -6504,7 +6560,7 @@ function renderReport(){
     k.push(kMO,kIS);
   }
   if(TEAM!=='delivery'){
-    const tg={};sets[0].rows.forEach(r=>{const t=r.tag||'ไม่ระบุ';tg[t]=(tg[t]||0)+1;});
+    const tg={};(sets.find(x=>x.p.k==='issue')||sets[0]).rows.forEach(r=>{const t=r.tag||'ไม่ระบุ';tg[t]=(tg[t]||0)+1;});
     const top=Object.entries(tg).sort((a,b)=>b[1]-a[1])[0];
     k.push({l:'พบบ่อยที่สุด',v:top?top[1]:0,n:top?top[0]:'—'});
   }
@@ -6519,7 +6575,7 @@ function renderReport(){
   el('panels').innerHTML=sets.map(s=>
     `<div class="panel"><div class="hd ${s.p.hd}">
        <h2 class="sec">${s.p.t} <em>${s.rows.length} ${s.p.unit} · ${s.p.c}</em><span></span></h2></div>
-     <div class="scroll">${s.p.ship?shipTableHTML(s.rows,s.p.empty):tableHTML(s.rows,s.p.empty,s.p.form)}</div></div>`).join('');
+     <div class="scroll">${s.p.ship?shipTableHTML(s.rows,s.p.empty):tableHTML(s.rows,s.p.empty,s.p.form||s.p.noQty,s.p)}</div></div>`).join('');
 
   const ks=[...new Set([...days,...shipSel.map(r=>r.date)])].filter(Boolean).sort();
   el('period').textContent=ks.length
