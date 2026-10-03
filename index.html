@@ -951,6 +951,22 @@ body:not(.present):not(.cap) #vRPT .scroll{flex:1;min-height:0;overflow:auto}
 #vRPT .empty{font-size:32px}
 #vRPT .empty b{font-size:36px}
 #vRPT .foot{font-size:27px}
+
+/* v-rptfont2: ขยายตัวหนังสือในตาราง/หัวข้อเพิ่ม */
+#vRPT .panel h2.sec{font-size:54px}
+#vRPT .panel h2.sec em{font-size:34px}
+#vRPT .kpi .l{font-size:36px}
+#vRPT .kpi .v,#vRPT .kpis.many .kpi .v{font-size:96px}
+#vRPT .kpi .n{font-size:31px}
+#vRPT table{font-size:44px}
+#vRPT th{font-size:34px;padding:18px 22px}
+#vRPT td{padding:20px 22px;line-height:1.35}
+#vRPT td.d{font-size:38px}
+#vRPT .tag{font-size:32px;padding:3px 14px}
+#vRPT td span[style*="opacity"]{font-size:36px}
+#vRPT tfoot td{font-size:40px}
+#vRPT .empty{padding:90px 20px}
+#vRPT .empty b{font-size:48px;color:var(--mute);font-weight:bold}
 </style>
 </head>
 <body>
@@ -6204,11 +6220,11 @@ const TEAMS={
     source:'Job Dairy Delivery (MO Delivery) · Packing 2026 (ออเดอร์จัดส่ง) และ แจ้งรายการมีปัญหาประจำวันของ Operation (แท็บ Delivery)',
     panels:[
       {k:'order',t:'ออเดอร์ค้างส่ง', c:'พร้อมเหตุผล · จากชีต Packing 2026', hd:'d', unit:'ออเดอร์',
-       ship:true, empty:'ไม่มีออเดอร์ค้างส่งในช่วงนี้'},
+       ship:true, empty:'ไม่มีออเดอร์ค้างส่ง'},
       {k:'mo',   t:'MO ประจำวัน',      c:'รายการจัดทำ MO Delivery', hd:'a', unit:'รายการ',
-       sheet:JOB, gid:'0',          empty:'ยังไม่มีรายการ MO ในช่วงนี้'},
+       sheet:JOB, gid:'0',          empty:'ไม่มีรายการทำ MO'},
       {k:'issue',t:'แจ้งปัญหาประจำวัน', c:'ป้ายสี = ผู้แจ้ง',        hd:'c', unit:'เคส',
-       sheet:OPS, gid:'1792859356', empty:'ไม่มีการแจ้งปัญหาในช่วงนี้'}
+       sheet:OPS, gid:'1792859356', empty:'ไม่พบปัญหา'}
     ]
   },
   warehouse:{
@@ -6314,23 +6330,23 @@ function shipProblemRows(rows){
   return Object.values(by).sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:0);
 }
 function shipTableHTML(rows,empty){
-  if(!rows.length)return `<div class="empty"><b>ไม่มีรายการ</b>${empty}</div>`;
+  if(!rows.length)return `<div class="empty"><b>${empty}</b></div>`;
   const e=v=>String(v==null?'':v).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   /* เหตุผล: คอลัมน์ Q (เช็คค้างส่ง) ก่อน ต่อด้วย P (เกณฑ์) */
   const why=r=>{const a=[r.q,r.crit].filter(v=>v&&v!=='ไม่ระบุ');
-    return [...new Set(a)].join(' · ')||'ไม่ระบุเหตุผล';};
+    return a[0]||'ค้างส่ง';};
   let last='',b='';
   rows.forEach(r=>{const n=r.date!==last;
     b+=`<tr class="${n?'newday':''}"><td class="d">${n?show(r.date):''}</td>
         <td><b>${e(r.ref||'—')}</b><br><span style="opacity:.7">${e(r.ch)} · ${e(r.carrier)}</span></td>
-        <td><span class="tag pend">ค้างส่ง</span><br>${e(why(r))}</td></tr>`;last=r.date;});
+        <td><span class="tag pend">${e(why(r).replace(/^ไม่ระบุเหตุผล$/,'ค้างส่ง'))}</span></td></tr>`;last=r.date;});
   return `<table><thead><tr><th style="width:112px">วันที่</th><th>เลขออเดอร์ · ช่องทาง · ขนส่ง</th>
     <th>เหตุผล</th></tr></thead><tbody>${b}</tbody>
     <tfoot><tr><td colspan="3">รวมค้างส่ง ${rows.length} ออเดอร์</td></tr></tfoot></table>`;
 }
 
 function tableHTML(rows,empty){
-  if(!rows.length)return `<div class="empty"><b>ยังไม่มีข้อมูล</b>${empty}</div>`;
+  if(!rows.length)return `<div class="empty"><b>${empty}</b></div>`;
   let last='',b='';
   rows.forEach(r=>{const n=r.date!==last;
     b+=`<tr class="${n?'newday':''}"><td class="d">${n?show(r.date):''}</td>
