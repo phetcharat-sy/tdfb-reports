@@ -923,12 +923,34 @@ body.present .main{margin-left:0}
 #vRPT tr.newday td{border-top:2px solid var(--line)}
 #vRPT .tag{font-size:24px}
 /* เลื่อนทั้งหน้าแบบหน้า KPI (ไม่บีบให้อยู่ในจอเดียว) · โหมดพรีเซนต์ยังพอดีจอเหมือนเดิม */
-body:not(.present):not(.cap) #vRPT .wrap{height:auto;overflow:visible;padding:26px 6% 44px}
-body:not(.present):not(.cap) #vRPT #shot{overflow:visible;flex:none}
-body:not(.present):not(.cap) #vRPT .panels{flex:none;align-items:start}
-body:not(.present):not(.cap) #vRPT .scroll{flex:none;max-height:1500px}
+/* v-rptfill: ตารางยืดลงจนสุดจอพอดี ไม่เหลือที่ว่างด้านล่าง · เลื่อนดูในตาราง
+   (body ถูก zoom ทั้งหน้า 100vh จึงต้องหารด้วยค่า zoom) */
+body:not(.present):not(.cap) #vRPT .wrap{height:calc(100vh / var(--z,1));min-height:0;overflow:hidden;
+  padding:26px 6% 24px;display:flex;flex-direction:column}
+body:not(.present):not(.cap) #vRPT #shot{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+body:not(.present):not(.cap) #vRPT .panels{flex:1;min-height:0;align-items:stretch}
+body:not(.present):not(.cap) #vRPT .panel{display:flex;flex-direction:column;min-height:0}
+body:not(.present):not(.cap) #vRPT .scroll{flex:1;min-height:0;overflow:auto}
 #vRPT .empty{color:var(--mute);font-size:28px}
 #vRPT .foot{border-top:1px solid var(--page-line);color:var(--page-mute);font-size:24px}
+
+/* v-rptfont: ขนาดตัวหนังสือเท่าหน้า KPI */
+#vRPT{font-size:34px}
+#vRPT .panel h2.sec{font-size:47px}
+#vRPT .panel h2.sec em{font-size:31px}
+#vRPT .kpi .l{font-size:32px}
+#vRPT .kpi .v,#vRPT .kpis.many .kpi .v{font-size:86px}
+#vRPT .kpi .n{font-size:27px}
+#vRPT table{font-size:36px}
+#vRPT th{font-size:30px;padding:16px 20px}
+#vRPT td{padding:17px 20px;line-height:1.4}
+#vRPT td.d{font-size:32px}
+#vRPT .tag{font-size:27px;padding:2px 12px}
+#vRPT td span[style*="opacity"]{font-size:30px}
+#vRPT tfoot td{font-size:34px}
+#vRPT .empty{font-size:32px}
+#vRPT .empty b{font-size:36px}
+#vRPT .foot{font-size:27px}
 </style>
 </head>
 <body>
@@ -1091,7 +1113,7 @@ body:not(.present):not(.cap) #vRPT .scroll{flex:none;max-height:1500px}
       <h1 id="title">รายงานทีม Delivery</h1>
       <div class="sub" id="subtitle"></div>
     </div>
-    <div class="period">ช่วงข้อมูล<b id="period">—</b><span class="chip" id="chip" style="display:none"></span></div>
+    <div class="period">ข้อมูลของวันที่<b id="period">—</b><span class="chip" id="chip" style="display:none"></span></div>
   </header>
   <div class="kpis" id="kpis"></div>
   <div class="panels" id="panels"></div>
@@ -6377,9 +6399,9 @@ function renderReport(){
        <h2 class="sec">${s.p.t} <em>${s.rows.length} ${s.p.unit} · ${s.p.c}</em><span></span></h2></div>
      <div class="scroll">${s.p.ship?shipTableHTML(s.rows,s.p.empty):tableHTML(s.rows,s.p.empty)}</div></div>`).join('');
 
-  const ks=[...days].sort();
+  const ks=[...new Set([...days,...shipSel.map(r=>r.date)])].filter(Boolean).sort();
   el('period').textContent=ks.length
-    ?(ks[0]===ks[ks.length-1]?show(ks[0]):`${show(ks[0])} – ${show(ks[ks.length-1])}`):'—';
+    ?(ks[0]===ks[ks.length-1]?showLong(ks[0]):`${showLong(ks[0])} – ${showLong(ks[ks.length-1])}`):'—';
   const bits=[];
   if($('fy').value)bits.push('ปี '+$('fy').value);
   if($('fm').value)bits.push(MONTHS[+$('fm').value-1]);
@@ -8154,6 +8176,7 @@ el('save').onclick=async function(){
     const w=document.documentElement.clientWidth||window.innerWidth;
     const z=Math.max(0.15,Math.min(3,base*w/DESIGN_W*US));
     const v=z.toFixed(3);
+    document.body.style.setProperty('--z',v);   /* v-rptfill: ให้ CSS รู้ค่า zoom (ใช้คำนวณความสูงเต็มจอ) */
     if(document.body.style.zoom!==v){ document.body.style.zoom=v;
       /* กราฟต้องวัดขนาดกล่องใหม่หลังเปลี่ยน zoom */
       try{ if(typeof CH!=='undefined')Object.values(CH).flat().forEach(c=>c&&c.resize&&c.resize()); }catch(e){} }
