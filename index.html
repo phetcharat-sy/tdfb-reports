@@ -6058,15 +6058,15 @@ const JOB='1bLDgYE8bXZ_iLdEG6FeBLyNf4OhcXKjMZq8Cks7jJmc';   /* Job Dairy Deliver
 const TEAMS={
   delivery:{
     title:'รายงานทีม Delivery',
-    sub:'งานจัดทำ MO · การแจ้งปัญหาประจำวัน · ออเดอร์จัดส่ง',
+    sub:'ออเดอร์จัดส่ง · ค้างส่ง · งานจัดทำ MO · การแจ้งปัญหาประจำวัน',
     source:'Job Dairy Delivery (MO Delivery) · Packing 2026 (ออเดอร์จัดส่ง) และ แจ้งรายการมีปัญหาประจำวันของ Operation (แท็บ Delivery)',
     panels:[
+      {k:'order',t:'ออเดอร์ค้างส่ง', c:'พร้อมเหตุผล · จากชีต Packing 2026', hd:'d', unit:'ออเดอร์',
+       ship:true, empty:'ไม่มีออเดอร์ค้างส่งในช่วงนี้'},
       {k:'mo',   t:'MO ประจำวัน',      c:'รายการจัดทำ MO Delivery', hd:'a', unit:'รายการ',
        sheet:JOB, gid:'0',          empty:'ยังไม่มีรายการ MO ในช่วงนี้'},
       {k:'issue',t:'แจ้งปัญหาประจำวัน', c:'ป้ายสี = ผู้แจ้ง',        hd:'c', unit:'เคส',
-       sheet:OPS, gid:'1792859356', empty:'ไม่มีการแจ้งปัญหาในช่วงนี้'},
-      {k:'order',t:'ออเดอร์ค้างส่ง / ไม่ตรงเกณฑ์', c:'จากชีต Packing 2026 · ป้ายแดง = ค้างส่ง', hd:'d', unit:'ออเดอร์',
-       ship:true, empty:'ไม่มีออเดอร์ค้างส่งหรือไม่ตรงเกณฑ์ในช่วงนี้'}
+       sheet:OPS, gid:'1792859356', empty:'ไม่มีการแจ้งปัญหาในช่วงนี้'}
     ]
   },
   warehouse:{
@@ -6156,30 +6156,30 @@ function buildShipRows(){
   SHIPROWS=src.map(x=>({...x,date:x.day,y:x.day.slice(0,4),m:x.day.slice(5,7),
                         wk:LOGI_SHIP.isoWeek(x.day)}));
 }
-/* ออเดอร์ที่มีปัญหา: 1 ออเดอร์ = 1 บรรทัด · ค้างส่งมาก่อนไม่ตรงเกณฑ์ */
+/* ออเดอร์ค้างส่ง: 1 ออเดอร์ = 1 บรรทัด */
 function shipProblemRows(rows){
   const by={};
   rows.forEach((x,i)=>{
-    const bad=x.pending||!SHIP_OK.test(x.crit||'');
-    if(!bad)return;
-    const k=x.ref||('r'+i), o=by[k];
-    if(!o||(x.pending&&!o.pending)) by[k]=x;
+    if(!x.pending)return;          /* นับเฉพาะค้างส่ง — แบ่งรอบส่ง/เกณฑ์อื่นไม่เอามา */
+    const k=x.ref||('r'+i);
+    if(!by[k]) by[k]=x;
   });
-  return Object.values(by).sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:(b.pending-a.pending));
+  return Object.values(by).sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:0);
 }
 function shipTableHTML(rows,empty){
   if(!rows.length)return `<div class="empty"><b>ไม่มีรายการ</b>${empty}</div>`;
   const e=v=>String(v==null?'':v).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  /* เหตุผล: คอลัมน์ Q (เช็คค้างส่ง) ก่อน ต่อด้วย P (เกณฑ์) */
+  const why=r=>{const a=[r.q,r.crit].filter(v=>v&&v!=='ไม่ระบุ');
+    return [...new Set(a)].join(' · ')||'ไม่ระบุเหตุผล';};
   let last='',b='';
   rows.forEach(r=>{const n=r.date!==last;
-    const st=r.pending?'<span class="tag pend">ค้างส่ง</span>':`<span class="tag">${e(r.crit)}</span>`;
     b+=`<tr class="${n?'newday':''}"><td class="d">${n?show(r.date):''}</td>
-        <td>${st}<br><b>${e(r.ref||'—')}</b></td>
-        <td>${e(r.ch)}<br><span style="opacity:.7">${e(r.carrier)}</span></td></tr>`;last=r.date;});
-  const np=rows.filter(r=>r.pending).length;
-  return `<table><thead><tr><th style="width:112px">วันที่</th><th>สถานะ · เลขออเดอร์</th>
-    <th>ช่องทาง · ขนส่ง</th></tr></thead><tbody>${b}</tbody>
-    <tfoot><tr><td colspan="3">รวม ${rows.length} ออเดอร์ · ค้างส่ง ${np} · ไม่ตรงเกณฑ์อื่นๆ ${rows.length-np}</td></tr></tfoot></table>`;
+        <td><b>${e(r.ref||'—')}</b><br><span style="opacity:.7">${e(r.ch)} · ${e(r.carrier)}</span></td>
+        <td><span class="tag pend">ค้างส่ง</span><br>${e(why(r))}</td></tr>`;last=r.date;});
+  return `<table><thead><tr><th style="width:112px">วันที่</th><th>เลขออเดอร์ · ช่องทาง · ขนส่ง</th>
+    <th>เหตุผล</th></tr></thead><tbody>${b}</tbody>
+    <tfoot><tr><td colspan="3">รวมค้างส่ง ${rows.length} ออเดอร์</td></tr></tfoot></table>`;
 }
 
 function tableHTML(rows,empty){
@@ -6214,10 +6214,12 @@ function renderReport(){
     const q=s.rows.reduce((a,r)=>a+(r.qty||0),0);
     return {l:s.p.t.replace('ประจำวัน',''),v:s.rows.length,n:q?`รวม ${fmt(q)} ${s.p.k==='issue'?'order':'ชิ้น'}`:s.p.unit};
   });
-  k.push({l:'วันที่มีงาน',v:days.size,
+  if(TEAM!=='delivery') k.push({l:'วันที่มีงาน',v:days.size,
     n:days.size?`เฉลี่ย ${(total/days.size).toFixed(1)} รายการ/วัน`:'วัน'});
   if(TEAM==='delivery'){
-    k.forEach((x,i)=>x.cls='c'+i);
+    const kMO=k[0], kIS=k[1];      /* MO, แจ้งปัญหา (เรียงตาม panels ที่ไม่ใช่ออเดอร์) */
+    kMO.cls='c0'; kIS.cls='c2';
+    k=[];
     if(!SHIPROWS.length){
       const er=window.LOGI_SHIP&&LOGI_SHIP.err();
       k.push({l:'จำนวนออเดอร์',v:er?'ดึงไม่ได้':'กำลังโหลด…',n:er?'ชีต Packing 2026':'ชีต Packing 2026',pending:true});
@@ -6225,13 +6227,12 @@ function renderReport(){
       k.push({l:'จำนวนออเดอร์',v:0,n:'ไม่มีออเดอร์ในช่วงนี้',cls:'ink'});
     }else{
       const S=LOGI_SHIP.stats(shipSel);
-      const bad=S.critBadE.slice(0,3).map(([a,b])=>a+' '+fmt(b)).join(' · ');
       k.push({l:'จำนวนออเดอร์',v:S.orders,cls:'ink',
-              n:(S.critPct!=null?`ตรงเกณฑ์ ${S.critPct.toFixed(2)}%`:'')+(S.days.length>1?` · เฉลี่ย ${fmt(S.avgDay)}/วัน`:'')});
+              n:`ส่งแล้ว ${fmt(S.orders-S.pending)}`+(S.days.length>1?` · เฉลี่ย ${fmt(S.avgDay)}/วัน`:'')});
       k.push({l:'ค้างส่ง',v:S.pending,cls:S.pending?'rose':'ok',
               n:S.pending?`${S.pendingPct.toFixed(2)}% ของออเดอร์`:'ไม่มีค้างส่ง'});
-      k.push({l:'ไม่ตรงเกณฑ์',v:S.critBad,cls:S.critBad?'c4':'ok',n:S.critBad?bad:'ตรงเกณฑ์ทั้งหมด'});
     }
+    k.push(kMO,kIS);
   }
   if(TEAM!=='delivery'){
     const tg={};sets[0].rows.forEach(r=>{const t=r.tag||'ไม่ระบุ';tg[t]=(tg[t]||0)+1;});
