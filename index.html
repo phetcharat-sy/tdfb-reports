@@ -873,7 +873,62 @@ body.present .main{margin-left:0}
 #vRPT #clear,#vRPT #reload,#vRPT #present{border-radius:12px;padding:14px 20px;font-size:25.1px}
 #vRPT #save{border-radius:12px;padding:14px 24px;font-size:25.1px;background:linear-gradient(100deg,var(--teal-d),#14B8A6);box-shadow:0 4px 14px rgba(15,118,110,.35)}
 #vRPT #shotMode{font-size:25.1px;min-width:0}
+#vRPT #reload{display:none}
 #vRPT .toolbar{margin-bottom:12px;flex:none}
+
+/* ===== v-rpttheme: หน้ารายงานประจำวัน ใช้ธีมเดียวกับหน้า KPI ===== */
+#vRPT #shot{background:transparent;border-radius:0;box-shadow:none;padding:8px 0 0}
+#vRPT #shot.cap-slide,#vRPT #shot.cap-full{background:#100D26;padding:34px 52px}
+#vRPT header{border-bottom:2px solid var(--teal);padding-bottom:20px;margin-bottom:22px}
+#vRPT h1{font-size:82px;letter-spacing:-.6px;line-height:1.2;font-weight:bold;color:var(--page-ink);
+  border-left:8px solid var(--teal);padding-left:20px}
+#vRPT .sub{color:var(--page-mute);font-size:36px;margin:10px 0 0 21px;line-height:1.4}
+#vRPT .period{color:var(--page-mute);font-size:31px}
+#vRPT .period b{color:var(--page-ink);font-size:50px}
+#vRPT .chip{background:#6B5CA5;font-size:27px}
+/* การ์ดตัวเลข = scard ของหน้า KPI */
+#vRPT .kpis{gap:14px;margin-bottom:10px}
+#vRPT .kpi,#vRPT .kpi.c0,#vRPT .kpi.c1,#vRPT .kpi.c2,#vRPT .kpi.c3,#vRPT .kpi.c4,
+#vRPT .kpi.rose,#vRPT .kpi.ok,#vRPT .kpi.ink,#vRPT .kpi.pending{
+  background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:22px;
+  box-shadow:0 1px 2px rgba(20,24,40,.04),0 8px 20px rgba(20,24,40,.05);
+  padding:24px 20px;text-align:center;display:flex;flex-direction:column;gap:4px}
+#vRPT .kpi .l{font-size:30.8px;color:var(--mute);letter-spacing:.04em;opacity:1}
+#vRPT .kpi .v,#vRPT .kpis.many .kpi .v{font-size:82px;font-weight:bold;letter-spacing:-1px;line-height:1.15;margin:0}
+#vRPT .kpi .n{font-size:24px;color:var(--mute);opacity:1}
+#vRPT .kpi.ink .v{color:var(--ink)}
+#vRPT .kpi.c0 .v,#vRPT .kpi.c1 .v,#vRPT .kpi.ok .v{color:var(--teal-d)}
+#vRPT .kpi.c2 .v,#vRPT .kpi.c3 .v{color:var(--plum-d)}
+#vRPT .kpi.c4 .v{color:var(--amber)}
+#vRPT .kpi.rose .v{color:var(--bad)}
+#vRPT .kpi.pending .v{font-size:40px;color:var(--mute);padding-top:14px}
+#vRPT .kpi.pending{border-style:dashed}
+/* หัวข้อแต่ละส่วน = h2.sec บนพื้นหน้า */
+#vRPT .panels{gap:22px}
+#vRPT .panel{background:transparent;border:0;border-radius:0;overflow:visible;min-height:0}
+#vRPT .panel .hd,#vRPT .panel .hd.a,#vRPT .panel .hd.b,#vRPT .panel .hd.c,#vRPT .panel .hd.d{
+  background:transparent;border:0;padding:0}
+#vRPT .panel h2.sec{font-size:42px;margin:22px 0 12px;display:flex;align-items:center;gap:12px;
+  color:var(--page-ink);justify-content:flex-start;flex-wrap:nowrap;white-space:nowrap}
+#vRPT .panel h2.sec em{font-style:normal;font-size:27px;color:var(--page-mute);font-weight:normal;
+  overflow:hidden;text-overflow:ellipsis}
+#vRPT .panel h2.sec span{flex:1;min-width:20px;height:1px;background:var(--page-line)}
+/* กล่องตาราง = cpanel/table.dt ของหน้า KPI */
+#vRPT .panel .scroll{background:var(--card);border:1px solid var(--line);border-radius:22px;
+  box-shadow:0 1px 2px rgba(20,24,40,.04),0 8px 22px rgba(20,24,40,.05)}
+#vRPT table{font-size:30px}
+#vRPT th{background:var(--soft);font-size:26px;padding:15px 18px;z-index:2;box-shadow:inset 0 -2px 0 var(--line)}
+#vRPT td{padding:15px 18px;border-bottom:0;border-top:1px solid var(--soft)}
+#vRPT tbody tr:hover td{background:var(--soft)}
+#vRPT tr.newday td{border-top:2px solid var(--line)}
+#vRPT .tag{font-size:24px}
+/* เลื่อนทั้งหน้าแบบหน้า KPI (ไม่บีบให้อยู่ในจอเดียว) · โหมดพรีเซนต์ยังพอดีจอเหมือนเดิม */
+body:not(.present):not(.cap) #vRPT .wrap{height:auto;overflow:visible;padding:26px 6% 44px}
+body:not(.present):not(.cap) #vRPT #shot{overflow:visible;flex:none}
+body:not(.present):not(.cap) #vRPT .panels{flex:none;align-items:start}
+body:not(.present):not(.cap) #vRPT .scroll{flex:none;max-height:1500px}
+#vRPT .empty{color:var(--mute);font-size:28px}
+#vRPT .foot{border-top:1px solid var(--page-line);color:var(--page-mute);font-size:24px}
 </style>
 </head>
 <body>
@@ -1020,7 +1075,7 @@ body.present .main{margin-left:0}
     </div></div>
   <button class="btn ghost" id="clear">Clear filters</button>
   <button class="btn ghost" id="reload">ดึงข้อมูลใหม่</button>
-  <div class="kf"><label>SHOT</label>
+  <div class="kf" hidden><label>SHOT</label>
     <select id="shotMode" autocomplete="off">
       <option value="slide">รูป 16:9 (ขนาดสไลด์)</option>
       <option value="full">รูปเต็มทุกรายการ</option>
@@ -6319,8 +6374,7 @@ function renderReport(){
   el('panels').style.gridTemplateColumns=`repeat(${sets.length},1fr)`;
   el('panels').innerHTML=sets.map(s=>
     `<div class="panel"><div class="hd ${s.p.hd}">
-       <h2>${s.p.t} <em>${s.rows.length} ${s.p.unit}</em></h2>
-       <div class="cap">${s.p.c}</div></div>
+       <h2 class="sec">${s.p.t} <em>${s.rows.length} ${s.p.unit} · ${s.p.c}</em><span></span></h2></div>
      <div class="scroll">${s.p.ship?shipTableHTML(s.rows,s.p.empty):tableHTML(s.rows,s.p.empty)}</div></div>`).join('');
 
   const ks=[...days].sort();
@@ -6438,7 +6492,8 @@ async function load(){
     else {DATA[ps[i].k]= (TEAM==='delivery'&&ps[i].k==='mo')?norm(SNAP):[]; bad.push(ps[i].t);}
   });
   live=bad.length<ps.length;
-  if(!bad.length){el('stat').innerHTML='เชื่อมกับ Google Sheet แล้ว · <b>ข้อมูลสด</b>';}
+  const lastD=allRows().map(r=>r.date).filter(Boolean).sort().pop();
+  if(!bad.length){el('stat').innerHTML=lastD?`<b>ข้อมูลอัปเดตล่าสุด</b> ${showLong(lastD)}`:'เชื่อมกับ Google Sheet แล้ว · <b>ข้อมูลสด</b>';}
   else{el('stat').className='stat err';
     el('stat').innerHTML=`<b>ดึงไม่ได้: ${bad.join(', ')}</b>${live?' · ส่วนที่เหลือเป็นข้อมูลสด':''}`;}
   el('reload').disabled=false;fillFiltersReport();renderReport();stamp();
@@ -6484,7 +6539,7 @@ el('save').addEventListener('click',async()=>{
   sh.classList.add(mode==='slide'?'cap-slide':'cap-full');
   await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
   try{
-    const opt={backgroundColor:'#F3F1FA',useCORS:true};
+    const opt={backgroundColor:'#100D26',useCORS:true};
     if(mode==='slide')Object.assign(opt,{scale:2.4,width:1600,height:900,windowWidth:1640,windowHeight:940});
     else opt.scale=2;
     const c=await html2canvas(sh,opt);
