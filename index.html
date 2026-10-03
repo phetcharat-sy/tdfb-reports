@@ -6542,7 +6542,7 @@ function renderReport(){
       return {l:s.p.t,v:s.rows.length,cls:'c2',n:top.join(' · ')||'ออเดอร์'};}
     return {l:s.p.t.replace('ประจำวัน',''),v:s.rows.length,n:q?`รวม ${fmt(q)} ${s.p.k==='issue'?'order':'ชิ้น'}`:s.p.unit};
   });
-  if(TEAM==='warehouse') k.push({l:'วันที่มีงาน',v:days.size,
+  if(false) k.push({l:'วันที่มีงาน',v:days.size,
     n:days.size?`เฉลี่ย ${(total/days.size).toFixed(1)} รายการ/วัน`:'วัน'});
   if(TEAM==='delivery'){
     const kMO=k[0], kIS=k[1];      /* MO, แจ้งปัญหา (เรียงตาม panels ที่ไม่ใช่ออเดอร์) */
