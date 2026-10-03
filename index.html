@@ -6559,7 +6559,7 @@ function renderReport(){
     }
     k.push(kMO,kIS);
   }
-  if(TEAM!=='delivery'){
+  if(TEAM==='warehouse'){   /* v136: Admin ไม่ต้องมีการ์ดพบบ่อยที่สุด */
     const tg={};(sets.find(x=>x.p.k==='issue')||sets[0]).rows.forEach(r=>{const t=r.tag||'ไม่ระบุ';tg[t]=(tg[t]||0)+1;});
     const top=Object.entries(tg).sort((a,b)=>b[1]-a[1])[0];
     k.push({l:'พบบ่อยที่สุด',v:top?top[1]:0,n:top?top[0]:'—'});
