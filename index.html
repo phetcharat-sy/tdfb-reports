@@ -925,12 +925,12 @@ body.present .main{margin-left:0}
 /* เลื่อนทั้งหน้าแบบหน้า KPI (ไม่บีบให้อยู่ในจอเดียว) · โหมดพรีเซนต์ยังพอดีจอเหมือนเดิม */
 /* v-rptfill: ตารางยืดลงจนสุดจอพอดี ไม่เหลือที่ว่างด้านล่าง · เลื่อนดูในตาราง
    (body ถูก zoom ทั้งหน้า 100vh จึงต้องหารด้วยค่า zoom) */
-body:not(.present):not(.cap) #vRPT .wrap{height:calc(100vh / var(--z,1));min-height:0;overflow:hidden;
+body:not(.cap) #vRPT .wrap{height:calc(100vh / var(--z,1));min-height:0;overflow:hidden;
   padding:26px 6% 24px;display:flex;flex-direction:column}
-body:not(.present):not(.cap) #vRPT #shot{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
-body:not(.present):not(.cap) #vRPT .panels{flex:1;min-height:0;align-items:stretch}
-body:not(.present):not(.cap) #vRPT .panel{display:flex;flex-direction:column;min-height:0}
-body:not(.present):not(.cap) #vRPT .scroll{flex:1;min-height:0;overflow:auto}
+body:not(.cap) #vRPT #shot{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+body:not(.cap) #vRPT .panels{flex:1;min-height:0;align-items:stretch}
+body:not(.cap) #vRPT .panel{display:flex;flex-direction:column;min-height:0}
+body:not(.cap) #vRPT .scroll{flex:1;min-height:0;overflow:auto}
 #vRPT .empty{color:var(--mute);font-size:28px}
 #vRPT .foot{border-top:1px solid var(--page-line);color:var(--page-mute);font-size:24px}
 
@@ -967,6 +967,12 @@ body:not(.present):not(.cap) #vRPT .scroll{flex:1;min-height:0;overflow:auto}
 #vRPT tfoot td{font-size:40px}
 #vRPT .empty{padding:90px 20px}
 #vRPT .empty b{font-size:48px;color:var(--mute);font-weight:bold}
+
+/* v-rptpres: โหมดพรีเซนต์เหมือนหน้า KPI — แสดงแถบตัวกรอง ซ่อนปุ่มบันทึก/พรีเซนต์ */
+body.present #vRPT .toolbar{display:flex}
+body.present #vRPT #save,body.present #vRPT #present,body.present #vRPT #reload{display:none}
+#vRPT #shot.cap-full .panel{display:block}
+#vRPT #shot.cap-full .scroll{max-height:none;overflow:visible;height:auto}
 </style>
 </head>
 <body>
@@ -6204,6 +6210,8 @@ window.LOGI_SHIP={
   stats:list=>shipStats(list),
   isoWeek:k=>isoWeek(k)
 };
+/* v-rptshot: ให้หน้ารายงานใช้ตัวบันทึกรูปตัวเดียวกับหน้า KPI */
+window.LOGI_SHOT={run:o=>shotExport(o),menu:(b,f)=>shotMenu(b,f)};
 
 })();
 </script>
@@ -6569,26 +6577,22 @@ document.addEventListener('keydown',e=>{
   openCal(false);
 });
 
-/* ---------- บันทึกรูป ---------- */
-el('save').addEventListener('click',async()=>{
-  const b=el('save'),sh=el('shot'),mode=el('shotMode').value;
-  b.disabled=true;b.textContent='กำลังบันทึก…';
-  document.body.classList.add('cap');
-  sh.classList.add(mode==='slide'?'cap-slide':'cap-full');
-  await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
-  try{
-    const opt={backgroundColor:'#100D26',useCORS:true};
-    if(mode==='slide')Object.assign(opt,{scale:2.4,width:1600,height:900,windowWidth:1640,windowHeight:940});
-    else opt.scale=2;
-    const c=await html2canvas(sh,opt);
-    const a=document.createElement('a');
-    const f=[el('fy').value,el('fm').value,RWK.join('_'),FD.value].filter(Boolean).join('-');
-    a.download=`${TEAM}-report${f?'-'+f:''}-${new Date().toISOString().slice(0,10)}.png`;
-    a.href=c.toDataURL('image/png');a.click();
-  }catch(e){alert('บันทึกรูปไม่สำเร็จ: '+e.message);}
-  sh.classList.remove('cap-slide','cap-full');
-  document.body.classList.remove('cap');
-  b.disabled=false;b.textContent='บันทึกเป็นรูป';
+/* ---------- บันทึกรูป: ใช้ตัวบันทึกเดียวกับหน้า KPI (สไลด์ 16:9 / แยกทีละหัวข้อ / ทั้งหน้า / ทั้ง 2 แบบ)
+   ตอนถ่ายจะกางตารางออกเต็ม ไม่ให้รายการที่ต้องเลื่อนดูหายไปจากภาพ ---------- */
+el('save').addEventListener('click',()=>{
+  LOGI_SHOT.menu(el('save'),async mode=>{
+    const sh=el('shot');
+    const tag=[el('fy').value, el('fm').value&&MONTH_EN_R[+el('fm').value-1],
+               RWK.length&&('W'+RWK.join('_')), FD.value].filter(Boolean).join('-')||'all';
+    document.body.classList.add('cap'); sh.classList.add('cap-full');
+    await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+    try{
+      await LOGI_SHOT.run({root:sh,btn:el('save'),zoomEls:[document.body],mode,
+        name:`report-${TEAM}-${tag}`,title:el('title').textContent});
+    }finally{
+      sh.classList.remove('cap-full'); document.body.classList.remove('cap');
+    }
+  });
 });
 
 /* โหลดข้อมูลรายงานเมื่อเปิดแท็บครั้งแรกเท่านั้น */
