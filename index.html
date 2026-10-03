@@ -817,6 +817,63 @@ body.present .navArrow.l{left:20px}
 body.present .main{margin-left:0}
 @media(max-width:1100px){.main{margin-left:0}.side{z-index:70}}
 .side-foot{font-size:23.5px}
+
+/* v-rptfilter: แถบตัวกรองหน้ารายงานประจำวัน ให้หน้าตาเหมือนหน้า KPI */
+#vRPT .toolbar{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+#vRPT .btn{background:var(--teal);color:#fff;border:0;font-family:inherit;font-weight:bold; font-size:30.7px;padding:13px 24px;border-radius:7px;cursor:pointer}
+#vRPT .btn.ghost{background:var(--card);color:var(--ink);border:1px solid var(--line);font-weight:normal}
+#vRPT .btn:disabled{opacity:.5;cursor:default}
+#vRPT select{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:7px; padding:13px 16px;font-family:inherit;font-size:30.7px}
+#vRPT .btn:focus-visible, #vRPT select:focus-visible{outline:2px solid var(--plum);outline-offset:2px}
+#vRPT .stat{color:var(--mute);font-size:28.5px;margin-left:auto}
+#vRPT .stat b{color:var(--teal-d)}
+#vRPT .stat.err b{color:var(--rose)}
+#vRPT .toolbar{background:var(--card);border:1px solid var(--line);border-radius:20px; padding:20px 24px;gap:16px;align-items:flex-end; box-shadow:0 1px 2px rgba(20,24,40,.05),0 10px 28px rgba(20,24,40,.07)}
+#vRPT .kf{display:flex;flex-direction:column;gap:7px}
+#vRPT .kf>label{font-size:19.4px;letter-spacing:.16em;color:var(--mute);text-transform:uppercase; font-family:'JetBrains Mono',monospace,Tahoma;font-weight:bold}
+#vRPT .kcal{position:relative}
+#vRPT #fdBtn[data-on="1"]{background:var(--teal);color:#fff;border-color:var(--teal);font-weight:bold}
+#vRPT select, #vRPT #fdBtn{border:1.5px solid var(--line);border-radius:12px; padding:14px 18px;font-size:27.4px;background:var(--soft);min-width:150px; transition:border-color .14s ease,box-shadow .14s ease,background .14s ease}
+#vRPT select:hover, #vRPT #fdBtn:hover{border-color:var(--teal);background:var(--card)}
+#vRPT select:focus, #vRPT #fdBtn:focus-visible{outline:none;border-color:var(--teal-d); box-shadow:0 0 0 4px rgba(13,148,136,.16)}
+#vRPT #fdBtn[data-on="1"]{background:linear-gradient(100deg,var(--teal-d),#14B8A6); color:#fff;border-color:var(--teal-d);box-shadow:0 4px 14px rgba(15,118,110,.35)}
+#vRPT .kcal-p{position:absolute;top:calc(100% + 6px);left:0;z-index:60;width:300px;background:var(--card); border:1px solid var(--line);border-radius:12px;padding:12px;box-shadow:0 14px 36px rgba(20,24,40,.18)}
+#vRPT .kcal-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px; font-size:21.7px;font-weight:bold}
+#vRPT .kcal-h .nav{background:var(--soft);border:1px solid var(--line);border-radius:8px;width:34px;height:34px; font-size:21.7px;line-height:1;color:var(--ink);cursor:pointer;font-family:inherit}
+#vRPT .kcal-h .nav:disabled{opacity:.3;cursor:default}
+#vRPT .kcal-dow{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px}
+#vRPT .kcal-dow span{text-align:center;font-size:14.8px;color:var(--mute); font-family:'JetBrains Mono',monospace,Tahoma}
+#vRPT .kcal-g{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+#vRPT .kcal-g button{aspect-ratio:1;border:0;background:none;border-radius:8px;cursor:pointer; font-family:inherit;font-size:17.1px;color:#B6BBC5;position:relative;padding:0}
+#vRPT .kcal-g button.has{color:var(--ink);background:#EDF3F3;font-weight:bold}
+#vRPT .kcal-g button.has:hover{background:#D9E7E6}
+#vRPT .kcal-g button.sel{background:var(--teal);color:#fff}
+#vRPT .kcal-g button:disabled{cursor:default}
+#vRPT .kcal-g .pad{visibility:hidden}
+#vRPT .kcal-f{display:flex;justify-content:space-between;align-items:center;margin-top:10px; padding-top:9px;border-top:1px solid var(--line);font-size:16px;color:var(--mute)}
+#vRPT .kcal-f .dot{width:6px;height:6px;border-radius:50%;background:var(--teal); display:inline-block;margin-right:6px}
+#vRPT .kcal-f .lnk{background:none;border:0;color:var(--teal);font-family:inherit;font-size:16px; cursor:pointer;text-decoration:underline;padding:0}
+#vRPT .btn, #vRPT select{font-size:33px}
+#vRPT .stat{font-size:31px}
+#vRPT .kf>label{font-size:23px}
+#vRPT .wsel{position:relative}
+#vRPT .wsel-p{position:absolute;top:calc(100% + 6px);left:0;z-index:60; min-width:260px;max-height:420px;overflow:auto;background:var(--card); border:1px solid var(--line);border-radius:12px;padding:8px; box-shadow:0 14px 36px rgba(20,24,40,.18)}
+#vRPT .wsel-p button{display:flex;align-items:center;width:100%;text-align:left; background:none;border:0;font-family:inherit;font-size:30px;color:var(--ink); padding:10px 14px;border-radius:9px;cursor:pointer;white-space:nowrap;gap:4px}
+#vRPT .wsel-p button:hover{background:#EDF3F3}
+#vRPT .wsel-p button.on{background:#EAF2F1;color:var(--ink);font-weight:bold}
+#vRPT .wsel-p button .cnt{margin-left:auto;font-size:26px;color:var(--mute);font-weight:normal; font-variant-numeric:tabular-nums}
+#vRPT .wsel-p button.on .cnt{color:var(--teal)}
+#vRPT .wsel-p .ck{display:inline-flex;align-items:center;justify-content:center; width:26px;height:26px;margin-right:12px;flex:0 0 auto; border:2px solid var(--line);border-radius:6px;background:var(--card); font-style:normal;font-size:19px;line-height:1;color:var(--teal);font-weight:bold}
+#vRPT .wsel-p .ck.on{border-color:var(--teal)}
+#vRPT .wsel-h{display:flex;align-items:center;justify-content:space-between;gap:12px; padding:6px 14px 10px;font-size:24px;color:var(--mute); border-bottom:1px solid var(--line);margin-bottom:6px}
+#vRPT .wsel-h button{display:inline;width:auto;padding:4px 10px;font-size:25px; color:var(--teal);font-weight:bold}
+#vRPT .wsel-f{padding:10px 14px 4px;font-size:23px;color:var(--mute); border-top:1px solid var(--line);margin-top:6px}
+#vRPT .wsel-p::-webkit-scrollbar{width:12px}
+#vRPT .wsel-p::-webkit-scrollbar-thumb{background:#C6CCD6;border-radius:6px;border:3px solid #fff}
+#vRPT #clear,#vRPT #reload,#vRPT #present{border-radius:12px;padding:14px 20px;font-size:25.1px}
+#vRPT #save{border-radius:12px;padding:14px 24px;font-size:25.1px;background:linear-gradient(100deg,var(--teal-d),#14B8A6);box-shadow:0 4px 14px rgba(15,118,110,.35)}
+#vRPT #shotMode{font-size:25.1px;min-width:0}
+#vRPT .toolbar{margin-bottom:12px;flex:none}
 </style>
 </head>
 <body>
@@ -937,29 +994,37 @@ body.present .main{margin-left:0}
 <button class="btn ghost exit" id="kExitPresent">ออกจากโหมดพรีเซนต์ (Esc)</button>
 
 <div class="toolbar">
-  <select id="fy" autocomplete="off"><option value="">ทุกปี</option></select>
-  <select id="fm" autocomplete="off"><option value="">ทุกเดือน</option></select>
-  <select id="fw" autocomplete="off"><option value="">ทุกสัปดาห์</option></select>
-  <div class="calwrap">
-    <button class="btn ghost" id="fdBtn" aria-haspopup="dialog" aria-expanded="false">ทุกวัน</button>
-    <div class="cal" id="cal" role="dialog" aria-label="เลือกวัน" hidden>
-      <div class="cal-h">
-        <button type="button" class="nav" id="calPrev" aria-label="เดือนก่อนหน้า">‹</button>
-        <div id="calTitle"></div>
-        <button type="button" class="nav" id="calNext" aria-label="เดือนถัดไป">›</button>
+  <div class="kf"><label>YEAR</label>
+    <select id="fy" autocomplete="off"><option value="">All</option></select></div>
+  <div class="kf"><label>MONTH</label>
+    <select id="fm" autocomplete="off"><option value="">All</option></select></div>
+  <div class="kf"><label>WEEK</label>
+    <div class="wsel">
+      <button class="btn ghost" id="fwBtn" aria-haspopup="listbox" aria-expanded="false">All</button>
+      <div class="wsel-p" id="fwPop" role="listbox" hidden></div>
+    </div></div>
+  <div class="kf"><label>DAY</label>
+    <div class="kcal">
+      <button class="btn ghost" id="fdBtn" aria-haspopup="dialog" aria-expanded="false">All</button>
+      <div class="kcal-p" id="cal" role="dialog" aria-label="เลือกวัน" hidden>
+        <div class="kcal-h">
+          <button type="button" class="nav" id="calPrev" aria-label="เดือนก่อนหน้า">‹</button>
+          <div id="calTitle"></div>
+          <button type="button" class="nav" id="calNext" aria-label="เดือนถัดไป">›</button>
+        </div>
+        <div class="kcal-dow"><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span><span>Su</span></div>
+        <div class="kcal-g" id="calGrid"></div>
+        <div class="kcal-f"><span><i class="dot"></i>has data</span>
+          <button type="button" class="lnk" id="calAll">Show all days</button></div>
       </div>
-      <div class="cal-dow"><span>จ</span><span>อ</span><span>พ</span><span>พฤ</span><span>ศ</span><span>ส</span><span>อา</span></div>
-      <div class="cal-g" id="calGrid"></div>
-      <div class="cal-f"><span><i class="dot"></i>มีงาน</span>
-        <button type="button" class="lnk" id="calAll">แสดงทุกวัน</button></div>
-    </div>
-  </div>
-  <button class="btn ghost" id="clear">ล้างตัวกรอง</button>
+    </div></div>
+  <button class="btn ghost" id="clear">Clear filters</button>
   <button class="btn ghost" id="reload">ดึงข้อมูลใหม่</button>
-  <select id="shotMode" autocomplete="off">
-    <option value="slide">รูป 16:9 (ขนาดสไลด์)</option>
-    <option value="full">รูปเต็มทุกรายการ</option>
-  </select>
+  <div class="kf"><label>SHOT</label>
+    <select id="shotMode" autocomplete="off">
+      <option value="slide">รูป 16:9 (ขนาดสไลด์)</option>
+      <option value="full">รูปเต็มทุกรายการ</option>
+    </select></div>
   <button class="btn" id="save">บันทึกเป็นรูป</button>
   <button class="btn ghost" id="present">🖥 โหมดพรีเซนต์</button>
   <div class="stat" id="stat">กำลังดึงข้อมูล…</div>
@@ -6144,8 +6209,13 @@ async function grab(p){
 let TEAM='delivery',DATA={},live=false,calYM=null;
 const norm=a=>a.map(r=>{const d=r.date.includes('-')?r.date:toKey(r.date);
   return {...r,date:d,y:d.slice(0,4),m:d.slice(5,7),tag:r.tag||''};});
-const match=r=>{const y=$('fy').value,m=$('fm').value,w=$('fw').value,d=FD.value;
-  return (!y||r.y===y)&&(!m||r.m===m)&&(!w||String(r.wk)===w)&&(!d||r.date===d);};
+let RWK=[], RWK_OPTS=[], RYEAR_INIT=false;   /* WEEK เลือกได้หลายค่า เหมือนหน้า KPI */
+const MONTH_EN_R=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const showLong=k=>{if(!k)return '—';const[y,m,d]=k.split('-');return `${d} ${MONTHS[+m-1]} ${y}`;};
+const match=r=>{const y=$('fy').value,m=$('fm').value,d=FD.value;
+  if(y&&r.y!==y)return false;
+  if(d)return r.date===d;
+  return (!m||r.m===m)&&(!RWK.length||RWK.includes(String(r.wk)));};
 const cfg=()=>TEAMS[TEAM];
 let SHIPROWS=[];   /* ออเดอร์ทุกแถวจากชีต Packing (ใช้นับยอด) */
 const allRows=()=>cfg().panels.filter(p=>!p.ship).flatMap(p=>DATA[p.k]||[])
@@ -6259,7 +6329,7 @@ function renderReport(){
   const bits=[];
   if($('fy').value)bits.push('ปี '+$('fy').value);
   if($('fm').value)bits.push(MONTHS[+$('fm').value-1]);
-  if($('fw').value)bits.push('สัปดาห์ '+$('fw').value);
+  if(RWK.length)bits.push(RWK.length===1?'สัปดาห์ '+RWK[0]:RWK.length+' สัปดาห์');
   if(FD.value)bits.push(show(FD.value));
   el('chip').style.display=bits.length?'inline-block':'none';
   el('chip').textContent=bits.join(' · ');
@@ -6274,12 +6344,19 @@ function opts(sel,list,label,all){
 function fillFiltersReport(){
   const rows=allRows().filter(r=>r.date);
   const uniq=(a,f)=>[...new Set(a.map(f).filter(Boolean))].sort();
-  opts($('fy'),uniq(rows,r=>r.y),v=>'ปี '+v,'ทุกปี');
+  const years=uniq(rows,r=>r.y).sort((a,b)=>b.localeCompare(a));
+  opts($('fy'),years,v=>v,'All');
+  /* ตั้งต้นที่ปีปัจจุบันเหมือนหน้า KPI */
+  if(!RYEAR_INIT&&years.length){RYEAR_INIT=true;
+    if(!$('fy').value){const now=String(new Date().getFullYear());$('fy').value=years.includes(now)?now:years[0];}}
   const y=$('fy').value,byY=rows.filter(r=>!y||r.y===y);
-  opts($('fm'),uniq(byY,r=>r.m),v=>MONTHS[+v-1],'ทุกเดือน');
+  opts($('fm'),uniq(byY,r=>r.m),v=>MONTH_EN_R[+v-1],'All');
   const m=$('fm').value,byM=byY.filter(r=>!m||r.m===m);
-  opts($('fw'),uniq(byM,r=>r.wk?String(r.wk):'').sort((a,b)=>a-b),v=>'สัปดาห์ '+v,'ทุกสัปดาห์');
-  const w=$('fw').value,byW=byM.filter(r=>!w||String(r.wk)===w);
+  const wc={};byM.forEach(r=>{if(r.wk){const k=String(r.wk);wc[k]=(wc[k]||0)+1;}});
+  RWK_OPTS=Object.keys(wc).sort((a,b)=>a-b).map(w=>[w,wc[w]]);
+  RWK=RWK.filter(w=>wc[w]);
+  buildWeekPopR();
+  const byW=byM.filter(r=>!RWK.length||RWK.includes(String(r.wk)));
   opts(FD,uniq(byW,r=>r.date),v=>show(v),'ทุกวัน');
 }
 
@@ -6294,7 +6371,7 @@ function drawCal(){
   const i=ms.indexOf(calYM);
   el('calPrev').disabled=i<=0;el('calNext').disabled=i>=ms.length-1;
   const [y,m]=calYM.split('-').map(Number);
-  el('calTitle').textContent=`${MONTHS[m-1]} ${y}`;
+  el('calTitle').textContent=`${MONTH_EN_R[m-1]} ${y}`;
   const pad=(new Date(y,m-1,1).getDay()+6)%7, days=new Date(y,m,0).getDate();
   let out='';
   for(let p=0;p<pad;p++)out+='<button class="pad" disabled tabindex="-1"></button>';
@@ -6305,9 +6382,35 @@ function drawCal(){
   }
   el('calGrid').innerHTML=out;syncBtn();
 }
-function syncBtn(){const b=el('fdBtn');b.textContent=FD.value?show(FD.value):'ทุกวัน';b.dataset.on=FD.value?'1':'0';}
+function syncBtn(){const b=el('fdBtn');b.textContent=FD.value?showLong(FD.value):'All';b.dataset.on=FD.value?'1':'0';}
+/* ---------- ตัวเลือก WEEK แบบติ๊กได้หลายค่า ---------- */
+function buildWeekPopR(){
+  const pop=el('fwPop'),btn=el('fwBtn');
+  pop.innerHTML=`<div class="wsel-h"><span>ติ๊กได้หลายค่า</span>
+      <span><button type="button" data-all="1">ทั้งหมด</button>
+      <button type="button" data-clear="1">ล้าง</button></span></div>`
+    +RWK_OPTS.map(([w,n])=>{const on=RWK.includes(w);
+      return `<button type="button" data-v="${w}" class="${on?'on':''}">
+        <i class="ck${on?' on':''}">${on?'✓':''}</i>Week ${w}
+        <b class="cnt">${fmt(n)}</b></button>`;}).join('')
+    +`<div class="wsel-f">ไม่เลือก = แสดงทั้งหมด</div>`;
+  btn.textContent=!RWK.length?'All':RWK.length===1?('Week '+RWK[0]):(RWK.length+' สัปดาห์');
+  btn.dataset.on=RWK.length?'1':'0';
+  btn.disabled=!RWK_OPTS.length;
+}
+function openWeekPopR(on){el('fwPop').hidden=!on;el('fwBtn').setAttribute('aria-expanded',on?'true':'false');
+  if(on){const c=el('fwPop').querySelector('button.on');if(c)c.scrollIntoView({block:'center'});}}
+el('fwBtn').addEventListener('click',e=>{e.stopPropagation();openCal(false);openWeekPopR(el('fwPop').hidden);});
+el('fwPop').addEventListener('click',e=>{e.stopPropagation();
+  if(e.target.closest('[data-all]'))RWK=RWK_OPTS.map(o=>o[0]);
+  else if(e.target.closest('[data-clear]'))RWK=[];
+  else{const b=e.target.closest('button[data-v]');if(!b)return;const v=b.dataset.v;
+    RWK=RWK.includes(v)?RWK.filter(x=>x!==v):[...RWK,v];}
+  FD.value='';calYM=null;fillFiltersReport();renderReport();});
+document.addEventListener('click',()=>openWeekPopR(false));
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){openWeekPopR(false);openCal(false);}});
 function openCal(o){el('cal').hidden=!o;el('fdBtn').setAttribute('aria-expanded',o?'true':'false');if(o)drawCal();}
-el('fdBtn').addEventListener('click',e=>{e.stopPropagation();openCal(el('cal').hidden);});
+el('fdBtn').addEventListener('click',e=>{e.stopPropagation();openWeekPopR(false);openCal(el('cal').hidden);});
 el('cal').addEventListener('click',e=>{e.stopPropagation();
   const b=e.target.closest('button[data-k]');if(!b)return;
   FD.value=FD.value===b.dataset.k?'':b.dataset.k;openCal(false);fillFiltersReport();renderReport();});
@@ -6322,7 +6425,7 @@ function stamp(){const d=new Date();
     +(live?'':' · ข้อมูลสำรอง');}
 
 async function load(){
-  ['fy','fm','fw'].forEach(i=>el(i).value='');FD.value='';calYM=null;
+  ['fy','fm'].forEach(i=>el(i).value='');RWK=[];RYEAR_INIT=false;FD.value='';calYM=null;
   el('stat').className='stat';el('stat').textContent='กำลังดึงข้อมูล…';el('reload').disabled=true;
   const ps=cfg().panels;
   const res=await Promise.allSettled(ps.map(p=>p.ship
@@ -6352,8 +6455,10 @@ function team(name){
 document.querySelectorAll('.teams button').forEach(b=>
   b.addEventListener('click',()=>team(b.dataset.team)));
 
-['fy','fm','fw'].forEach(i=>el(i).addEventListener('change',()=>{fillFiltersReport();renderReport();}));
-el('clear').addEventListener('click',()=>{['fy','fm','fw'].forEach(i=>el(i).value='');FD.value='';calYM=null;fillFiltersReport();renderReport();});
+['fy','fm'].forEach(i=>el(i).addEventListener('change',()=>{
+  if(i==='fy')el('fm').value='';
+  RWK=[];FD.value='';calYM=null;fillFiltersReport();renderReport();}));
+el('clear').addEventListener('click',()=>{['fy','fm'].forEach(i=>el(i).value='');RWK=[];FD.value='';calYM=null;fillFiltersReport();renderReport();});
 el('reload').addEventListener('click',load);
 
 /* ---------- โหมดพรีเซนต์ ---------- */
@@ -6384,7 +6489,7 @@ el('save').addEventListener('click',async()=>{
     else opt.scale=2;
     const c=await html2canvas(sh,opt);
     const a=document.createElement('a');
-    const f=[el('fy').value,el('fm').value,el('fw').value,FD.value].filter(Boolean).join('-');
+    const f=[el('fy').value,el('fm').value,RWK.join('_'),FD.value].filter(Boolean).join('-');
     a.download=`${TEAM}-report${f?'-'+f:''}-${new Date().toISOString().slice(0,10)}.png`;
     a.href=c.toDataURL('image/png');a.click();
   }catch(e){alert('บันทึกรูปไม่สำเร็จ: '+e.message);}
