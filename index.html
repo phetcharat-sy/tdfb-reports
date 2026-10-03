@@ -6287,7 +6287,7 @@ const TEAMS={
        ship:true, empty:'ไม่มีออเดอร์ค้างส่ง'},
       {k:'mo',   t:'MO ประจำวัน',      c:'รายการจัดทำ MO Delivery', hd:'a', unit:'รายการ',
        sheet:JOB, gid:'0',          empty:'ไม่มีรายการทำ MO'},
-      {k:'issue',t:'แจ้งปัญหาประจำวัน', c:'ป้ายสี = เกณฑ์ · → แผนกที่รับเรื่อง', hd:'c', unit:'เคส',
+      {k:'issue',t:'แจ้งปัญหาประจำวัน', c:'ป้ายสี = เกณฑ์', hd:'c', unit:'เคส',
        sheet:OPS, gid:DLV_GID, form:true, showDept:true, empty:'ไม่พบปัญหา'}
     ]
   },
@@ -6386,7 +6386,7 @@ function toFormRows(csv){
     const meta=[box,rnd].filter(Boolean).join(' · ');
     const row={date:d,y:d.slice(0,4),m:d.slice(5,7),wk:isoWk(d),tag,raw:det,qty:null};
     row.dept=DEPT_OF(row);
-    row.html=esc(det||tag).replace(/\n+/g,' · ')+(meta?`<br><span style="opacity:.6;font-size:.85em">${esc(meta)}</span>`:'');
+    row.html=esc(det||tag).replace(/\n+/g,' · ');
     return row;
   }).filter(Boolean).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
 }
@@ -6400,7 +6400,7 @@ async function grab(p){
   if(!p.form)return toRows(txt);
   return toFormRows(txt)
     .filter(r=>!p.dept||r.dept===p.dept)
-    .map(r=>({...r,item:r.html+(p.showDept?`<br><span class="tag" style="font-size:.78em;background:#F3EEFE;border-color:#E2D7FB;color:#6D28D9">→ ${DEPT_NAME[r.dept]}</span>`:'')}));
+    .map(r=>({...r,item:r.html}));
 }
 
 let TEAM='delivery',DATA={},live=false,calYM=null;
@@ -6449,13 +6449,15 @@ function shipTableHTML(rows,empty){
     <tfoot><tr><td colspan="3">รวมค้างส่ง ${rows.length} ออเดอร์</td></tr></tfoot></table>`;
 }
 
-function tableHTML(rows,empty){
+function tableHTML(rows,empty,noQty){
   if(!rows.length)return `<div class="empty"><b>${empty}</b></div>`;
   let last='',b='';
   rows.forEach(r=>{const n=r.date!==last;
     b+=`<tr class="${n?'newday':''}"><td class="d">${n?show(r.date):''}</td>
         <td>${r.tag?`<span class="tag">${r.tag}</span><br>`:''}${r.item}</td>
-        <td class="num">${r.qty!=null?fmt(r.qty):'—'}</td></tr>`;last=r.date;});
+        ${noQty?'':`<td class="num">${r.qty!=null?fmt(r.qty):'—'}</td>`}</tr>`;last=r.date;});
+  if(noQty)return `<table><thead><tr><th style="width:112px">วันที่พบปัญหา</th><th>เกณฑ์ · รายละเอียด</th></tr></thead>
+    <tbody>${b}</tbody><tfoot><tr><td colspan="2">รวม ${rows.length} เคส</td></tr></tfoot></table>`;
   const sum=rows.reduce((s,r)=>s+(r.qty||0),0);
   const blank=rows.filter(r=>r.qty==null).length;
   return `<table><thead><tr><th style="width:112px">วันที่</th><th>รายละเอียด</th>
@@ -6517,7 +6519,7 @@ function renderReport(){
   el('panels').innerHTML=sets.map(s=>
     `<div class="panel"><div class="hd ${s.p.hd}">
        <h2 class="sec">${s.p.t} <em>${s.rows.length} ${s.p.unit} · ${s.p.c}</em><span></span></h2></div>
-     <div class="scroll">${s.p.ship?shipTableHTML(s.rows,s.p.empty):tableHTML(s.rows,s.p.empty)}</div></div>`).join('');
+     <div class="scroll">${s.p.ship?shipTableHTML(s.rows,s.p.empty):tableHTML(s.rows,s.p.empty,s.p.form)}</div></div>`).join('');
 
   const ks=[...new Set([...days,...shipSel.map(r=>r.date)])].filter(Boolean).sort();
   el('period').textContent=ks.length
