@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>TDFB Operations Dashboard</title>
+<title>Logistics Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600;700&family=Baloo+2:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -19,7 +19,10 @@
   background-image:radial-gradient(900px 500px at 6% -6%,rgba(13,148,136,.05),transparent 62%),
                    radial-gradient(700px 460px at 100% 4%,rgba(124,58,237,.05),transparent 58%);
   background-attachment:fixed;
-  font-family:'Baloo 2','Mitr',-apple-system,BlinkMacSystemFont,sans-serif;font-size:27.7px;line-height:1.6;zoom:1.15}#vKPI .wrap{max-width:none;margin:0 auto;padding:26px 6% 44px}#vKPI .toolbar{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-bottom:14px}#vKPI .btn{background:var(--teal);color:#fff;border:0;font-family:inherit;font-weight:bold;
+  font-family:'Baloo 2','Mitr',-apple-system,BlinkMacSystemFont,sans-serif;font-size:27.7px;line-height:1.6;zoom:1.3}
+/* v-size: ค่าฐาน 1.3 (จอกว้าง 2380px) · ตอนใช้งานจริงสคริปต์ v-fit ท้ายไฟล์ปรับตามความกว้างจอ · โหมดพรีเซนต์คงขนาดเดิม */
+body.present{zoom:1.15}
+#vKPI .wrap{max-width:none;margin:0 auto;padding:26px 6% 44px}#vKPI .toolbar{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-bottom:14px}#vKPI .btn{background:var(--teal);color:#fff;border:0;font-family:inherit;font-weight:bold;
   font-size:30.7px;padding:13px 24px;border-radius:7px;cursor:pointer}#vKPI .btn.ghost{background:var(--card);color:var(--ink);border:1px solid var(--line);font-weight:normal}#vKPI .btn:disabled{opacity:.5;cursor:default}#vKPI select{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:7px;
   padding:13px 16px;font-family:inherit;font-size:30.7px}#vKPI .btn:focus-visible, #vKPI select:focus-visible{outline:2px solid var(--plum);outline-offset:2px}#vKPI .stat{color:var(--mute);font-size:28.5px;margin-left:auto}#vKPI .stat b{color:var(--teal-d)}#vKPI .stat.err b{color:var(--rose)}#vKPI .tabs{display:flex;gap:6px;background:var(--soft);padding:5px;border-radius:11px;width:fit-content;margin-bottom:14px}#vKPI .tabs a{text-decoration:none;font-size:29.2px;padding:10px 26px;border-radius:8px;color:var(--mute)}#vKPI .tabs a.on{background:var(--teal);color:#fff;font-weight:bold}#vKPI #kShot{background:transparent;border:0;box-shadow:none;padding:8px 0 40px;
   box-shadow:0 1px 3px rgba(20,24,40,.07),0 8px 24px rgba(20,24,40,.05)}#vKPI header{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;
@@ -148,7 +151,7 @@ body.sopmode.present #vKPI .sopframe{height:100vh}
 #vKPI .pkrank{display:flex;flex-direction:column;gap:10px;width:100%}
 #vKPI .rrow{display:grid;grid-template-columns:64px minmax(150px,1.3fr) 3fr auto;
   align-items:center;gap:16px;padding:10px 6px;border-radius:12px}
-#vKPI .rrow.top{background:var(--soft)}
+#vKPI .rrow.podium{background:var(--soft)}
 #vKPI .rno{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;
   justify-content:center;font-size:28px;font-weight:800;color:#fff;background:#B9BFC9}
 #vKPI .rno.g{background:linear-gradient(160deg,#E8B93E,#C08A16)}
@@ -156,11 +159,17 @@ body.sopmode.present #vKPI .sopframe{height:100vh}
 #vKPI .rno.b{background:linear-gradient(160deg,#C98B5E,#9C6236)}
 #vKPI .rname{font-size:29px;font-weight:700;color:var(--ink);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#vKPI .rrow.top .rname{font-size:31px;font-weight:800}
+#vKPI .rrow.podium .rname{font-weight:800}
+#vKPI .rval em{font-style:normal;font-weight:600;color:var(--mute);font-size:.8em;margin-left:6px;
+  display:inline-block;min-width:3.6em}
+#vKPI .rtot{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;padding:4px 6px 12px;
+  border-bottom:1px solid var(--line);margin-bottom:4px;font-size:29px;color:var(--ink)}
+#vKPI .rtot b{font-size:38px}
+#vKPI .rtot span{margin-left:auto;font-size:23px;color:var(--mute)}
 #vKPI .rbar{background:#EDEFF3;border-radius:8px;height:20px;overflow:hidden}
 #vKPI .rbar i{display:block;height:100%;border-radius:8px}
 #vKPI .rval{font-size:31px;font-weight:800;color:var(--ink);
-  font-variant-numeric:tabular-nums;min-width:150px;text-align:right}
+  font-variant-numeric:tabular-nums;min-width:240px;text-align:right;white-space:nowrap}
 #vKPI .pkstations{display:flex;flex-wrap:wrap;gap:18px;justify-content:center;
   align-content:center;padding:14px 0;flex:1}
 #vKPI .pkgauge{width:45%;min-width:190px;display:flex;flex-direction:column;align-items:center}
@@ -270,6 +279,11 @@ body.sopmode.present #vKPI .sopframe{height:100vh}
   box-shadow:0 2px 6px rgba(20,24,40,.10),0 16px 38px rgba(20,24,40,.12)}#vKPI .big.a{background:linear-gradient(140deg,#4AA3A0 0%,var(--teal-d) 100%)}#vKPI .big.b{background:linear-gradient(140deg,#7D6DB8 0%,var(--plum-d) 100%)}#vKPI .big .l{font-size:37.6px;opacity:.95}#vKPI .big .v{font-size:114px;font-weight:bold;line-height:1.05;letter-spacing:-1px;margin-top:4px}#vKPI .big .n{font-size:29.6px;opacity:.9;margin-top:4px}/* KPI เรียงบรรทัดละใบ · จัดเนื้อหาแนวนอนไม่ให้การ์ดสูงเกินไป */
 #vKPI .kpis{display:grid;grid-template-columns:1fr;gap:6px}
 #vKPI .kpis>.subsec{grid-column:1/-1;margin-top:26px}
+/* v-2col: หน้า KPI ทุกแผนก บรรทัดละ 2 KPI */
+#vKPI #ovBox .kpis{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:28px}
+#vKPI .kcell{display:flex;flex-direction:column;min-width:0}
+#vKPI .kcell>.kpi{flex:1}
+@media(max-width:1000px){#vKPI #ovBox .kpis{grid-template-columns:1fr}}
 #vKPI .kpi-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;
   padding:0 6px;margin-top:20px}
 #vKPI .kpi-head b{font-size:38px;font-weight:bold;color:var(--page-ink)}
@@ -342,6 +356,13 @@ body.sopmode.present #vKPI .sopframe{height:100vh}
 #vKPI .fbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:0 0 16px}
 #vKPI .fbar .fl{font-size:25px;color:var(--mute);letter-spacing:.12em;
   text-transform:uppercase;margin-right:6px}
+/* v-fl2: ป้ายตัวกรองย่อย (พนักงานแพ็ค · มุมมอง · ประเภท · ช่องทางขาย ฯลฯ) อยู่บนพื้นเข้ม
+   เดิมใช้สีเทาเข้ม (--mute) แทบมองไม่เห็น → ใช้สีอ่อนบนพื้นเข้ม ตัวใหญ่ขึ้น หนาขึ้น */
+#vKPI .fbar .fl{font-size:30px;color:var(--page-ink);font-weight:bold;letter-spacing:.04em;
+  margin-right:10px;opacity:1}
+#vKPI .fbar .ddbtn{font-size:30px;padding:10px 26px;border-radius:30px;font-weight:bold}
+#vKPI .fbar button{font-size:30px}
+#vKPI .cpanel .fbar .fl,#vKPI .scard .fbar .fl{color:var(--ink)}   /* ถ้าอยู่บนการ์ดสีอ่อน ใช้สีเข้ม */
 #vKPI .fbar button{font-family:inherit;font-size:28px;padding:9px 24px;border-radius:30px;
   border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;
   transition:background .12s ease,color .12s ease}
@@ -711,7 +732,10 @@ body.cap .wrap{height:auto;overflow:visible;padding:0}#vRPT #shot.cap-slide{widt
   font-size:27.4px;cursor:pointer}
 body.present .side,body.present .side-toggle{display:none}
 /* ---------- โหมดพรีเซนต์: หน้า KPI ---------- */
-body.present #vKPI .toolbar{display:none}
+/* v-pres3: โหมดพรีเซนต์แสดงแถบตัวกรองด้วย (ซ่อนเฉพาะปุ่มที่ไม่ต้องใช้ตอนนำเสนอ) */
+body.present #vKPI .toolbar{display:flex}
+body.present #vKPI #kSave,body.present #vKPI #kPresent,body.present #vKPI #kReload{display:none}
+body.sopmode.present #vKPI .toolbar{display:none}
 body.present #vKPI .exit{display:block}
 body.present #vKPI .wrap{padding:16px 3% 20px;max-width:none}
 body.present #vKPI #kShot{padding:26px 30px}
@@ -765,6 +789,33 @@ body.present #vKPI .tscroll{max-height:none}
 .side .brand span{font-size:24.5px}
 .sidenav .grp{font-size:24.5px}
 .sidenav button{font-size:38px;padding:19px 20px}
+/* v-usize: ปุ่มปรับขนาด A− 100% A+ ในเมนูซ้าย */
+.usize{display:flex;align-items:center;gap:10px;padding:18px 22px;border-top:1px solid rgba(255,255,255,.1)}
+.usize .ul{font-size:26px;color:#A9A3C9;margin-right:auto;letter-spacing:.06em}
+.usize button{font:inherit;font-size:28px;font-weight:bold;color:#EAF0F0;background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:8px 18px;cursor:pointer;min-width:74px}
+.usize button:hover{background:rgba(62,142,140,.55)}
+.usize #usizeV{min-width:120px;font-variant-numeric:tabular-nums}
+/* v-nav: ปุ่มลูกศรซ้าย-ขวาเปลี่ยนหน้า + ป้ายชื่อหน้าตอนเปลี่ยน */
+.navArrow{position:fixed;top:50%;transform:translateY(-50%);z-index:90;width:96px;height:150px;
+  border:0;border-radius:24px;background:rgba(28,24,54,.55);color:#fff;font-size:110px;line-height:1;
+  cursor:pointer;opacity:.35;transition:opacity .15s,background .15s;font-family:inherit;padding:0 0 14px}
+.navArrow:hover,.navArrow:focus-visible{opacity:1;background:rgba(15,118,110,.92);outline:none}
+.navArrow.l{left:560px}.navArrow.r{right:20px}
+body.present .navArrow.l{left:20px}
+@media(max-width:1100px){.navArrow.l{left:10px}}
+#navToast{position:fixed;left:50%;bottom:60px;transform:translate(-50%,20px);z-index:95;
+  background:rgba(28,24,54,.94);color:#fff;border-radius:22px;padding:22px 40px;
+  display:flex;gap:24px;align-items:baseline;font-size:44px;opacity:0;pointer-events:none;
+  transition:opacity .2s,transform .2s;box-shadow:0 12px 40px rgba(0,0,0,.35)}
+#navToast span{font-size:30px;color:#8FD6D3}
+#navToast.show{opacity:1;transform:translate(-50%,0)}
+/* v-side3: เมนูซ้ายตรึงอยู่กับที่ เลื่อนหน้าแล้วขยับเฉพาะเนื้อหาด้านขวา
+   (เดิมใช้ sticky + height:100vh แต่ body มี zoom ทำให้ความสูงเกินจอ เมนูเลยเลื่อนตาม) */
+.side{position:fixed;left:0;top:0;bottom:0;height:auto;z-index:60}
+.main{margin-left:540px}
+body.present .main{margin-left:0}
+@media(max-width:1100px){.main{margin-left:0}.side{z-index:70}}
 .side-foot{font-size:23.5px}
 </style>
 </head>
@@ -773,7 +824,7 @@ body.present #vKPI .tscroll{max-height:none}
 <button class="side-toggle" id="sideToggle" aria-label="เปิด/ปิดเมนู">☰</button>
 <div class="shell">
   <aside class="side" id="side">
-    <div class="brand"><b>TDFB</b><span>Operations</span></div>
+    <div class="brand"><b>Logistics</b><span>Dashboard</span></div>
     <nav class="sidenav">
       <div class="grp">ภาพรวม</div>
       <button data-view="kpi" data-sec="overview" class="on">KPI ทุกแผนก</button>
@@ -781,7 +832,7 @@ body.present #vKPI .tscroll{max-height:none}
       <div class="grp">Warehouse</div>
       <button data-view="kpi" data-sec="oos">KPI Out Of Stock</button>
       <button data-view="kpi" data-sec="diff">KPI Stock Variance &lt;2%</button>
-      <button data-view="kpi" data-sec="dock">KPI Dock Time To Stock</button>
+      <button data-view="kpi" data-sec="dock">KPI Dock To Stock Time</button>
       <button data-view="kpi" data-sec="pick">Picking</button>
       <button data-view="kpi" data-sec="perr">KPI Human Error On Picking &lt;0.05%</button>
       <button data-view="kpi" data-sec="repl">Replenishment</button>
@@ -849,7 +900,7 @@ body.present #vKPI .tscroll{max-height:none}
   <header>
     <div>
       <h1 id="kTitle">ภาพรวม KPI ทุกแผนก</h1>
-      <div class="sub" id="kSub">Warehouse · Delivery · Admin — TDFB</div>
+      <div class="sub" id="kSub">Warehouse · Delivery · Admin</div>
     </div>
     <div class="period">ข้อมูลของวันที่<b id="kPeriod">—</b><span class="kchip" id="kChip" style="display:none"></span>
       <div id="cmpNote" style="font-size:17px;margin-top:4px">เทียบกับเดือนก่อน</div></div>
@@ -1344,6 +1395,10 @@ function deltaHTML(cur,prev,goodUp=true,unit='%'){
 }
 
 function kpiCard(o){
+  /* v-2col: ห่อหัว+การ์ดไว้ใน .kcell เพื่อวางบรรทัดละ 2 KPI */
+  return `<div class="kcell">${kpiCardInner(o)}</div>`;
+}
+function kpiCardInner(o){
   const num=o.n!=null?`<span class="no">${o.n}</span>`:'';
   const head=`<div class="kpi-head">${num}<b>${o.l}</b><span>${o.t}</span></div>`;
   if(o.wait)return head+`<div class="kpi wait">
@@ -1894,7 +1949,7 @@ const clickF={id:'clickF',
     /* v-clk2: แท่ง/เส้น = คลิกตรงคอลัมน์ไหนก็ได้ (แท่งเตี้ยๆ อย่าง 0.05% ก็กดได้) · วงกลม = ต้องโดนชิ้น */
     const round=/pie|doughnut/.test(ch.config.type);
     let els=[];
-    try{ els=ch.getElementsAtEventForMode(e.native||e,round?'nearest':'index',{intersect:round},false); }catch(x){}
+    try{ els=ch.getElementsAtEventForMode(e,round?'nearest':'index',{intersect:round},false); }catch(x){}
     if(e.type==='mousemove'){ ch.canvas.style.cursor=els.length?'pointer':''; return; }
     if(!els.length)return;
     const key=Object.keys(CH).find(k=>CH[k]===ch)||'';
@@ -1933,10 +1988,10 @@ function clkPop(ch,key,i,ev){
     }else if(isPct){
       rows=`<div class="cp-r"><span>ค่า</span><b>${pc(v)}</b></div>`;
     }else{
-      const vals=ds.data.map(x=>+x||0), tot=D._tot||vals.reduce((t,x)=>t+x,0)||1;
+      const vals=ds.data.map(x=>+x||0), tot=(D._totArr&&D._totArr[i])||D._tot||vals.reduce((t,x)=>t+x,0)||1;
       rows=`<div class="cp-r"><span>จำนวน</span><b>${f(v)} ${esc(unit)}</b></div>`
         +(D._noPct?'':`<div class="cp-r"><span>สัดส่วน</span><b>${pc(v/tot*100)}</b></div>
-        <div class="cp-r dim"><span>จากทั้งหมด</span><b>${fmt(Math.round(tot))} ${esc(unit)}</b></div>`);
+        <div class="cp-r dim"><span>${esc(D._totLbl||'จากทั้งหมด')}</span><b>${fmt(Math.round(tot))} ${esc(unit)}</b></div>`);
     }
   }
   /* ปุ่มกรองตามเวลา (ถ้าเป็นกราฟแกนเวลา) */
@@ -1962,6 +2017,17 @@ function clkPop(ch,key,i,ev){
   if(fb)fb.onclick=()=>{close(); clkHandle({data:{labels:D.labels,_cfv:D._cfv}},'__time',i);};
 }
 if(window.Chart&&!Chart.registry.plugins.get('clickF'))Chart.register(clickF);
+/* v-zoomfix: body ใช้ CSS zoom ทำให้ตำแหน่งเมาส์ที่ Chart.js อ่านเพี้ยน (จิ้มแล้วเลือกผิดแท่ง/ไม่ขึ้นป้าย)
+   คำนวณตำแหน่งใหม่จาก clientX/Y เทียบขนาดจริงของ canvas บนจอ ใช้ได้ทั้งตอนมี/ไม่มี zoom */
+const zoomFix={id:'zoomFix',
+  beforeEvent(ch,args){
+    const e=args.event, n=e&&e.native; if(!n||n.clientX==null)return;
+    const r=ch.canvas.getBoundingClientRect(); if(!r.width||!r.height)return;
+    e.x=(n.clientX-r.left)*ch.width/r.width;
+    e.y=(n.clientY-r.top)*ch.height/r.height;
+    const A=ch.chartArea; if(A)args.inChartArea=e.x>=A.left&&e.x<=A.right&&e.y>=A.top&&e.y<=A.bottom;
+  }};
+if(window.Chart&&!Chart.registry.plugins.get('zoomFix'))Chart.register(zoomFix);
 const G_ONTIME={ok:r=>classify(r.wh)==='late'?'No':'Yes',
   plat:r=>isPlatform(r.source)?'Platform':'Walk-in',
   urg:r=>r.urgent||'ไม่ระบุ', snd:r=>r.sender||'ไม่ระบุ'};
@@ -1997,7 +2063,9 @@ function secOOS(){
      <!-- "จัดส่งก่อนกำหนด" ย้ายไปแสดงที่หน้า On-Time Performance แล้ว — % ยังคำนวณ (on+early)/total เหมือนเดิม
           เพราะ on-time กับ early ยังนับเป็นผ่านเกณฑ์ทั้งคู่ มีแค่ late เท่านั้นที่ไม่ผ่าน -->
 
-     <h2 class="sec">Weekly Line Items <em>จำนวนชิ้นที่ออกต่อสัปดาห์</em><span></span></h2>
+     <h2 class="sec">${tGrp()==='month'?'Monthly Line Items <em>จำนวนชิ้นที่ออกต่อเดือน</em>'
+        :tGrp()==='day'?'Daily Line Items <em>จำนวนชิ้นที่ออกต่อวัน</em>'
+        :'Weekly Line Items <em>จำนวนชิ้นที่ออกต่อสัปดาห์</em>'}<span></span></h2>
      <div class="cpanel"><div class="cbox"><canvas id="c_wk2"></canvas></div></div>
 
      <div class="g2">
@@ -2015,17 +2083,23 @@ function drawOOS(){
   if(!OOS_CTX)return;
   const {rows,on,ea,la}=OOS_CTX;
 
-  const byW={}; rows.forEach(r=>{ if(r.week)byW[r.week]=(byW[r.week]||0)+r.qty; });
-  const wk=Object.keys(byW).sort((a,b)=>a-b);
+  /* v-grp: ภาพรวม = รายเดือน · เลือกเดือน = รายสัปดาห์ · เลือก Week/Day = รายวัน */
+  const g=tGrp(), byW={};
+  rows.forEach(r=>{
+    const k=g==='week'?(r.week||(r.date?String(isoWeek(r.date)):''))
+           :r.date?(g==='month'?r.date.slice(0,7):r.date):'';
+    if(k)byW[k]=(byW[k]||0)+r.qty; });
+  const wk=Object.keys(byW).sort(g==='week'?((a,b)=>a-b):((a,b)=>a<b?-1:a>b?1:0));
+  const wkLbl=w=>g==='month'?ymLbl(w):g==='day'?shortD(w):'W'+w;
   destroy('wk2');
   const o=baseOpts(false); o.layout={padding:{top:34,right:26}};
   o.plugins.linePt={display:true};
   if(wk.length===1)o.scales.x.offset=true;
   CH.wk2=new Chart(document.getElementById('c_wk2'),{type:'line',
-    data:{labels:wk.map(w=>'W'+w),datasets:[{label:'ชิ้น',data:wk.map(w=>byW[w]),
+    data:{labels:wk.map(wkLbl),datasets:[{label:'ชิ้น',data:wk.map(w=>byW[w]),
       borderColor:C.tealD,backgroundColor:'rgba(15,118,110,.13)',tension:.3,fill:true,
       borderWidth:2,pointRadius:wk.length===1?9:3,pointBackgroundColor:C.tealD}]},options:o});
-  CH.wk2.data._unit='ชิ้น';
+  CH.wk2.data._unit='ชิ้น'; if(g==='day')CH.wk2.data._cfv=wk;
 
   const cnt={}; rows.forEach(r=>{const p=(r.product||'').trim();if(p)cnt[p]=(cnt[p]||0)+r.qty;});
   const top=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,5);
@@ -2325,12 +2399,23 @@ function secDock(){
   const avg=dd.length?dd.reduce((a,b)=>a+b,0)/dd.length:null;
   const worst=dd.length?Math.max(...dd):null;
 
-  /* สรุปรายสัปดาห์ */
+  /* สรุปตามช่วง — v-grp: ภาพรวม = รายเดือน · เลือกเดือน/สัปดาห์/วัน = รายสัปดาห์ */
+  const dkMon=tGrp()==='month';
+  const dkYr=+(fYear()||new Date().getFullYear());
+  const dkKey=r=>{
+    if(!dkMon)return r.week;
+    const ms=dockDateMs(r);
+    if(!isNaN(ms))return dkey(new Date(ms)).slice(0,7);
+    return parseInt(r.week)?wkToYM(dkYr,parseInt(r.week)):'?';
+  };
   const byW={};
-  rows.forEach(r=>{const o=byW[r.week]=byW[r.week]||{w:r.week,n:0,inOk:0,stOk:0,days:0,dn:0};
+  rows.forEach(r=>{const k=dkKey(r);
+    const o=byW[k]=byW[k]||{w:k,lbl:dkMon?(k==='?'?'ไม่ระบุ':ymLbl(k)):'W'+k,
+      full:dkMon?(k==='?'?'ไม่ระบุ':ymLbl(k)):'Week '+k,n:0,inOk:0,stOk:0,days:0,dn:0};
     o.n++; if(r.inOk)o.inOk++; if(r.stOk)o.stOk++;
     if(r.days!=null){o.days+=r.days;o.dn++;}});
-  const wk=Object.keys(byW).sort((a,b)=>(parseInt(a)||0)-(parseInt(b)||0));
+  const wk=Object.keys(byW).sort(dkMon?((a,b)=>a<b?-1:a>b?1:0):((a,b)=>(parseInt(a)||0)-(parseInt(b)||0)));
+  const dkUnit=dkMon?'เดือน':'สัปดาห์', dkGrp=dkMon?'รายเดือน':'รายสัปดาห์';
   /* ON-TIME รายสัปดาห์ตามมุมมองที่เลือก */
   const wOn=o=>!o.n?0
     : fDk==='in' ? o.inOk/o.n*100
@@ -2349,24 +2434,24 @@ function secDock(){
    +ringHTML(allP,90,
       `<span>ON-TIME ${esc(vName)}</span>`
      +`<span>เป้าหมาย ไม่ผ่านเกณฑ์ <b>&lt; 10%</b> · ตอนนี้ <b>${pct1(100-allP)}</b></span>`
-     +`<span style="opacity:.8">${fmt(n)} รายการ · ${wk.length} สัปดาห์${fWeekLabel()?` · ${fWeekLabel()}`:''}</span>`)
+     +`<span style="opacity:.8">${fmt(n)} รายการ · ${wk.length} ${dkUnit}${fWeekLabel()?` · ${fWeekLabel()}`:''}</span>`)
    +`<div class="sgrid">${card('รับเข้าตรงเวลา',pct1(inP),inP>=90?'teal':'rose')}
       ${card('จัดเก็บตรงเวลา',pct1(stP),stP>=90?'teal':'rose')}
       ${card('ระยะเวลาเฉลี่ย (วัน)',avg==null?'—':avg.toFixed(1),'amber')}
       ${card('นานสุด (วัน)',worst==null?'—':worst.toFixed(1),'rose')}</div>
 
-     <h2 class="sec">ON-TIME รายสัปดาห์ <em>${esc(vName)}</em><span></span></h2>
+     <h2 class="sec">ON-TIME ${dkGrp} <em>${esc(vName)}</em><span></span></h2>
      <div class="cpanel">
        <div class="cscroll"><div class="cbox" style="height:560px;min-width:${Math.max(900,wk.length*122)}px">
          <canvas id="c_dockwk"></canvas></div></div>
      </div>
      <div class="tscroll"><table class="dt"><thead><tr>
-       <th class="c-week">สัปดาห์</th><th class="num">รายการ</th>
+       <th class="c-week">${dkMon?'เดือน':'สัปดาห์'}</th><th class="num">รายการ</th>
        <th class="num">รับเข้าตรงเวลา</th><th class="num">จัดเก็บตรงเวลา</th>
        <th class="num">ระยะเวลาเฉลี่ย (วัน)</th><th class="num">ON-TIME ${esc(vName)}</th>
      </tr></thead><tbody>`
    +wk.map(w=>{const o=byW[w],v=wOn(o);
-      return `<tr><td class="c-week"><b>Week ${o.w}</b></td>
+      return `<tr><td class="c-week"><b>${o.full}</b></td>
         <td class="num">${fmt(o.n)}</td>
         <td class="num">${pct1(o.n?o.inOk/o.n*100:0)}</td>
         <td class="num">${pct1(o.n?o.stOk/o.n*100:0)}</td>
@@ -2426,7 +2511,7 @@ function drawDock(){
   o.scales.y.max=100;
   o.scales.y.suggestedMin=Math.max(0,Math.floor(Math.min(...vals)/10)*10-5);
   o.plugins.tooltip.callbacks={
-    title:c=>'Week '+wk[c[0].dataIndex],
+    title:c=>byW[wk[c[0].dataIndex]].full,
     label:c=>{const d=byW[wk[c.dataIndex]];
       return `ON-TIME ${vName} ${(+c.raw).toFixed(1)}%  ·  ${fmt(d.n)} รายการ`
         +(d.dn?`  ·  เฉลี่ย ${(d.days/d.dn).toFixed(1)} วัน`:'');}};
@@ -2434,7 +2519,7 @@ function drawDock(){
   o.scales.x.ticks.font={size:cf(26)};
   o.scales.y.ticks.font={size:cf(26)};
   CH.dockwk=new Chart(el2,{type:'bar',
-    data:{labels:wk.map(w=>'W'+w),datasets:[{data:vals,
+    data:{labels:wk.map(w=>byW[w].lbl),datasets:[{data:vals,
       backgroundColor:vals.map(v=>v>=90?C.teal:C.rose),borderRadius:6,
       maxBarThickness:70,minBarLength:2}]},options:o});
 }
@@ -3474,16 +3559,16 @@ function secSOP(){
 }
 /* ขนาดฐานของเอกสารในกรอบ — ปรับตัวเลขนี้ตัวเดียวเพื่อย่อ/ขยายทั้งหน้า
    16 = ขนาดเว็บปกติ · 27.7 = เท่าฐานแดชบอร์ด · 42 = อ่านจากไกลได้ */
-const SOP_ROOT_PX=42;
+const SOP_ROOT_PX=34;   /* v-sop2: ย่อลง ~20% (เดิม 42) */
 /* เมนูในเอกสาร — คุมแยกจากเนื้อหา เพราะถ้าโตตาม rem จะกินที่ครึ่งจอ
    แต่ระยะห่างข้างในต้องกำหนดเป็น px เอง ไม่งั้น padding ที่วัดเป็น rem
    จะบวมจนไม่เหลือที่ให้ตัวหนังสือ แล้วข้อความตกบรรทัด */
-const SOP_TAB_FS=56;      /* ตัวหนังสือแท็บ — 56 คือขนาดที่ยังพอในแถวเดียว */
+const SOP_TAB_FS=45;      /* ตัวหนังสือแท็บ — 56 คือขนาดที่ยังพอในแถวเดียว */
 const SOP_TAB_PADY=44;    /* ความสูงส่วนเกินของกรอบปุ่ม (ข้างละ) */
 const SOP_TAB_PADX=64;    /* ความกว้างส่วนเกินของกรอบปุ่ม (ข้างละ) */
 const SOP_ACTIVE_GROW=3;  /* แท็บที่เลือกอยู่กว้างกว่าอันอื่นกี่เท่า */
-const SOP_BAR_PADY=24;    /* ระยะขอบบน-ล่างของแถบทั้งแถบ */
-const SOP_TAB_RESERVE=380;/* ที่ว่างขวาที่กันไว้ให้ปุ่มโหมดพรีเซนต์ */
+const SOP_BAR_PADY=18;    /* ระยะขอบบน-ล่างของแถบทั้งแถบ */
+const SOP_TAB_RESERVE=320;/* ที่ว่างขวาที่กันไว้ให้ปุ่มโหมดพรีเซนต์ */
 const SOP_PAD_PX=22;      /* ระยะขอบรอบเนื้อหาในกรอบ */
 const SOP_CSS_VER='v131';
 function sopCSS(){
@@ -3632,7 +3717,10 @@ function drawRetEmbed(fid='retFrame',tid='retDoc'){
      17 R = รูปแบบการจัดส่ง      (ขนส่ง)
    นับ "ค้างส่ง" ด้วยคำใน Q แบบเดียวกับต้นฉบับ: ค้าง|รอ|pending|fail|ยกเลิก|ไม่สำเร็จ */
 let SHIP=null, SHIP_ERR='', SHIP_LOADING=false;
-const SHIP_PENDING_RE=/ค้าง|รอ|pending|fail|ยกเลิก|ไม่สำเร็จ/i;
+const SHIP_PENDING_RE=/ค้าง|รอ|pending|fail|ยกเลิก|ไม่สำเร็จ|ยังไม่/i;
+/* v-ship4: ออเดอร์ที่คอลัมน์ P เป็น "ยังไม่ได้จัดส่ง"/"ค้างส่ง" แต่คอลัมน์ Q ยังว่าง
+   (Q ของวันล่าสุดยังไม่ถูกเติม) ต้องนับเป็นค้างส่งด้วย */
+const SHIP_PENDING_P_RE=/ค้างส่ง|ยังไม่/i;
 
 function shipDateKey(v){
   const s=String(v||'').trim();
@@ -3669,11 +3757,17 @@ async function loadShip(force){
         dst:clean(g(r,E)), send:clean(g(r,J)), ch:clean(g(r,K)),
         urg:clean(g(r,M)), crit:clean(g(r,P)), q:clean(q),
         carrier:clean(g(r,R)),
-        pending:SHIP_PENDING_RE.test(q) });
+        /* v-ship5: ตัดช่องว่าง/อักขระล่องหน (zero-width) ก่อนเทียบคำ กันพิมพ์ในชีตไม่เหมือนกันเป๊ะ */
+        pending:SHIP_PENDING_RE.test(q)||SHIP_PENDING_P_RE.test(g(r,P).normalize('NFC').replace(/[\s\u200B-\u200D\uFEFF]/g,'')) });
     });
     if(!list.length)throw new Error('อ่านได้ 0 แถว (เช็คคอลัมน์วันที่ / เลขออเดอร์)');
     SHIP={list};
-    SHEET_STATE.ship=fmt(list.length)+' แถว';
+    /* v-ship2: โชว์ค่าที่เจอในคอลัมน์ Q (เช็คค้างส่ง) ไว้ที่แถบสถานะชีตด้านล่าง
+       ถ้าค้างส่งขึ้น 0 ทั้งที่มีของค้าง จะเห็นทันทีว่าในชีตเขียนคำว่าอะไร */
+    const qCnt={}; list.forEach(x=>{qCnt[x.q]=(qCnt[x.q]||0)+1;});
+    const qTop=Object.entries(qCnt).sort((a,b)=>b[1]-a[1]).slice(0,5)
+      .map(([k,v])=>`"${k}" ${fmt(v)}`).join(', ');
+    SHEET_STATE.ship=fmt(list.length)+' แถว · คอลัมน์ Q (เช็คค้างส่ง): '+qTop;
   }catch(e){ SHIP=null; SHIP_ERR=e.message; SHEET_STATE.ship='ผิดพลาด — '+e.message; }
   SHIP_LOADING=false;
   return SHIP;
@@ -3706,6 +3800,8 @@ function shipStats(list){
   const carrierE=numEnt(byCarrier);
   const isOK=v=>/สำเร็จ|ตรง|ผ่าน|on ?time|delivered/i.test(v||'');
   const okCrit=list.filter(x=>isOK(x.crit)).length;
+  /* v-ship3: รายการที่ไม่ตรงเกณฑ์ (คอลัมน์ P) — แยกจาก "ค้างส่ง" (คอลัมน์ Q) */
+  const badCrit={}; list.filter(x=>!isOK(x.crit)).forEach(x=>{badCrit[x.crit]=(badCrit[x.crit]||0)+1;});
   return {
     orders:ords.size, pending:pend.size,
     pendingPct:ords.size?pend.size/ords.size*100:null,
@@ -3717,6 +3813,7 @@ function shipStats(list){
     carrierE, topCarrier:carrierE[0]?carrierE[0][0]:'-',
     statusE:numEnt(byStatus), urgE:numEnt(byUrg),
     critPct:list.length?okCrit/list.length*100:null,
+    critBad:list.length-okCrit, critBadE:Object.entries(badCrit).sort((a,b)=>b[1]-a[1]),
     rows:list.length
   };
 }
@@ -3762,25 +3859,30 @@ function secShip(){
   if(!list.length)return bar+'<div class="empty2">ไม่มีข้อมูลตามตัวกรองนี้</div>';
 
   const S=shipStats(list);
+  /* v-shipgrp: ภาพรวม = รายเดือน · เลือกเดือน = รายสัปดาห์ · เลือกสัปดาห์/วัน = รายวัน */
+  S.grp=(DAYSEL||WKSEL.length)?'day':(shipYM||fMonth())?'week':'month';
+  S.list=list;
   SHIP_CTX=S;
+  const grpTxt={month:'รายเดือน',week:'รายสัปดาห์',day:'รายวัน'}[S.grp];
 
   /* v133: หน้านี้ไม่มีเป้า KPI — ส่ง target เป็น null
      วงจะไม่มีป้ายผ่าน/ไม่ผ่าน และไม่เปลี่ยนสีตามเกณฑ์ */
   const ring=S.critPct!=null
     ? ringHTML(S.critPct, null,
         `<span>จัดส่งตรงตามเกณฑ์ในชีต</span>`
-       +`<span style="opacity:.8">${fmt(S.rows)} รายการ · ${fmt(S.days.length)} วัน</span>`)
+       +`<span style="opacity:.8">${fmt(S.rows)} รายการ · ${fmt(S.days.length)} วัน</span>`
+       +(S.critBad?`<span style="opacity:.8">ไม่ตรงเกณฑ์ ${fmt(S.critBad)} รายการ (${S.critBadE.slice(0,3).map(([k,v])=>esc(k)+' '+fmt(v)).join(' · ')}) — คนละเรื่องกับค้างส่ง</span>`:''))
     : '<div class="empty2">ไม่มีคอลัมน์เกณฑ์การจัดส่งให้คำนวณ</div>';
 
   return bar
    + ring
    +`<div class="sgrid">
        ${card('ออเดอร์จัดส่งทั้งหมด',S.orders)}
-       ${card('ค้างส่ง',S.pending,S.pending?'rose':'teal')}
+       ${card('ค้างส่ง <small style="opacity:.5">v5</small>',S.pending,S.pending?'rose':'teal')}
        ${card('ขนส่งที่ใช้มากสุด',esc(S.topCarrier),'plum')}
        ${card('วันพีคสุด ('+(S.peak||'-')+')',S.peakQty,'amber')}</div>
 
-     <h2 class="sec">ออเดอร์จัดส่งรายวัน <em>นับออเดอร์ไม่ซ้ำ ตาม Expected Delivery</em><span></span></h2>
+     <h2 class="sec">ออเดอร์จัดส่ง${grpTxt} <em>นับออเดอร์ไม่ซ้ำ ตาม Expected Delivery</em><span></span></h2>
      <div class="cpanel"><div class="cbox"><canvas id="c_shDay"></canvas></div></div>
 
      <div class="g2">
@@ -3801,10 +3903,28 @@ function drawShip(){
   /* รายวัน — v134: ลดเหลือ 30 วันล่าสุด + ย่อป้ายเป็น 18px
      เพื่อให้ตัวเลขขึ้นครบทุกแท่ง (60 วันช่องแคบเกินไป ป้ายถูกข้ามกว่าครึ่ง) */
   const SHIP_DAYS_SHOWN=30;
-  const d=S.days.slice(-SHIP_DAYS_SHOWN);
+  let labels, vals;
+  if(S.grp==='day'){
+    const d=S.days.slice(-SHIP_DAYS_SHOWN);
+    labels=d; vals=d.map(k=>S.byDay[k].size);
+  }else{
+    /* นับออเดอร์ไม่ซ้ำต่อเดือน/สัปดาห์ (ออเดอร์เดียวกันข้ามวันนับครั้งเดียวในช่วงนั้น) */
+    const keyOf=S.grp==='month'
+      ? k=>k.slice(0,7)
+      : k=>{const w=isoWeek(k);const[y,m]=k.split('-').map(Number);
+            const wy=(m===1&&w>50)?y-1:(m===12&&w===1)?y+1:y;
+            return wy+'-W'+String(w).padStart(2,'0');};
+    const by={};
+    S.list.forEach((x,i)=>{(by[keyOf(x.day)]=by[keyOf(x.day)]||new Set()).add(x.ref||('r'+i));});
+    const ks=Object.keys(by).sort();
+    labels=ks.map(k=>S.grp==='month'
+      ? MON_S[+k.slice(5,7)-1]+' '+k.slice(2,4)
+      : 'W'+(+k.slice(-2)));
+    vals=ks.map(k=>by[k].size);
+  }
   destroy('shDay');
   CH.shDay=new Chart(document.getElementById('c_shDay'),{type:'bar',
-    data:{labels:d,datasets:[{label:'ออเดอร์',data:d.map(k=>S.byDay[k].size),
+    data:{labels,datasets:[{label:'ออเดอร์',data:vals,
       backgroundColor:C.plum,borderRadius:4}]},
     options:Object.assign(baseOpts(false),{
       plugins:Object.assign({},baseOpts(false).plugins,{
@@ -3869,7 +3989,12 @@ function drawShip(){
    1 แถว = 1 ออเดอร์ (qty=1) ตามที่หน้าเดิมนับ
    ยังไม่ทำ "ขนส่งที่แพ็คบ่อยสุด" เพราะหน้าเดิมต้อง lookup ข้ามชีต Shipping */
 const PACK_CSV='https://docs.google.com/spreadsheets/d/e/2PACX-1vQi8zQULkdkvxAqX8R2Sxcej99RFL90cbmQiWUf4CtViqa3XZlQNceThIBGqVMIbSBAKcSl6_2J-7tM/pub?gid=640931357&single=true&output=csv';
-const PACK_TARGET=200;      /* เป้าออเดอร์/คน/วัน */
+const PACK_TARGET=200;      /* เป้าออเดอร์/คน/วัน (ก่อน 1 ต.ค. 2026) */
+const PACK_TARGET_NEW=300, PACK_TARGET_FROM='2026-10-01';   /* ตั้งแต่ 1/10/26 เป้า 300/คน/วัน */
+const packTgt=fd=>fd&&fd>=PACK_TARGET_FROM?PACK_TARGET_NEW:PACK_TARGET;
+/* ป้ายเป้าตามช่วงที่ดูอยู่ — ทั้งช่วงก่อน = 200 · ทั้งช่วงหลัง = 300 · คร่อมทั้งสองช่วง = 200→300 */
+const packTgtLbl=days=>{const a=days.some(d=>packTgt(d)===PACK_TARGET),b=days.some(d=>packTgt(d)===PACK_TARGET_NEW);
+  return a&&b?PACK_TARGET+'→'+PACK_TARGET_NEW:String(b?PACK_TARGET_NEW:PACK_TARGET);};
 const PACK_FULL_HOUR=12;    /* ชั่วโมงที่แพ็ค >= 12 ใบ ถึงนับเป็นชั่วโมงหลัก */
 const PACK_EXCLUDE=['operation admin1','wh admin 1','operation engineer','pop napat','ton jakapan'];
 
@@ -3886,9 +4011,17 @@ function packMins(v){
 function packDate(v){
   const s=String(v||'').trim();
   let y,mo,da,m;
-  if((m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))){ y=+m[1];mo=+m[2];da=+m[3]; }
-  else if((m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/))){ da=+m[1];mo=+m[2];y=+m[3]; }
+  const MON={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12,
+    'ม.ค.':1,'ก.พ.':2,'มี.ค.':3,'เม.ย.':4,'พ.ค.':5,'มิ.ย.':6,'ก.ค.':7,'ส.ค.':8,'ก.ย.':9,'ต.ค.':10,'พ.ย.':11,'ธ.ค.':12};
+  if((m=s.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/))){ y=+m[1];mo=+m[2];da=+m[3]; }
+  else if((m=s.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})/))){ da=+m[1];mo=+m[2];y=+m[3]; }
+  else if((m=s.match(/^(\d{1,2})\s*([A-Za-z]{3})[A-Za-z]*\.?\s*,?\s*(\d{2,4})/))){ da=+m[1];mo=MON[m[2].toLowerCase()];y=+m[3]; }
+  else if((m=s.match(/^([A-Za-z]{3})[A-Za-z]*\.?\s+(\d{1,2}),?\s+(\d{2,4})/))){ mo=MON[m[1].toLowerCase()];da=+m[2];y=+m[3]; }
+  else if((m=s.match(/^(\d{1,2})\s*([ก-๙]{1,3}\.[ก-๙]{1,2}\.)\s*(\d{2,4})/))){ da=+m[1];mo=MON[m[2]];y=+m[3]; }
   else return null;
+  if(y<100)y+=2000;          /* 26 → 2026 */
+  if(y>2400)y-=543;          /* พ.ศ. 2569 → 2026 */
+  if(mo>12||da>31)return null;
   if(!y||!mo||!da)return null;
   const p=n=>String(n).padStart(2,'0');
   const t=new Date(Date.UTC(y,mo-1,da));
@@ -3915,15 +4048,21 @@ async function loadPack(force){
     const hdr=(rows[0]||[]).map(h=>String(h||'').trim().toLowerCase());
     let CC_AUTO=hdr.findIndex(h=>h==='source'||h==='ช่องทางการขาย'||h==='ช่องทาง');
     if(CC_AUTO<0)CC_AUTO=hdr.findIndex(h=>/source|ช่องทาง/.test(h));
-    const CP=1,CD=2,CT=3,CC=CC_AUTO>=0?CC_AUTO:5,CST=14,CDUR=21;
+    /* หาคอลัมน์ชื่อพนักงาน/วันที่จากหัวตารางก่อน ถ้าไม่เจอใช้ตำแหน่งเดิม (B, C) */
+    const hFind=re=>hdr.findIndex(h=>re.test(h));
+    let CP_AUTO=hFind(/พนักงาน|ผู้แพ็ค|คนแพ็ค|packer|employee|staff/);
+    let CD_AUTO=hFind(/^วันที่$|^date$|วันที่แพ็ค|pack.*date/);
+    const CP=CP_AUTO>=0?CP_AUTO:1,CD=CD_AUTO>=0?CD_AUTO:2,CT=3,CC=CC_AUTO>=0?CC_AUTO:5,CST=14,CDUR=21;
+    let noDate=0,noName=0;
     const list=[];
     rows.slice(1).forEach(r=>{
       if(!r||r.length<=CP)return;
       let d=packDate(r[CD]);
       if(!d){ for(let i=0;i<r.length&&!d;i++) d=packDate(r[i]); }
-      if(!d)return;
+      if(!d){noDate++;return;}
       const p=String(r[CP]||'').trim();
-      if(!p||p==='-'||p.toLowerCase()==='null'||p==='ไม่ระบุ'||p==='ไม่ระบุพนักงาน')return;
+      if(!p){noName++;return;}
+      if(p==='-'||p.toLowerCase()==='null'||p==='ไม่ระบุ'||p==='ไม่ระบุพนักงาน')return;
       if(PACK_EXCLUDE.includes(p.toLowerCase()))return;
       let hr=String(r[CT]||'').trim();
       const hm=hr.match(/^(\d{1,2})[:.](\d{1,2})/);
@@ -3933,7 +4072,12 @@ async function loadPack(force){
       list.push({p, st, c:String(r[CC]||'').trim()||'ไม่ระบุ',
                  hr:hr||'ไม่ระบุ', d, dur:packMins(r[CDUR])});
     });
-    if(!list.length)throw new Error('อ่านได้ 0 แถว (เช็คคอลัมน์ชื่อพนักงาน/วันที่)');
+    if(!list.length){
+      const H=rows[0]||[], R=rows[1]||[];
+      throw new Error(`อ่านได้ 0 แถว จาก ${rows.length-1} แถว · วันที่อ่านไม่ออก ${noDate} · ชื่อว่าง ${noName}`
+        +` · คอลัมน์ชื่อ="${H[CP]||'?'}" (ตัวอย่าง "${R[CP]||''}") · คอลัมน์วันที่="${H[CD]||'?'}" (ตัวอย่าง "${R[CD]||''}")`
+        +` · หัวตาราง: ${H.slice(0,8).join(' | ')}`);
+    }
     PACK={list};
     SHEET_STATE.pack=fmt(list.length)+' ออเดอร์'
       +(CC_AUTO>=0?` · ช่องทางขายอ่านจากคอลัมน์ "${(rows[0]||[])[CC_AUTO]}"`:' · หาคอลัมน์ช่องทางขายไม่เจอ (ใช้ index 5 แทน)');
@@ -3977,7 +4121,7 @@ function packStats(list){
   let uSum=0,uN=0;
   for(const d in daily){
     const n=daily[d].packers.size;
-    if(n>0){ uSum+=(daily[d].orders/(n*PACK_TARGET))*100; uN++; }
+    if(n>0){ uSum+=(daily[d].orders/(n*packTgt(d)))*100; uN++; }
   }
   const util=uN?Math.round(uSum/uN):0;
 
@@ -3996,12 +4140,13 @@ function packStats(list){
     const o=per[name];
     const uDays=Math.max(1,o.days.size);
     const aDay=Math.round(o.count/uDays);
+    const tgtAvg=[...o.days].reduce((t,d)=>t+packTgt(d),0)/uDays;   /* เป้าเฉลี่ยตามวันที่คนนั้นทำงาน */
     let ph=0,pq=0;
     for(const s in o.hourQty){ const q=o.hourQty[s]; if(q>=PACK_FULL_HOUR){ph++;pq+=q;} }
     const workHrs=Object.keys(o.hourQty).length;
     const aHr=ph>0?Math.round(pq/ph):(workHrs>0?Math.round(o.count/workHrs):0);
     return {name, count:o.count, aDay, aHr, workHrs,
-            util:Math.round(aDay/PACK_TARGET*100),
+            util:Math.round(o.count/uDays/tgtAvg*100), tgtLbl:packTgtLbl([...o.days]),
             time:Math.floor(o.dur/60)+' ชม. '+Math.round(o.dur%60)+' นาที',
             ch:top(o.ch), st:top(o.st)};
   });
@@ -4057,7 +4202,7 @@ function secPack(){
     <div class="pkcard">
       <div class="pkhead"><span class="pkname">${esc(c.name)}</span>
         <span class="pkutil ${uCls(c.util)}">Util: ${c.util}%</span></div>
-      <div class="pklbl">UTILIZATION (เป้า ${PACK_TARGET}/วัน)</div>
+      <div class="pklbl">UTILIZATION (เป้า ${c.tgtLbl}/วัน)</div>
       <div class="pkbar"><i class="${uCls(c.util)}" style="width:${Math.min(c.util,100)}%"></i></div>
       <div class="pkmain">
         <div><div class="pklbl">ความเร็วเฉลี่ย</div>
@@ -4082,21 +4227,24 @@ function secPack(){
        ${card('ความเร็วแพ็คเฉลี่ย (ออเดอร์/ชม.)',S.speed,'amber')}
        ${card('พีคไทม์',(()=>{const e=Object.entries(S.hrs).filter(x=>x[0]!=='ไม่ระบุ')
            .sort((a,b)=>b[1]-a[1])[0]; return e?e[0]:'—';})(),'rose')}
-       ${card('TEAM UTIL. (เป้า '+PACK_TARGET+'/คน/วัน)',S.util+'%',S.util>=80?'teal':'rose')}</div>
+       ${card('TEAM UTIL. (เป้า '+packTgtLbl(S.days)+'/คน/วัน)',S.util+'%',S.util>=80?'teal':'rose')}</div>
 
      <div class="pkpair">
        <div><h2 class="sec">ผลงานพนักงานแพ็ค (Leaderboard)<span></span></h2>
-         <div class="cpanel"><div class="pkrank">${
-           S.pArr.map((n,i)=>{
-             const v=S.per[n].count, mx=S.per[S.pArr[0]].count||1;
+         <div class="cpanel"><div class="pkrank">${(()=>{
+           /* v-rank2: ทุกอันดับใช้รูปแบบเดียวกัน · หลอด = สัดส่วนของออเดอร์ทั้งหมด */
+           const tot=S.pArr.reduce((t,n)=>t+S.per[n].count,0)||1;
+           return `<div class="rtot">รวมทั้งหมด <b>${fmt(tot)}</b> ออเดอร์ · ${S.pArr.length} คน
+               <span>หลอด = สัดส่วนของออเดอร์ทั้งหมด</span></div>`
+            +S.pArr.map((n,i)=>{
+             const v=S.per[n].count, sh=v/tot*100;
              const medal=i<3?['g','s','b'][i]:'';
-             return `<div class="rrow${i<3?' top':''}">
+             return `<div class="rrow${i<3?' podium':''}">
                <span class="rno ${medal}">${i+1}</span>
-               <span class="rname">${esc(n)}</span>
-               <span class="rbar"><i style="width:${Math.max(2,v/mx*100)}%;
-                 background:${['#6B5CA5','#3E8E8C','#D89A2E'][i]||'#9AA1AE'}"></i></span>
-               <span class="rval">${fmt(v)}</span></div>`;
-           }).join('')}</div></div></div>
+               <span class="rname" title="${esc(n)}">${esc(n)}</span>
+               <span class="rbar"><i style="width:${Math.max(1,sh)}%;background:${['#6B5CA5','#3E8E8C','#D89A2E'][i]||'#9AA1AE'}"></i></span>
+               <span class="rval">${fmt(v)} <em>${sh.toFixed(1)}%</em></span></div>`;
+           }).join('');})()}</div></div></div>
        <div><h2 class="sec">Station Utilization <em>วันที่สถานีถูกใช้ ÷ วันทำงาน</em><span></span></h2>
          <div class="cpanel"><div id="pkStations" class="pkstations"></div></div></div>
      </div>
@@ -4210,12 +4358,13 @@ function drawPack(){
       label:c=>cats[c.dataIndex].p+': '+fmt(c.parsed.y),
       footer:its=>'รวมทั้งเดือน '+fmt(gTot[cats[its[0].dataIndex].g])+' กล่อง'};
     CH.pkWk=new Chart(document.getElementById('c_pkWk'),{type:'bar',
-      data:{labels:cats.map((c,i)=>String(i)),
+      data:{labels:cats.map(c=>c.sp?'':c.p+' · '+c.m),
         datasets:[{label:'กล่อง',data:cats.map(c=>c.sp?null:c.v),
           backgroundColor:cats.map(c=>c.sp?'rgba(0,0,0,0)':c.c),
           borderRadius:2,maxBarThickness:90}]},
       options:oWk});
-    CH.pkWk.data._cfv=cats.map(c=>c.sp?'':c.m); CH.pkWk.data._unit='กล่อง';   /* คลิกแท่ง = กรองเดือน/สัปดาห์นั้น */
+    CH.pkWk.data._cfv=cats.map(c=>c.sp?'':c.m); CH.pkWk.data._unit='กล่อง';
+    CH.pkWk.data._totArr=cats.map(c=>c.sp?null:gTot[c.g]); CH.pkWk.data._totLbl='จากทั้ง'+(byMonth?'เดือน':'สัปดาห์');   /* คลิกแท่ง = กรองเดือน/สัปดาห์นั้น */
   }
 
   /* สัดส่วนรายคน — plot เป็น % เพื่อให้ pieLbl เขียนตัวเลขลงบนวงได้ */
@@ -4324,7 +4473,15 @@ function secPick(){
   const peakIdx=hrTotal.length?hrTotal.indexOf(Math.max(...hrTotal)):-1;
   const peakHour=peakIdx>=0?hrs[peakIdx]:null;
 
-  PICK_CTX={per,days,dayBy,hrs,hrBy};
+  /* v-grp: กราฟแนวโน้ม — ภาพรวม = รายเดือน · เลือกเดือน = รายสัปดาห์ · เลือก Week/Day = รายวัน */
+  const pg=tGrp();
+  const pKey=d=>pg==='month'?d.slice(0,7):pg==='week'?isoWkKey(d):d;
+  const tk=[...new Set(days.map(pKey))].sort();
+  const tBy={}; per.forEach(p=>tBy[p.who]=tk.map(()=>0));
+  list.forEach(r=>{if(!r.date)return;const i=tk.indexOf(pKey(r.date)); if(i>=0&&tBy[r.who])tBy[r.who][i]+=r.qty;});
+  per.forEach(p=>{tBy[p.who]=tBy[p.who].map(v=>v||null);});
+  const tLbl=tk.map(k=>pg==='month'?ymLbl(k):pg==='week'?'W'+(+k.slice(-2)):shortD(k));
+  PICK_CTX={per,days,dayBy,hrs,hrBy,pg,tk,tBy,tLbl};
 
   return bar
    +`<div class="sgrid">
@@ -4342,9 +4499,9 @@ function secPick(){
            <canvas id="c_pkbat"></canvas></div></div>
      </div>
 
-     <h2 class="sec">แนวโน้มการหยิบในแต่ละวัน <em>จำนวนชิ้นต่อวัน แยกตามคน</em><span></span></h2>
+     <h2 class="sec">แนวโน้มการหยิบ${pg==='month'?'รายเดือน':pg==='week'?'รายสัปดาห์':'ในแต่ละวัน'} <em>จำนวนชิ้นต่อ${pg==='month'?'เดือน':pg==='week'?'สัปดาห์':'วัน'} แยกตามคน</em><span></span></h2>
      <div class="cpanel"><div class="cscroll">
-       <div class="cbox" style="height:480px;min-width:${Math.max(900,days.length*120)}px">
+       <div class="cbox" style="height:480px;min-width:${Math.max(900,tk.length*120)}px">
          <canvas id="c_pkday"></canvas></div></div></div>
 
      <h2 class="sec">ช่วงเวลาที่หยิบหนาแน่น <em>จำนวนชิ้นตามชั่วโมง</em><span></span></h2>
@@ -4373,7 +4530,7 @@ function secPick(){
 
 function drawPick(){
   if(!PICK_CTX)return;
-  const {per,days,dayBy,hrs,hrBy}=PICK_CTX;
+  const {per,days,dayBy,hrs,hrBy,pg,tk,tBy,tLbl}=PICK_CTX;
   const cols=per.map((_,i)=>PICK_PAL[i%PICK_PAL.length]);
   const colOf={}; per.forEach((p,i)=>colOf[p.who]=cols[i]);
 
@@ -4421,7 +4578,7 @@ function drawPick(){
 
   /* แนวโน้มรายวัน — เส้นแยกตามคน */
   const el3=document.getElementById('c_pkday');
-  if(el3&&days.length){
+  if(el3&&tk.length){
     destroy('pkday');
     const o=baseOpts(true);
     o.interaction={mode:'index',intersect:false};
@@ -4430,12 +4587,12 @@ function drawPick(){
     o.scales.y.ticks.callback=v=>fmt(v);
     o.plugins.tooltip.callbacks={label:c=>`${c.dataset.label}: ${fmt(c.raw)} ชิ้น`};
     CH.pkday=new Chart(el3,{type:'line',
-      data:{labels:days.map(d=>shortD(d)),
-        datasets:per.map((p,i)=>({label:p.who,data:dayBy[p.who],
+      data:{labels:tLbl,
+        datasets:per.map((p,i)=>({label:p.who,data:tBy[p.who],
           borderColor:cols[i],backgroundColor:cols[i],borderWidth:3,
           tension:.35,pointRadius:3,pointBackgroundColor:cols[i],
           spanGaps:true,fill:false}))},options:o});
-    CH.pkday.data._cfv=days; CH.pkday.data._unit='ชิ้น';
+    CH.pkday.data._cfv=pg==='day'?tk:tLbl; CH.pkday.data._unit='ชิ้น';
   }
 
   /* ช่วงเวลาที่หยิบหนาแน่น — เส้นโค้งมีพื้นที่ใต้กราฟ แยกตามคน */
@@ -5115,11 +5272,11 @@ function renderKPI(){
   const isOv = SEC==='overview';
   el('ovBox').hidden=!isOv;
   el('detail').hidden=isOv;
-  const TITLE={overview:['ภาพรวม KPI ทุกแผนก','Warehouse · Delivery · Admin — TDFB'],
+  const TITLE={overview:['ภาพรวม KPI ทุกแผนก','Warehouse · Delivery · Admin'],
                ontime:['KPI On-Time Performance','Admin · แพ็คสินค้าเสร็จตามวันที่ต้องการ'],
                oos:['KPI Out Of Stock','Warehouse · WH ส่งของให้ Packing ตามกำหนด'],
                diff:['KPI Stock Variance <2%','Warehouse · ความแม่นยำสต็อก · รายการที่นับไม่ตรง'],
-               dock:['KPI Dock Time To Stock','Warehouse · GR → Putaway · รับเข้าและจัดเก็บตามเกณฑ์'],
+               dock:['KPI Dock To Stock Time','Warehouse · GR → Putaway · รับเข้าและจัดเก็บตามเกณฑ์'],
                repl:['Replenishment','Warehouse · รายการที่ต้องเติมสต็อก'],
                fc:['Forecast','Warehouse · พยากรณ์ยอดขาย สต็อก และอัตรากำลังคน'],
                pick:['Picking','Warehouse · ภาพรวมการหยิบสินค้ารายคน ผลงาน และเวลาหนาแน่น'],
@@ -5300,6 +5457,23 @@ function renderKPI(){
   const now=new Date();
   el('kTs').textContent=`ข้อมูล ณ ${now.getDate()} ${MONTHS[now.getMonth()]} ${now.getFullYear()} `
     +`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')} น.`;
+}
+
+/* v-grp: กราฟแนวโน้มทุกหน้า — ภาพรวม (ไม่เลือกเดือน) = รายเดือน · เลือกเดือน = รายสัปดาห์
+   · เลือก Week/Day = รายวัน (กราฟที่ข้อมูลเป็นรายสัปดาห์อยู่แล้วจะคงเป็นรายสัปดาห์) */
+function tGrp(){ return (DAYSEL||WKSEL.length)?'day':fMonth()?'week':'month'; }
+function ymLbl(k){ return MON_S[+k.slice(5,7)-1]+' '+k.slice(2,4); }
+function isoWkKey(k){
+  const [y,m,d]=k.split('-').map(Number);
+  const t=new Date(Date.UTC(y,m-1,d));
+  t.setUTCDate(t.getUTCDate()+4-(t.getUTCDay()||7));
+  return t.getUTCFullYear()+'-W'+String(isoWeek(k)).padStart(2,'0');
+}
+/* สัปดาห์ ISO → เดือนที่วันพฤหัสของสัปดาห์นั้นอยู่ (ใช้กับแถวที่มีแค่เลขสัปดาห์ ไม่มีวันที่) */
+function wkToYM(y,w){
+  const j4=new Date(Date.UTC(y,0,4)), dn=j4.getUTCDay()||7;
+  const th=new Date(j4.getTime()+((w-1)*7+(4-dn))*864e5);
+  return th.getUTCFullYear()+'-'+String(th.getUTCMonth()+1).padStart(2,'0');
 }
 
 function isoWeek(k){
@@ -5533,7 +5707,7 @@ el('kReload').addEventListener('click',boot);
    layout จึงไม่เปลี่ยน) และสั่งให้กราฟวาดใหม่ที่ความละเอียดเท่ากับภาพที่ถ่าย */
 const SHOT_SLIDE_W=3840, SHOT_SLIDE_H=2160;
 const SHOT_BG='#100D26';
-const SHOT_PANEL_SEL='.big,.kpi,.cpanel,.fcacc-panel,.fcacc-cards,.sgrid,.brkcard,.panel,.kpis>.kpi';
+const SHOT_PANEL_SEL='.big,.kpi,.cpanel,.fcacc-panel,.fcacc-cards,.sgrid,.brkcard,.panel,.kpis>.kpi,.kpis>.kcell';
 const shotWait=ms=>new Promise(r=>setTimeout(r,ms));
 const shotFrame=()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
 async function shotLoadZip(){
@@ -5628,11 +5802,15 @@ async function shotExport({root,btn,name,title,zoomEls,bg=SHOT_BG,fg='#B7AEDE',m
   if(btn)btn.disabled=true;
   say('กำลังเตรียมภาพ…');
   const w0=root.offsetWidth;
+  window.__noFit=true;   /* v-fit: ห้ามปรับ zoom อัตโนมัติระหว่างถ่ายภาพ */
   const saved=zoomEls.map(e=>[e,e.style.zoom]);
   const rw=[root.style.width,root.style.maxWidth];
   zoomEls.forEach(e=>e.style.zoom='1');
   root.style.width=w0+'px'; root.style.maxWidth='none';
-  const S=Math.min(5,Math.max(2.5,(SHOT_SLIDE_W+60)/w0));
+  /* v-shot9: เดิมบังคับ scale ขั้นต่ำ 2.5 → คนที่ตั้งขนาดหน้าจอเล็ก/จอกว้าง (w0 กว้าง ~3000px)
+     ได้ canvas กว้าง 7,000–8,000px สูงหลายพัน เกินที่เบราว์เซอร์วาดไหว → ได้ภาพว่างเปล่า
+     ตอนนี้คำนวณ scale ให้ภาพกว้างราว 3,900px เท่ากันทุกคน ไม่ว่าจะตั้งขนาดจอเท่าไร */
+  const S=Math.min(5,Math.max(1,(SHOT_SLIDE_W+60)/w0));
   const charts=doc===document?Object.values(CH):[];
   /* ปิด tooltip ที่ค้างอยู่ตอนเอาเมาส์ชี้กราฟ ไม่ให้ติดไปในภาพ */
   charts.forEach(c=>{try{c.options.devicePixelRatio=S;
@@ -5673,15 +5851,53 @@ async function shotExport({root,btn,name,title,zoomEls,bg=SHOT_BG,fg='#B7AEDE',m
     pages.forEach((pg,i)=>pg.forEach(b=>b.items.forEach(it=>mark(it.el,'shotPg',String(i)))));
     mark(root,'shotRoot','1');
 
+    /* v-shot9: ถ้าภาพที่ได้ว่างเปล่า (เบราว์เซอร์วาด canvas ใหญ่ไม่ไหว — เจอบ่อยใน Safari/เครื่อง RAM น้อย)
+       ลองใหม่อัตโนมัติด้วยขนาดที่เล็กลง แทนการเซฟภาพว่างออกไป */
+    const shotBlank=c=>{
+      try{const x=c.getContext('2d'),w=c.width,h=c.height;
+        const t=document.createElement('canvas').getContext('2d');t.fillStyle=bg;t.fillRect(0,0,1,1);
+        const [r0,g0,b0]=t.getImageData(0,0,1,1).data;
+        const step=Math.max(1,Math.floor(Math.min(w,h)/60));
+        for(let yy=0;yy<h;yy+=step){const row=x.getImageData(0,yy,w,1).data;
+          for(let xx=0;xx<w;xx+=step){const o=xx*4;
+            if(Math.abs(row[o]-r0)+Math.abs(row[o+1]-g0)+Math.abs(row[o+2]-b0)>24)return false;}}
+        return true;}catch(e){return false;}
+    };
     const shoot=async(w,h,sc,prep)=>{
-      const s=Math.min(sc,Math.sqrt(1.2e8/(w*h)));
-      return html2canvas(root,{scale:s,backgroundColor:bg,useCORS:true,logging:false,
-        x:0,y:0,width:w,height:h,scrollX:0,scrollY:0,windowWidth:w,windowHeight:h,
-        onclone:d=>prep(d)});
+      const caps=[6e7,1.6e7,6e6];   /* พื้นที่ภาพสูงสุด (พิกเซล) ที่ลองตามลำดับ · 1.6e7 = เพดานของ Safari */
+      let c=null;
+      for(const cap of caps){
+        const s=Math.min(sc,Math.sqrt(cap/(w*h)),16000/h,16000/w);
+        c=await html2canvas(root,{scale:s,backgroundColor:bg,useCORS:true,logging:false,
+          x:0,y:0,width:w,height:h,scrollX:0,scrollY:0,windowWidth:w,windowHeight:h,
+          onclone:d=>prep(d)});
+        if(!shotBlank(c))return c;
+        c.width=c.height=0;
+      }
+      throw new Error('เบราว์เซอร์วาดภาพไม่ออก (ภาพว่าง) — ลองกด A+ ขยายหน้าจอขึ้น หรือใช้ Chrome แล้วบันทึกใหม่');
     };
     const pad2=n=>String(n).padStart(2,'0');
+    /* ---- v-shotpage: ทั้งหน้าเป็นภาพยาวภาพเดียว (.png ไม่ต้อง zip) ---- */
+    if(mode==='page'){
+      say('กำลังสร้างภาพทั้งหน้า…');
+      const hh=Math.max(root.scrollHeight,R.height);
+      let c=await shoot(w0,Math.ceil(hh+60),S,d=>{
+        const rc=d.querySelector('[data-shot-root="1"]'); if(rc)shotIsolate(d,rc,w0);});
+      c=shotTrim(c,bg);
+      const M=Math.round(c.width*0.025), FOOT=Math.round(c.width*0.03);
+      const out=document.createElement('canvas'); out.width=c.width+M*2; out.height=c.height+M+FOOT;
+      const x=out.getContext('2d'); x.fillStyle=bg; x.fillRect(0,0,out.width,out.height);
+      x.drawImage(c,M,M);
+      x.fillStyle=fg; x.font=`500 ${Math.round(FOOT*0.42)}px "Baloo 2","Mitr",sans-serif`; x.textBaseline='middle';
+      x.textAlign='left'; x.fillText('Logistics Dashboard · '+(title||''),M,out.height-FOOT/2);
+      const a=document.createElement('a'); a.download=name+'-fullpage.png';
+      a.href=URL.createObjectURL(await shotBlob(out));
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+      c.width=c.height=out.width=out.height=0;
+    }
     /* ---- แบบที่ 1: สไลด์ 16:9 ---- */
-    for(let i=0;mode!=='charts'&&i<pages.length;i++){
+    for(let i=0;mode!=='charts'&&mode!=='page'&&i<pages.length;i++){
       say(`กำลังสร้างสไลด์ ${i+1}/${pages.length}…`);
       const pg=pages[i], hh=pg[pg.length-1].bot-pg[0].top;
       let c=await shoot(w0,Math.ceil(hh+260),S,d=>{
@@ -5697,7 +5913,7 @@ async function shotExport({root,btn,name,title,zoomEls,bg=SHOT_BG,fg='#B7AEDE',m
       x.imageSmoothingQuality='high';
       x.drawImage(c,(sl.width-dw)/2,M+Math.max(0,(bh-dh)/2)*(dh<bh*0.6?0.4:1),dw,dh);
       x.fillStyle=fg; x.font='500 34px "Baloo 2","Mitr",sans-serif'; x.textBaseline='middle';
-      x.textAlign='left'; x.fillText('TDFB Operations · '+(title||''),M,sl.height-FOOT/2);
+      x.textAlign='left'; x.fillText('Logistics Dashboard · '+(title||''),M,sl.height-FOOT/2);
       x.textAlign='right'; x.fillText(`${i+1} / ${pages.length}`,sl.width-M,sl.height-FOOT/2);
       zip.file(`1-สไลด์ 16x9/slide-${pad2(i+1)}.png`,await shotBlob(sl));
       c.width=c.height=0;
@@ -5705,7 +5921,7 @@ async function shotExport({root,btn,name,title,zoomEls,bg=SHOT_BG,fg='#B7AEDE',m
     /* ---- แบบที่ 2 (v-shot6): แยกทีละหัวข้อ — หัวข้อ + เนื้อหาใต้หัวข้อนั้นจนถึงหัวข้อถัดไป
        เป็น 1 ภาพ (เช่น ชื่อหน้า + วงแหวน + การ์ดตัวเลข) ภาพจึงมีหัวข้อติดมาเสมอ ---- */
     const groups=[];
-    if(mode!=='slides'){
+    if(mode!=='slides'&&mode!=='page'){
       let g=null;
       /* v-shot7: ตัดเป็น "ทีละบรรทัด" — แถวที่มีหัวข้อของตัวเอง (เช่น กราฟ 3 ช่องที่มีชื่อกำกับ
          แต่ละช่อง) = 1 ภาพทั้งแถว · แถวที่ไม่มีหัวข้อ (การ์ดตัวเลข/ตาราง) ต่อท้ายภาพก่อนหน้า
@@ -5740,15 +5956,18 @@ async function shotExport({root,btn,name,title,zoomEls,bg=SHOT_BG,fg='#B7AEDE',m
       zip.file(`2-แยกทีละหัวข้อ/${pad2(j+1)}-${shotSafe(nm)}.png`,await shotBlob(c));
       c.width=c.height=0;
     }
+    if(mode!=='page'){
     say('กำลังรวมไฟล์…');
     const blob=await zip.generateAsync({type:'blob'});
     const a=document.createElement('a');
     a.download=name+(mode==='slides'?'-slides':mode==='charts'?'-charts':'')+'.zip'; a.href=URL.createObjectURL(blob);
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+    }
   }catch(e){ alert('บันทึกรูปไม่สำเร็จ: '+e.message); }
   marked.forEach(([e,k])=>{delete e.dataset[k];});
   saved.forEach(([e,z])=>e.style.zoom=z);
+  window.__noFit=false; if(window.fitZoom)fitZoom();
   root.style.width=rw[0]; root.style.maxWidth=rw[1];
   charts.forEach(c=>{try{delete c.options.devicePixelRatio;c.resize();}catch(e){}});
   if(btn){btn.disabled=false;btn.textContent=label;}
@@ -5762,6 +5981,7 @@ function shotMenu(btn,onPick){
   m.innerHTML=`<div class="sm-h">บันทึกเป็นรูปแบบไหน? <small style="font-weight:normal;color:var(--mute);font-size:18px">(ตัวบันทึก v8 · 24 ก.ย.)</small></div>
     <button data-m="slides"><b>🖼️ แบบรวม · สไลด์ 16:9</b><span>ทั้งหน้าแบ่งเป็นสไลด์ ขนาด Google Slides</span></button>
     <button data-m="charts"><b>🧩 แบบแยก · ทีละหัวข้อ</b><span>หัวข้อ + กราฟ/การ์ดใต้หัวข้อนั้น เป็น 1 ภาพ</span></button>
+    <button data-m="page"><b>📄 ทั้งหน้า · ภาพเดียว</b><span>ทั้งหน้าตั้งแต่บนสุดถึงล่างสุด เป็นภาพยาว .png ภาพเดียว</span></button>
     <button data-m="both"><b>📦 ทั้ง 2 แบบ</b><span>ได้ทั้งสไลด์และภาพแยก ในไฟล์ zip เดียว</span></button>`;
   document.body.appendChild(m);
   const r=btn.getBoundingClientRect(), z=parseFloat(getComputedStyle(document.body).zoom)||1;
@@ -5829,7 +6049,7 @@ const JOB='1bLDgYE8bXZ_iLdEG6FeBLyNf4OhcXKjMZq8Cks7jJmc';   /* Job Dairy Deliver
 const TEAMS={
   delivery:{
     title:'รายงานทีม Delivery',
-    sub:'งานจัดทำ MO · งานอื่นๆ · การแจ้งปัญหาประจำวัน — TDFB',
+    sub:'งานจัดทำ MO · งานอื่นๆ · การแจ้งปัญหาประจำวัน',
     source:'Job Dairy Delivery (MO Delivery · รายการ Dairy อื่นๆ) และ แจ้งรายการมีปัญหาประจำวันของ Operation (แท็บ Delivery)',
     panels:[
       {k:'mo',   t:'MO ประจำวัน',      c:'รายการจัดทำ MO Delivery', hd:'a', unit:'รายการ',
@@ -5842,7 +6062,7 @@ const TEAMS={
   },
   warehouse:{
     title:'รายงานทีม Warehouse',
-    sub:'การแจ้งปัญหาประจำวัน — TDFB',
+    sub:'การแจ้งปัญหาประจำวัน',
     source:'แจ้งรายการมีปัญหาประจำวันของ Operation (แท็บ Warehouse)',
     panels:[
       {k:'issue',t:'แจ้งปัญหาประจำวัน', c:'ป้ายสี = เกณฑ์ปัญหา', hd:'c', unit:'เคส',
@@ -5851,7 +6071,7 @@ const TEAMS={
   },
   admin:{
     title:'รายงานทีม Admin',
-    sub:'การแจ้งปัญหาประจำวัน — TDFB',
+    sub:'การแจ้งปัญหาประจำวัน',
     source:'แจ้งรายการมีปัญหาประจำวันของ Operation (แท็บ Admin)',
     panels:[
       {k:'issue',t:'แจ้งปัญหาประจำวัน', c:'ป้ายสี = ประเภทสาเหตุ', hd:'c', unit:'เคส',
@@ -6138,6 +6358,58 @@ window.RPT_INIT=(t)=>{ if(started){ if(t&&t!==TEAM) team(t); return; } started=t
 
   btns.forEach(b=>b.addEventListener('click',()=>
     go(b.dataset.view, b.dataset.view==='report'?b.dataset.team:(b.dataset.sec||'overview'))));
+
+  /* v-nav: กด ← / → (คีย์บอร์ด หรือปุ่มลูกศรซ้าย-ขวาบนจอ) เพื่อเปลี่ยน dashboard ไปหน้าก่อน/ถัดไป
+     เรียงตามลำดับในเมนูซ้าย · วนรอบ (หน้าสุดท้าย → หน้าแรก) */
+  const navTitle=b=>(b.textContent||'').trim();
+  function step(dir){
+    const i=btns.findIndex(b=>b.classList.contains('on'));
+    const n=btns[(Math.max(0,i)+dir+btns.length)%btns.length];
+    if(!n)return;
+    n.click();
+    window.scrollTo({top:0});
+    toast(navTitle(n),btns.indexOf(n)+1);
+    setTimeout(updNav,0);
+  }
+  let tT;
+  function toast(t,k){
+    let el=document.getElementById('navToast');
+    if(!el){el=document.createElement('div');el.id='navToast';document.body.appendChild(el);}
+    el.innerHTML='<b></b><span></span>';
+    el.querySelector('b').textContent=t; el.querySelector('span').textContent=k+' / '+btns.length;
+    el.classList.add('show'); clearTimeout(tT); tT=setTimeout(()=>el.classList.remove('show'),1400);
+  }
+  const prev=document.createElement('button'), next=document.createElement('button');
+  prev.type=next.type='button'; prev.className='navArrow l'; next.className='navArrow r';
+  prev.innerHTML='&#8249;'; next.innerHTML='&#8250;';
+  prev.addEventListener('click',e=>{e.stopPropagation();step(-1);});
+  next.addEventListener('click',e=>{e.stopPropagation();step(1);});
+  document.body.append(prev,next);
+  function updNav(){
+    const i=Math.max(0,btns.findIndex(b=>b.classList.contains('on')));
+    const pb=btns[(i-1+btns.length)%btns.length], nb=btns[(i+1)%btns.length];
+    prev.title='← '+navTitle(pb); prev.setAttribute('aria-label','หน้าก่อนหน้า: '+navTitle(pb));
+    next.title=navTitle(nb)+' →'; next.setAttribute('aria-label','หน้าถัดไป: '+navTitle(nb));
+  }
+  btns.forEach(b=>b.addEventListener('click',()=>setTimeout(updNav,0)));
+  function onKey(e){
+    if(e.key!=='ArrowLeft'&&e.key!=='ArrowRight')return;
+    if(e.altKey||e.ctrlKey||e.metaKey||e.shiftKey)return;
+    const t=e.target, tag=(t&&t.tagName||'').toLowerCase();
+    if(tag==='input'||tag==='select'||tag==='textarea'||(t&&t.isContentEditable))return;
+    if(document.querySelector('.wsel-p:not([hidden]),.kcal-p:not([hidden]),#clkPop'))return;  /* มีดรอปดาวน์/ปฏิทินเปิดอยู่ */
+    e.preventDefault(); step(e.key==='ArrowRight'?1:-1);
+  }
+  document.addEventListener('keydown',onKey);
+  /* หน้าที่ฝังเป็น iframe (SOP · Return · Cancel) — คลิกข้างในแล้วคีย์บอร์ดไปอยู่ใน iframe ต้องดักในนั้นด้วย */
+  function hookFrames(){
+    document.querySelectorAll('iframe.sopframe').forEach(f=>{
+      const h=()=>{try{const d=f.contentDocument; if(d&&!d.__navKey){d.__navKey=1;d.addEventListener('keydown',onKey);if(window.__usizeKey)d.addEventListener('keydown',window.__usizeKey);}}catch(x){}};
+      if(!f.__navHooked){f.__navHooked=1;f.addEventListener('load',h);} h();
+    });
+  }
+  new MutationObserver(hookFrames).observe(document.getElementById('vKPI'),{childList:true,subtree:true});
+  updNav();
 
   const t=document.getElementById('sideToggle');
   if(t)t.addEventListener('click',e=>{e.stopPropagation();document.body.classList.toggle('side-open');});
@@ -6844,7 +7116,7 @@ window.RPT_INIT=(t)=>{ if(started){ if(t&&t!==TEAM) team(t); return; } started=t
 <template id="retDoc">&lt;!DOCTYPE html&gt;
 &lt;html lang=&quot;th&quot;&gt;&lt;head&gt;&lt;meta charset=&quot;utf-8&quot;&gt;
 &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1&quot;&gt;
-&lt;title&gt;Return Dashboard — TDFB&lt;/title&gt;
+&lt;title&gt;Return Dashboard&lt;/title&gt;
 &lt;style&gt;
 :root{--paper:#F7F6F1;--ink:#1C2119;--matcha:#4F7A3F;--matcha-d:#3A5C2E;--clay:#B5603A;
  --tint:#E7EDE0;--line:#D9D8CF;--muted:#6B7266;}
@@ -6923,7 +7195,7 @@ td.hi{font-weight:650}
     &lt;div&gt;&lt;h3&gt;แยกตามสาเหตุ&lt;/h3&gt;&lt;svg id=&quot;d2&quot;&gt;&lt;/svg&gt;&lt;/div&gt;
   &lt;/div&gt;
   &lt;div class=&quot;scroll&quot;&gt;
-  &lt;table id=&quot;causetbl&quot;&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;สาเหตุ&lt;/th&gt;&lt;th&gt;ใบ&lt;/th&gt;&lt;th&gt;สัดส่วน&lt;/th&gt;&lt;th&gt;ห่าง (กลาง)&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tbody&gt;&lt;/tbody&gt;&lt;/table&gt;
+  &lt;table id=&quot;causetbl&quot;&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;สาเหตุ&lt;/th&gt;&lt;th&gt;ออเดอร์&lt;/th&gt;&lt;th&gt;สัดส่วน&lt;/th&gt;&lt;th&gt;ห่าง (กลาง)&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tbody&gt;&lt;/tbody&gt;&lt;/table&gt;
   &lt;/div&gt;
 &lt;/div&gt;
 
@@ -6944,17 +7216,17 @@ td.hi{font-weight:650}
   &lt;div class=&quot;panel&quot;&gt;
     &lt;h2&gt;สินค้าที่ตีกลับบ่อย&lt;/h2&gt;
     &lt;p class=&quot;note&quot;&gt;ของออกจากคลังไปแล้ว เสียค่าส่งสองเที่ยว&lt;/p&gt;
-    &lt;table id=&quot;prodret&quot;&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;สินค้า&lt;/th&gt;&lt;th&gt;ใบ&lt;/th&gt;&lt;th&gt;ชิ้น&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tbody&gt;&lt;/tbody&gt;&lt;/table&gt;
+    &lt;table id=&quot;prodret&quot;&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;สินค้า&lt;/th&gt;&lt;th&gt;ออเดอร์&lt;/th&gt;&lt;th&gt;ชิ้น&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tbody&gt;&lt;/tbody&gt;&lt;/table&gt;
   &lt;/div&gt;
   &lt;div class=&quot;panel&quot;&gt;
     &lt;h2&gt;สินค้าที่ยกเลิกในวันบ่อย&lt;/h2&gt;
     &lt;p class=&quot;note&quot;&gt;จับได้ก่อนของออก ไม่เสียค่าส่ง&lt;/p&gt;
-    &lt;table id=&quot;prodcan&quot;&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;สินค้า&lt;/th&gt;&lt;th&gt;ใบ&lt;/th&gt;&lt;th&gt;ชิ้น&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tbody&gt;&lt;/tbody&gt;&lt;/table&gt;
+    &lt;table id=&quot;prodcan&quot;&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;สินค้า&lt;/th&gt;&lt;th&gt;ออเดอร์&lt;/th&gt;&lt;th&gt;ชิ้น&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tbody&gt;&lt;/tbody&gt;&lt;/table&gt;
   &lt;/div&gt;
 &lt;/div&gt;
 
 &lt;div class=&quot;panel&quot;&gt;
-  &lt;h2&gt;แนวโน้มรายสัปดาห์&lt;/h2&gt;
+  &lt;h2 id=&quot;trendh&quot;&gt;แนวโน้มรายสัปดาห์&lt;/h2&gt;
   &lt;p class=&quot;note&quot; id=&quot;trendnote&quot;&gt;&lt;/p&gt;
   &lt;svg id=&quot;trend&quot; viewBox=&quot;0 0 900 220&quot; style=&quot;width:100%;height:220px&quot;&gt;&lt;/svg&gt;
   &lt;div class=&quot;legend&quot; style=&quot;margin-top:8px&quot;&gt;
@@ -7046,7 +7318,7 @@ function donut(svgId,parts,total){
         +share.toFixed(0)+&#x27;%&lt;/text&gt;&#x27;;}
     ang=a2;});
   out+=&#x27;&lt;text x=&quot;&#x27;+cx+&#x27;&quot; y=&quot;&#x27;+(cy+2)+&#x27;&quot; text-anchor=&quot;middle&quot; font-size=&quot;26&quot; font-weight=&quot;660&quot;&gt;&#x27;+total+&#x27;&lt;/text&gt;&#x27;;
-  out+=&#x27;&lt;text x=&quot;&#x27;+cx+&#x27;&quot; y=&quot;&#x27;+(cy+19)+&#x27;&quot; text-anchor=&quot;middle&quot; font-size=&quot;10.5&quot; fill=&quot;#6B7266&quot;&gt;ใบ&lt;/text&gt;&#x27;;
+  out+=&#x27;&lt;text x=&quot;&#x27;+cx+&#x27;&quot; y=&quot;&#x27;+(cy+19)+&#x27;&quot; text-anchor=&quot;middle&quot; font-size=&quot;10.5&quot; fill=&quot;#6B7266&quot;&gt;ออเดอร์&lt;/text&gt;&#x27;;
   let y=legendTop;
   show.forEach(([nm,n,col])=&gt;{
     out+=&#x27;&lt;rect x=&quot;10&quot; y=&quot;&#x27;+(y-9)+&#x27;&quot; width=&quot;11&quot; height=&quot;11&quot; rx=&quot;3&quot; fill=&quot;&#x27;+col+&#x27;&quot;/&gt;&#x27;
@@ -7067,8 +7339,15 @@ function prodTable(D,filter,sel){
 }
 
 function trend(D){
-  const wk={}; D.forEach(r=&gt;{const k=r.w||&#x27;?&#x27;;(wk[k]??={s:0,c:0});shipped(r)?wk[k].s++:wk[k].c++;});
-  const ks=Object.keys(wk).sort((a,b)=&gt;a-b);
+  /* v-grp: ช่วงวันที่ยาวกว่า ~1 เดือน (รวมถึงภาพรวมทั้งหมด) = รายเดือน · สั้นกว่านั้น = รายสัปดาห์ */
+  const f0=el(&#x27;from&#x27;).value,t0=el(&#x27;to&#x27;).value;
+  const byM=!(f0&amp;&amp;t0)||(new Date(t0)-new Date(f0))/864e5&gt;35;
+  const MS=[&#x27;ม.ค.&#x27;,&#x27;ก.พ.&#x27;,&#x27;มี.ค.&#x27;,&#x27;เม.ย.&#x27;,&#x27;พ.ค.&#x27;,&#x27;มิ.ย.&#x27;,&#x27;ก.ค.&#x27;,&#x27;ส.ค.&#x27;,&#x27;ก.ย.&#x27;,&#x27;ต.ค.&#x27;,&#x27;พ.ย.&#x27;,&#x27;ธ.ค.&#x27;];
+  const kOf=r=&gt;byM?((r.d||&#x27;&#x27;).slice(0,7)||&#x27;?&#x27;):(r.w||&#x27;?&#x27;);
+  const lblOf=k=&gt;byM?(k===&#x27;?&#x27;?&#x27;ไม่ระบุ&#x27;:MS[+k.slice(5,7)-1]+&#x27; &#x27;+k.slice(2,4)):&#x27;สัปดาห์ &#x27;+k;
+  el(&#x27;trendh&#x27;).textContent=byM?&#x27;แนวโน้มรายเดือน&#x27;:&#x27;แนวโน้มรายสัปดาห์&#x27;;
+  const wk={}; D.forEach(r=&gt;{const k=kOf(r);(wk[k]??={s:0,c:0});shipped(r)?wk[k].s++:wk[k].c++;});
+  const ks=Object.keys(wk).sort(byM?((a,b)=&gt;a&lt;b?-1:a&gt;b?1:0):((a,b)=&gt;a-b));
   if(!ks.length){el(&#x27;trend&#x27;).innerHTML=&#x27;&lt;text x=&quot;450&quot; y=&quot;110&quot; text-anchor=&quot;middle&quot; font-size=&quot;14&quot; fill=&quot;#6B7266&quot;&gt;ไม่มีข้อมูลในช่วงนี้&lt;/text&gt;&#x27;;el(&#x27;trendnote&#x27;).textContent=&#x27;&#x27;;return;}
   const max=Math.max(...ks.map(k=&gt;wk[k].s+wk[k].c))*1.15||1;
   const W=900,H=220,P=34,bw=Math.min(90,(W-P*2)/ks.length*0.6);
@@ -7081,9 +7360,9 @@ function trend(D){
     s+=&#x27;&lt;rect x=&quot;&#x27;+(x(i)-bw/2)+&#x27;&quot; y=&quot;&#x27;+y(o.c)+&#x27;&quot; width=&quot;&#x27;+bw+&#x27;&quot; height=&quot;&#x27;+Math.max(0,y(0)-y(o.c))+&#x27;&quot; fill=&quot;#3F8E6E&quot; rx=&quot;3&quot;/&gt;&#x27;;
     s+=&#x27;&lt;rect x=&quot;&#x27;+(x(i)-bw/2)+&#x27;&quot; y=&quot;&#x27;+y(t)+&#x27;&quot; width=&quot;&#x27;+bw+&#x27;&quot; height=&quot;&#x27;+Math.max(0,y(o.c)-y(t))+&#x27;&quot; fill=&quot;#C2603C&quot; rx=&quot;3&quot;/&gt;&#x27;;
     s+=&#x27;&lt;text x=&quot;&#x27;+x(i)+&#x27;&quot; y=&quot;&#x27;+(y(t)-7)+&#x27;&quot; font-size=&quot;12&quot; font-weight=&quot;600&quot; text-anchor=&quot;middle&quot;&gt;&#x27;+t+&#x27;&lt;/text&gt;&#x27;;
-    s+=&#x27;&lt;text x=&quot;&#x27;+x(i)+&#x27;&quot; y=&quot;&#x27;+(H-10)+&#x27;&quot; font-size=&quot;11.5&quot; text-anchor=&quot;middle&quot; fill=&quot;#6B7266&quot;&gt;สัปดาห์ &#x27;+k+&#x27;&lt;/text&gt;&#x27;;});
+    s+=&#x27;&lt;text x=&quot;&#x27;+x(i)+&#x27;&quot; y=&quot;&#x27;+(H-10)+&#x27;&quot; font-size=&quot;11.5&quot; text-anchor=&quot;middle&quot; fill=&quot;#6B7266&quot;&gt;&#x27;+lblOf(k)+&#x27;&lt;/text&gt;&#x27;;});
   el(&#x27;trend&#x27;).innerHTML=s;
-  el(&#x27;trendnote&#x27;).textContent=ks.length&lt;6?&#x27;ข้อมูลยังมี &#x27;+ks.length+&#x27; สัปดาห์ ต้องสะสมอีกสักระยะถึงจะอ่านแนวโน้มได้จริง&#x27;:&#x27;&#x27;;
+  el(&#x27;trendnote&#x27;).textContent=!byM&amp;&amp;ks.length&lt;6?&#x27;ข้อมูลยังมี &#x27;+ks.length+&#x27; สัปดาห์ ต้องสะสมอีกสักระยะถึงจะอ่านแนวโน้มได้จริง&#x27;:&#x27;&#x27;;
 }
 
 const current=()=&gt;{const f=el(&#x27;from&#x27;).value,t=el(&#x27;to&#x27;).value,p=el(&#x27;plat&#x27;).value,c=el(&#x27;cause&#x27;).value;
@@ -7092,13 +7371,13 @@ const current=()=&gt;{const f=el(&#x27;from&#x27;).value,t=el(&#x27;to&#x27;).va
 function render(){
   const D=current();
   const skipped=RAW.length-ALL.length;
-  el(&#x27;meta&#x27;).textContent=(LIVE?&#x27;ข้อมูลสดจากชีต&#x27;:&#x27;ข้อมูลสำรองในไฟล์&#x27;)+&#x27; · &#x27;+ALL.length+&#x27; ใบ · &#x27;+MIN+&#x27; ถึง &#x27;+MAX
-    +(skipped?&#x27; · ไม่นับอีก &#x27;+skipped+&#x27; ใบที่ยังไม่ได้ระบุสาเหตุใน Odoo&#x27;:&#x27;&#x27;);
-  el(&#x27;hint&#x27;).textContent=&#x27;กำลังแสดง &#x27;+D.length+&#x27; ใบ จาก &#x27;+ALL.length+&#x27; ใบ&#x27;;
+  el(&#x27;meta&#x27;).textContent=(LIVE?&#x27;ข้อมูลสดจากชีต&#x27;:&#x27;ข้อมูลสำรองในไฟล์&#x27;)+&#x27; · &#x27;+ALL.length+&#x27; ออเดอร์ · &#x27;+MIN+&#x27; ถึง &#x27;+MAX
+    +(skipped?&#x27; · ไม่นับอีก &#x27;+skipped+&#x27; ออเดอร์ที่ยังไม่ได้ระบุสาเหตุใน Odoo&#x27;:&#x27;&#x27;);
+  el(&#x27;hint&#x27;).textContent=&#x27;กำลังแสดง &#x27;+D.length+&#x27; ออเดอร์ จาก &#x27;+ALL.length+&#x27; ออเดอร์&#x27;;
 
   const nShip=D.filter(shipped).length, nCan=D.length-nShip;
   el(&#x27;kpis&#x27;).innerHTML=[
-   &#x27;&lt;b&gt;&#x27;+D.length+&#x27;&lt;/b&gt;&lt;span&gt;ใบในช่วงที่เลือก&lt;/span&gt;&#x27;,
+   &#x27;&lt;b&gt;&#x27;+D.length+&#x27;&lt;/b&gt;&lt;span&gt;ออเดอร์ในช่วงที่เลือก&lt;/span&gt;&#x27;,
    &#x27;&lt;b&gt;&#x27;+nShip+&#x27;&lt;/b&gt;&lt;span&gt;ตีกลับ (ของออกไปแล้ว)&lt;/span&gt;&lt;small&gt;&#x27;+pct(nShip,D.length).toFixed(0)+&#x27;% ของที่แสดง&lt;/small&gt;&#x27;,
    &#x27;&lt;b&gt;&#x27;+nCan+&#x27;&lt;/b&gt;&lt;span&gt;ยกเลิกก่อนของออก&lt;/span&gt;&lt;small&gt;&#x27;+pct(nCan,D.length).toFixed(0)+&#x27;% ไม่เสียค่าส่ง&lt;/small&gt;&#x27;,
   ].map(x=&gt;&#x27;&lt;div class=&quot;kpi&quot;&gt;&#x27;+x+&#x27;&lt;/div&gt;&#x27;).join(&#x27;&#x27;);
@@ -7137,11 +7416,11 @@ function render(){
     const sh=rs.filter(shipped).length;
     return &#x27;&lt;div style=&quot;margin-bottom:14px&quot;&gt;&#x27;
      +&#x27;&lt;div style=&quot;display:flex;justify-content:space-between;font-size:13.5px;font-weight:550&quot;&gt;&#x27;
-     +&#x27;&lt;span&gt;&#x27;+p+&#x27;&lt;/span&gt;&lt;span style=&quot;color:var(--muted);font-weight:400&quot;&gt;&#x27;+rs.length+&#x27; ใบ · ของออกไปแล้ว &#x27;
+     +&#x27;&lt;span&gt;&#x27;+p+&#x27;&lt;/span&gt;&lt;span style=&quot;color:var(--muted);font-weight:400&quot;&gt;&#x27;+rs.length+&#x27; ออเดอร์ · ของออกไปแล้ว &#x27;
      +pct(sh,rs.length).toFixed(0)+&#x27;%&#x27;+(pct(sh,rs.length)&gt;55?&#x27;&lt;span class=&quot;tag warn&quot;&gt;สูง&lt;/span&gt;&#x27;:&#x27;&#x27;)+&#x27;&lt;/span&gt;&lt;/div&gt;&#x27;
      +&#x27;&lt;div class=&quot;bar&quot; style=&quot;height:22px;margin:6px 0 4px&quot;&gt;&#x27;
      +ord.map(([cc,n])=&gt;{const w=pct(n,rs.length);
-       return &#x27;&lt;div style=&quot;width:&#x27;+w+&#x27;%;background:&#x27;+(COLORS[cc]||&#x27;#A8A79E&#x27;)+&#x27;&quot; title=&quot;&#x27;+cc+&#x27; &#x27;+n+&#x27; ใบ&quot;&gt;&#x27;+(w&gt;14?n:&#x27;&#x27;)+&#x27;&lt;/div&gt;&#x27;;}).join(&#x27;&#x27;)
+       return &#x27;&lt;div style=&quot;width:&#x27;+w+&#x27;%;background:&#x27;+(COLORS[cc]||&#x27;#A8A79E&#x27;)+&#x27;&quot; title=&quot;&#x27;+cc+&#x27; &#x27;+n+&#x27; ออเดอร์&quot;&gt;&#x27;+(w&gt;14?n:&#x27;&#x27;)+&#x27;&lt;/div&gt;&#x27;;}).join(&#x27;&#x27;)
      +&#x27;&lt;/div&gt;&lt;div class=&quot;note&quot;&gt;&#x27;+ord.map(([cc,n])=&gt;cc+&#x27; &#x27;+pct(n,rs.length).toFixed(0)+&#x27;%&#x27;).join(&#x27; · &#x27;)+&#x27;&lt;/div&gt;&lt;/div&gt;&#x27;;
   }).join(&#x27;&#x27;)||&#x27;&lt;div class=&quot;empty&quot;&gt;ไม่มีข้อมูลในช่วงนี้&lt;/div&gt;&#x27;;
 
@@ -7213,7 +7492,7 @@ el(&#x27;save&#x27;).onclick=async function(){
 <template id="canDoc">&lt;!DOCTYPE html&gt;
 &lt;html lang="th"&gt;&lt;head&gt;&lt;meta charset="utf-8"&gt;
 &lt;meta name="viewport" content="width=device-width,initial-scale=1"&gt;
-&lt;title&gt;Cancel Dashboard — TDFB&lt;/title&gt;
+&lt;title&gt;Cancel Dashboard&lt;/title&gt;
 &lt;style&gt;
 :root{--paper:#F7F6F1;--ink:#1C2119;--matcha:#4F7A3F;--matcha-d:#3A5C2E;--clay:#B5603A;
  --tint:#E7EDE0;--line:#D9D8CF;--muted:#6B7266;}
@@ -7285,7 +7564,7 @@ td.hi{font-weight:650}
   &lt;h2&gt;แยกตามหมวด&lt;/h2&gt;
   &lt;svg id="d2" style="width:100%;max-width:420px;height:auto;display:block;margin:10px auto 4px"&gt;&lt;/svg&gt;
   &lt;div class="scroll"&gt;
-  &lt;table id="cattbl"&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;หมวด&lt;/th&gt;&lt;th&gt;ใบ&lt;/th&gt;&lt;th&gt;สัดส่วน&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tbody&gt;&lt;/tbody&gt;&lt;/table&gt;
+  &lt;table id="cattbl"&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;หมวด&lt;/th&gt;&lt;th&gt;ออเดอร์&lt;/th&gt;&lt;th&gt;สัดส่วน&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tbody&gt;&lt;/tbody&gt;&lt;/table&gt;
   &lt;/div&gt;
 &lt;/div&gt;
 
@@ -7301,7 +7580,7 @@ td.hi{font-weight:650}
   &lt;div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:10px 0 6px"&gt;
     &lt;div class="legend" id="platleg"&gt;&lt;/div&gt;
     &lt;div class="chips" style="margin:0"&gt;
-      &lt;button class="chip on" id="mCount"&gt;จำนวนใบ&lt;/button&gt;
+      &lt;button class="chip on" id="mCount"&gt;จำนวนออเดอร์&lt;/button&gt;
       &lt;button class="chip" id="mPct"&gt;สัดส่วน %&lt;/button&gt;
     &lt;/div&gt;
   &lt;/div&gt;
@@ -7311,7 +7590,7 @@ td.hi{font-weight:650}
 &lt;/div&gt;
 
 &lt;div class="panel"&gt;
-  &lt;h2&gt;แนวโน้มรายสัปดาห์&lt;/h2&gt;
+  &lt;h2 id="trendh"&gt;แนวโน้มรายสัปดาห์&lt;/h2&gt;
   &lt;p class="note" id="trendnote"&gt;&lt;/p&gt;
   &lt;svg id="trend" viewBox="0 0 900 220" style="width:100%;height:220px"&gt;&lt;/svg&gt;
   &lt;div class="legend" style="margin-top:8px" id="trendleg"&gt;&lt;/div&gt;
@@ -7430,7 +7709,7 @@ function donut(svgId,parts,total){
       out+='&lt;text x="'+tx+'" y="'+(ty+4)+'" text-anchor="middle" font-size="12.5" font-weight="650" fill="#fff"&gt;'+share.toFixed(0)+'%&lt;/text&gt;';}
     ang=a2;});
   out+='&lt;text x="'+cx+'" y="'+(cy+2)+'" text-anchor="middle" font-size="26" font-weight="660"&gt;'+total+'&lt;/text&gt;';
-  out+='&lt;text x="'+cx+'" y="'+(cy+19)+'" text-anchor="middle" font-size="10.5" fill="#6B7266"&gt;ใบ&lt;/text&gt;';
+  out+='&lt;text x="'+cx+'" y="'+(cy+19)+'" text-anchor="middle" font-size="10.5" fill="#6B7266"&gt;ออเดอร์&lt;/text&gt;';
   let y=legendTop;
   show.forEach(([nm,n,col])=&gt;{
     out+='&lt;rect x="10" y="'+(y-9)+'" width="11" height="11" rx="3" fill="'+col+'"/&gt;'
@@ -7441,8 +7720,15 @@ function donut(svgId,parts,total){
 }
 
 function trend(D){
+  /* v-grp: ช่วงวันที่ยาวกว่า ~1 เดือน (รวมถึงภาพรวมทั้งหมด) = รายเดือน · สั้นกว่านั้น = รายสัปดาห์ */
+  const f0=el('from').value,t0=el('to').value;
+  const byM=!(f0&amp;&amp;t0)||(new Date(t0)-new Date(f0))/864e5&gt;35;
+  const MS=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const kOf=r=&gt;byM?((r.d||'').slice(0,7)||'?'):(r.w||'?');
+  const lblOf=k=&gt;byM?(k==='?'?'ไม่ระบุ':MS[+k.slice(5,7)-1]+' '+k.slice(2,4)):'สัปดาห์ '+k;
+  el('trendh').textContent=byM?'แนวโน้มรายเดือน':'แนวโน้มรายสัปดาห์';
   const wk={},first={};
-  D.forEach(r=&gt;{const k=r.w||'?';(wk[k]??={});CATS.forEach(c=&gt;wk[k][c]??=0);wk[k][r.c]++;
+  D.forEach(r=&gt;{const k=kOf(r);(wk[k]??={});CATS.forEach(c=&gt;wk[k][c]??=0);wk[k][r.c]++;
     if(!first[k]||r.d&lt;first[k])first[k]=r.d;});
   const ks=Object.keys(wk).sort((a,b)=&gt;first[a]&lt;first[b]?-1:1);   // เรียงตามวันที่จริง ไม่ใช่เลขสัปดาห์
   if(!ks.length){el('trend').innerHTML='&lt;text x="450" y="110" text-anchor="middle" font-size="14" fill="#6B7266"&gt;ไม่มีข้อมูลในช่วงนี้&lt;/text&gt;';el('trendnote').textContent='';return;}
@@ -7460,26 +7746,26 @@ function trend(D){
       s+='&lt;rect x="'+(x(i)-bw/2)+'" y="'+y(acc+n)+'" width="'+bw+'" height="'+Math.max(0,y(acc)-y(acc+n))
         +'" fill="'+COLORS[c]+'" rx="3"/&gt;'; acc+=n;});
     s+='&lt;text x="'+x(i)+'" y="'+(y(acc)-7)+'" font-size="12" font-weight="600" text-anchor="middle"&gt;'+acc+'&lt;/text&gt;';
-    s+='&lt;text x="'+x(i)+'" y="'+(H-10)+'" font-size="11.5" text-anchor="middle" fill="#6B7266"&gt;สัปดาห์ '+k+'&lt;/text&gt;';});
+    s+='&lt;text x="'+x(i)+'" y="'+(H-10)+'" font-size="11.5" text-anchor="middle" fill="#6B7266"&gt;'+lblOf(k)+'&lt;/text&gt;';});
   el('trend').innerHTML=s;
   el('trendleg').innerHTML=CATS.map(c=&gt;'&lt;span&gt;&lt;i style="background:'+COLORS[c]+'"&gt;&lt;/i&gt;'+c+'&lt;/span&gt;').join('');
-  el('trendnote').textContent=ks.length&lt;6?'ข้อมูลยังมี '+ks.length+' สัปดาห์ ต้องสะสมอีกสักระยะถึงจะอ่านแนวโน้มได้จริง':'';
+  el('trendnote').textContent=!byM&amp;&amp;ks.length&lt;6?'ข้อมูลยังมี '+ks.length+' สัปดาห์ ต้องสะสมอีกสักระยะถึงจะอ่านแนวโน้มได้จริง':'';
 }
 
 function render(){
   const D=current();
   el('meta').textContent=(LIVE?'ข้อมูลสดจากชีต':'ข้อมูลสำรองในไฟล์')
-    +' · '+ALL.length+' ใบ · '+MIN+' ถึง '+MAX;
-  el('hint').textContent='กำลังแสดง '+D.length+' ใบ จาก '+ALL.length+' ใบ';
+    +' · '+ALL.length+' ออเดอร์ · '+MIN+' ถึง '+MAX;
+  el('hint').textContent='กำลังแสดง '+D.length+' ออเดอร์ จาก '+ALL.length+' ออเดอร์';
 
   const nShip=D.filter(shipped).length;
   const nPack=D.filter(r=&gt;r.c==='ยกเลิกก่อนแพ็ค').length;
   const nPick=D.filter(r=&gt;r.c==='ยกเลิกก่อนหยิบ').length;
   el('kpis').innerHTML=[
-   '&lt;b&gt;'+D.length+'&lt;/b&gt;&lt;span&gt;ใบยกเลิกทั้งหมด&lt;/span&gt;',
-   '&lt;b&gt;'+nPick+'&lt;/b&gt;&lt;span&gt;ใบยกเลิกก่อนหยิบ&lt;/span&gt;&lt;small&gt;'+pct(nPick,D.length).toFixed(0)+'%&lt;/small&gt;',
-   '&lt;b&gt;'+nPack+'&lt;/b&gt;&lt;span&gt;ใบยกเลิกก่อนแพ็ค&lt;/span&gt;&lt;small&gt;'+pct(nPack,D.length).toFixed(0)+'%&lt;/small&gt;',
-   '&lt;b&gt;'+nShip+'&lt;/b&gt;&lt;span&gt;ใบยกเลิกหลังแพ็ค&lt;/span&gt;&lt;small&gt;'+pct(nShip,D.length).toFixed(0)+'%&lt;/small&gt;',
+   '&lt;b&gt;'+D.length+'&lt;/b&gt;&lt;span&gt;ออเดอร์ยกเลิกทั้งหมด&lt;/span&gt;',
+   '&lt;b&gt;'+nPick+'&lt;/b&gt;&lt;span&gt;ออเดอร์ยกเลิกก่อนหยิบ&lt;/span&gt;&lt;small&gt;'+pct(nPick,D.length).toFixed(0)+'%&lt;/small&gt;',
+   '&lt;b&gt;'+nPack+'&lt;/b&gt;&lt;span&gt;ออเดอร์ยกเลิกก่อนแพ็ค&lt;/span&gt;&lt;small&gt;'+pct(nPack,D.length).toFixed(0)+'%&lt;/small&gt;',
+   '&lt;b&gt;'+nShip+'&lt;/b&gt;&lt;span&gt;ออเดอร์ยกเลิกหลังแพ็ค&lt;/span&gt;&lt;small&gt;'+pct(nShip,D.length).toFixed(0)+'%&lt;/small&gt;',
   ].map(x=&gt;'&lt;div class="kpi"&gt;'+x+'&lt;/div&gt;').join('');
 
   const cs={}; D.forEach(r=&gt;(cs[r.c]??=[]).push(r));
@@ -7513,11 +7799,11 @@ function render(){
     const sh=rs.filter(shipped).length;
     return '&lt;div style="margin-bottom:14px"&gt;'
      +'&lt;div style="display:flex;justify-content:space-between;font-size:13.5px;font-weight:550"&gt;'
-     +'&lt;span&gt;'+p+'&lt;/span&gt;&lt;span style="color:var(--muted);font-weight:400"&gt;'+rs.length+' ใบ · ของออกไปแล้ว '
+     +'&lt;span&gt;'+p+'&lt;/span&gt;&lt;span style="color:var(--muted);font-weight:400"&gt;'+rs.length+' ออเดอร์ · ของออกไปแล้ว '
      +pct(sh,rs.length).toFixed(0)+'%'+(pct(sh,rs.length)&gt;60?'&lt;span class="tag"&gt;สูง&lt;/span&gt;':'')+'&lt;/span&gt;&lt;/div&gt;'
      +'&lt;div class="bar" style="height:22px;margin:6px 0 4px"&gt;'
      +ord.map(([cc,n])=&gt;{const w=pct(n,rs.length);
-       return '&lt;div style="width:'+w+'%;background:'+COLORS[cc]+'" title="'+cc+' '+n+' ใบ"&gt;'+(w&gt;14?n:'')+'&lt;/div&gt;';}).join('')
+       return '&lt;div style="width:'+w+'%;background:'+COLORS[cc]+'" title="'+cc+' '+n+' ออเดอร์"&gt;'+(w&gt;14?n:'')+'&lt;/div&gt;';}).join('')
      +'&lt;/div&gt;&lt;div class="note"&gt;'+ord.map(([cc,n])=&gt;cc+' '+pct(n,rs.length).toFixed(0)+'%').join(' · ')+'&lt;/div&gt;&lt;/div&gt;';
   }).join('')||'&lt;div class="empty"&gt;ไม่มีข้อมูลในช่วงนี้&lt;/div&gt;';
 
@@ -7555,12 +7841,12 @@ function platChart(D,bp){
       if(h&gt;18) s+='&lt;text x="'+x(i)+'" y="'+(y(acc+v)+h/2+4)+'" text-anchor="middle" font-size="12" font-weight="600" fill="#fff"&gt;'+lbl+'&lt;/text&gt;';
       acc+=v;});
     s+='&lt;text x="'+x(i)+'" y="'+(y(acc)-8)+'" font-size="13" font-weight="650" text-anchor="middle"&gt;'
-      +(PC?tot(k)+' ใบ':tot(k))+'&lt;/text&gt;';
+      +(PC?tot(k)+' ออเดอร์':tot(k))+'&lt;/text&gt;';
     s+='&lt;text x="'+x(i)+'" y="'+(H-12)+'" font-size="12" text-anchor="middle" fill="#1C2119"&gt;'+k+'&lt;/text&gt;';});
   svg.innerHTML=s;
   el('platnote').textContent=PC
-    ?'แท่งสูงเท่ากันทุกช่องทาง เทียบสัดส่วนได้แม้ช่องทางที่มีใบน้อย · ตัวเลขบนหัวแท่งคือจำนวนใบจริง'
-    :'ความสูงตามจำนวนใบจริง · ช่องทางที่มีใบน้อยจะเห็นยาก ให้สลับไปดูสัดส่วน';
+    ?'แท่งสูงเท่ากันทุกช่องทาง เทียบสัดส่วนได้แม้ช่องทางที่มีออเดอร์น้อย · ตัวเลขบนหัวแท่งคือจำนวนออเดอร์จริง'
+    :'ความสูงตามจำนวนออเดอร์จริง · ช่องทางที่มีออเดอร์น้อยจะเห็นยาก ให้สลับไปดูสัดส่วน';
 }
 // ผูกเหตุการณ์ครั้งเดียว ไม่ผูกซ้ำทุกครั้งที่ setup() ทำงาน
 function bindOnce(){
@@ -7621,5 +7907,69 @@ el('save').onclick=async function(){
   b.disabled=false; b.textContent=old;
 };
 &lt;/script&gt;&lt;/body&gt;&lt;/html&gt;</template>
+<script>
+/* v-fit: ปรับขนาดทั้งหน้าอัตโนมัติตามความกว้างจอของแต่ละคน
+   เดิมใช้ zoom คงที่ (1.3) + ตัวหนังสือเป็น px ที่ออกแบบไว้สำหรับจอกว้าง ~2380px
+   ทำให้คนที่เปิดจอ/โน้ตบุ๊กขนาดอื่น หรือ Chrome zoom 100% เห็นใหญ่ล้นจอ ต้องย่อเองเหลือ 33–50%
+   ตอนนี้: คำนวณ zoom = ค่าฐาน × (ความกว้างจอ ÷ 2380) ทุกคนจะเห็นสัดส่วนเดียวกันเสมอ */
+(function(){
+  const DESIGN_W=2380, BASE=0.55, BASE_PRESENT=1.15;   /* ขนาดตั้งต้น */
+  /* v-usize: แต่ละคนปรับขนาดเองได้ (⌘+ / ⌘− / ⌘0 หรือปุ่ม A− A+ ในเมนูซ้าย)
+     จำค่าไว้ในเบราว์เซอร์ของคนนั้น เปิดครั้งหน้าก็ยังเป็นขนาดเดิม · ไม่กระทบคนอื่น */
+  const UKEY='ldash.size';
+  let US=1; try{US=parseFloat(localStorage.getItem(UKEY))||1;}catch(e){}
+  const clampUS=v=>Math.max(0.5,Math.min(2.5,Math.round(v*100)/100));
+  function setUS(v,show){
+    US=clampUS(v); try{localStorage.setItem(UKEY,String(US));}catch(e){}
+    fitZoom(); updUI(); if(show)sizeToast();
+  }
+  function fitZoom(){
+    if(window.__noFit||!document.body)return;
+    const base=document.body.classList.contains('present')?BASE_PRESENT:BASE;
+    const w=document.documentElement.clientWidth||window.innerWidth;
+    const z=Math.max(0.15,Math.min(3,base*w/DESIGN_W*US));
+    const v=z.toFixed(3);
+    if(document.body.style.zoom!==v){ document.body.style.zoom=v;
+      /* กราฟต้องวัดขนาดกล่องใหม่หลังเปลี่ยน zoom */
+      try{ if(typeof CH!=='undefined')Object.values(CH).flat().forEach(c=>c&&c.resize&&c.resize()); }catch(e){} }
+  }
+  window.fitZoom=fitZoom;
+  const pct=()=>Math.round(US*100)+'%';
+  function updUI(){const v=document.getElementById('usizeV'); if(v)v.textContent=pct();}
+  let tt;
+  function sizeToast(){
+    let el=document.getElementById('navToast');
+    if(!el){el=document.createElement('div');el.id='navToast';document.body.appendChild(el);}
+    el.innerHTML='<b>ขนาดหน้าจอ</b><span>'+pct()+'</span>';
+    el.classList.add('show'); clearTimeout(tt); tt=setTimeout(()=>el.classList.remove('show'),1200);
+  }
+  /* ปุ่มในเมนูซ้าย */
+  const foot=document.querySelector('.side .side-foot');
+  if(foot){
+    const box=document.createElement('div'); box.className='usize';
+    box.innerHTML='<span class="ul">ขนาด</span><button type="button" data-d="-1" title="เล็กลง (⌘−)">A−</button>'
+      +'<button type="button" id="usizeV" data-d="0" title="กลับเป็นขนาดตั้งต้น (⌘0)"></button>'
+      +'<button type="button" data-d="1" title="ใหญ่ขึ้น (⌘+)">A+</button>';
+    foot.parentNode.insertBefore(box,foot);
+    box.addEventListener('click',e=>{const b=e.target.closest('button'); if(!b)return;
+      const d=+b.dataset.d; setUS(d===0?1:US*(d>0?1.1:1/1.1),true);});
+  }
+  /* ⌘+ / ⌘− / ⌘0 (Windows: Ctrl) — ปรับขนาดของเราแทนการ zoom ของ Chrome
+     (เพราะ zoom ของ Chrome จะถูกปรับกลับให้พอดีจออยู่ดี) */
+  function onKey(e){
+    if(!(e.metaKey||e.ctrlKey)||e.altKey)return;
+    const k=e.key;
+    if(k==='='||k==='+'){e.preventDefault();setUS(US*1.1,true);}
+    else if(k==='-'||k==='_'){e.preventDefault();setUS(US/1.1,true);}
+    else if(k==='0'){e.preventDefault();setUS(1,true);}
+  }
+  document.addEventListener('keydown',onKey);
+  window.__usizeKey=onKey;   /* ให้ iframe (SOP/Return/Cancel) ใช้ด้วย */
+  updUI();
+  let t; window.addEventListener('resize',()=>{clearTimeout(t);t=setTimeout(fitZoom,120);});
+  new MutationObserver(fitZoom).observe(document.body,{attributes:true,attributeFilter:['class']});
+  fitZoom();
+})();
+</script>
 </body>
 </html>
