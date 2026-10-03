@@ -6299,9 +6299,12 @@ const TEAMS={
   },
   warehouse:{
     title:'รายงานทีม Warehouse',
-    sub:'ปัญหาที่ทีม Delivery แจ้งกลับมา (ของในรถ/กล่อง)',
-    source:'แจ้งรายการมีปัญหาประจำวันของ Operation (แท็บ Delivery. · เฉพาะเคสของในรถ/กล่องผิด)',
+    sub:'รับสินค้าเข้าระบบ · การแจ้งปัญหาประจำวัน',
+    source:'Job Daily Operation (แท็บ GR Warehouse) และ แจ้งรายการมีปัญหาประจำวันของ Operation (แท็บ Delivery. · เฉพาะเคสของในรถ/กล่องผิด)',
     panels:[
+      /* v137: รายการรับสินค้าเข้าระบบ — n8n เติมจาก Odoo ทุกวัน 16:30 */
+      {k:'gr',t:'รับสินค้าเข้าระบบ', c:'GR Warehouse', hd:'a', unit:'รายการ',
+       sheet:JOB, gid:'976094805', empty:'ไม่มีการรับสินค้าเข้าในช่วงนี้'},
       {k:'issue',t:'แจ้งปัญหาประจำวัน', c:'ป้ายสี = เกณฑ์ปัญหา', hd:'c', unit:'เคส',
        sheet:OPS, gid:DLV_GID, form:true, dept:'warehouse', empty:'ไม่มีการแจ้งปัญหาในช่วงนี้'}
     ]
