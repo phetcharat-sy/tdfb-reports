@@ -6678,7 +6678,11 @@ function stamp(){const d=new Date();
     +`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')} น.`
     +(live?'':' · ข้อมูลสำรอง');}
 
+/* v135: กันโหลดซ้อน — สลับทีมเร็ว ๆ (เช่น เปิดมาที่ Delivery แล้วกดไป Admin) ผลของทีมเก่าที่มาช้า
+   เคยทับข้อมูลทีมใหม่ ทำให้ยกเลิก/Return เป็น 0 และช่องแจ้งปัญหาโชว์ข้อมูลของ Delivery */
+let LOAD_SEQ=0;
 async function load(){
+  const seq=++LOAD_SEQ;
   for(const k in CSV_CACHE)delete CSV_CACHE[k];
   ['fy','fm'].forEach(i=>el(i).value='');RWK=[];RYEAR_INIT=false;FD.value='';calYM=null;
   el('stat').className='stat';el('stat').textContent='กำลังดึงข้อมูล…';el('reload').disabled=true;
@@ -6686,6 +6690,7 @@ async function load(){
   const res=await Promise.allSettled(ps.map(p=>p.ship
     ? LOGI_SHIP.load(true).then(r=>{ if(!r)throw new Error(LOGI_SHIP.err()||'ดึงไม่ได้'); return []; })
     : grab(p)));
+  if(seq!==LOAD_SEQ)return;          /* มีการโหลดใหม่กว่าแล้ว ทิ้งผลนี้ */
   buildShipRows();
   DATA={};const bad=[];
   res.forEach((r,i)=>{
