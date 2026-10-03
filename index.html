@@ -6264,36 +6264,51 @@ window.LOGI_SHOT={run:o=>shotExport(o),menu:(b,f)=>shotMenu(b,f)};
 const OPS='1vPoYKpkQkAq1ZXRG3aCQUMM9jDYIUEzIWFxjATKVOuU';   /* แจ้งรายการมีปัญหาประจำวันของ Operation */
 const JOB='1bLDgYE8bXZ_iLdEG6FeBLyNf4OhcXKjMZq8Cks7jJmc';   /* Job Dairy Delivery */
 
+/* v132: ชีต "แจ้งรายการมีปัญหาประจำวันของ Operation" แท็บ Delivery. (gid 1897671003)
+   คือฟอร์มที่ทีม Delivery แจ้งปัญหาที่เจอตอนรับ Car/Box มาแพ็ก
+   → Delivery เห็นทุกเคสที่ตัวเองแจ้ง · Warehouse เห็นเคสของในรถ/กล่องผิด · Admin เห็นเคส Tracking Label / ใบปะหน้า
+   แก้กติกาแบ่งแผนกได้ที่ DEPT_OF ข้างล่าง */
+const DLV_GID='1897671003';
+const LABEL_RE=/tracking|label|ลาเบล|แทร็ก|แทรก|แท็ก|ใบปะหน้า|ใบปปะหน้า/i;
+const DEPT_OF=r=>{
+  /* เคสฉลาก/ใบปะหน้า → Admin เว้นแต่รายละเอียดบอกชัดว่าคลังเป็นคนพลาด */
+  if(LABEL_RE.test(r.tag)&&!/คลัง/.test(r.raw||''))return 'admin';
+  return 'warehouse';
+};
+const DEPT_NAME={warehouse:'Warehouse',admin:'Admin'};
+
 const TEAMS={
   delivery:{
     title:'รายงานทีม Delivery',
     sub:'ออเดอร์จัดส่ง · ค้างส่ง · งานจัดทำ MO · การแจ้งปัญหาประจำวัน',
-    source:'Job Dairy Delivery (MO Delivery) · Packing 2026 (ออเดอร์จัดส่ง) และ แจ้งรายการมีปัญหาประจำวันของ Operation (แท็บ Delivery)',
+    source:'Job Dairy Delivery (MO Delivery) · Packing 2026 (ออเดอร์จัดส่ง) และ แจ้งรายการมีปัญหาประจำวันของ Operation (แท็บ Delivery.)',
     panels:[
       {k:'order',t:'ออเดอร์ค้างส่ง', c:'พร้อมเหตุผล · จากชีต Packing 2026', hd:'d', unit:'ออเดอร์',
        ship:true, empty:'ไม่มีออเดอร์ค้างส่ง'},
       {k:'mo',   t:'MO ประจำวัน',      c:'รายการจัดทำ MO Delivery', hd:'a', unit:'รายการ',
        sheet:JOB, gid:'0',          empty:'ไม่มีรายการทำ MO'},
-      {k:'issue',t:'แจ้งปัญหาประจำวัน', c:'ป้ายสี = ผู้แจ้ง',        hd:'c', unit:'เคส',
-       sheet:OPS, gid:'1792859356', empty:'ไม่พบปัญหา'}
+      {k:'issue',t:'แจ้งปัญหาประจำวัน', c:'ป้ายสี = เกณฑ์ · → แผนกที่รับเรื่อง', hd:'c', unit:'เคส',
+       sheet:OPS, gid:DLV_GID, form:true, showDept:true, empty:'ไม่พบปัญหา'}
     ]
   },
   warehouse:{
     title:'รายงานทีม Warehouse',
-    sub:'การแจ้งปัญหาประจำวัน',
-    source:'แจ้งรายการมีปัญหาประจำวันของ Operation (แท็บ Warehouse)',
+    sub:'ปัญหาที่ทีม Delivery แจ้งกลับมา (ของในรถ/กล่อง)',
+    source:'แจ้งรายการมีปัญหาประจำวันของ Operation (แท็บ Delivery. · เฉพาะเคสของในรถ/กล่องผิด)',
     panels:[
       {k:'issue',t:'แจ้งปัญหาประจำวัน', c:'ป้ายสี = เกณฑ์ปัญหา', hd:'c', unit:'เคส',
-       sheet:OPS, gid:'1897671003', empty:'ไม่มีการแจ้งปัญหาในช่วงนี้'}
+       sheet:OPS, gid:DLV_GID, form:true, dept:'warehouse', empty:'ไม่มีการแจ้งปัญหาในช่วงนี้'}
     ]
   },
   admin:{
     title:'รายงานทีม Admin',
-    sub:'การแจ้งปัญหาประจำวัน',
-    source:'แจ้งรายการมีปัญหาประจำวันของ Operation (แท็บ Admin)',
+    sub:'การแจ้งปัญหาประจำวัน · ปัญหา Tracking Label ที่ทีม Delivery แจ้ง',
+    source:'แจ้งรายการมีปัญหาประจำวันของ Operation (แท็บ Admin และแท็บ Delivery. เฉพาะเคส Tracking Label / ใบปะหน้า)',
     panels:[
       {k:'issue',t:'แจ้งปัญหาประจำวัน', c:'ป้ายสี = ประเภทสาเหตุ', hd:'c', unit:'เคส',
-       sheet:OPS, gid:'1007119536', empty:'ไม่มีการแจ้งปัญหาในช่วงนี้'}
+       sheet:OPS, gid:'1007119536', empty:'ไม่มีการแจ้งปัญหาในช่วงนี้'},
+      {k:'label',t:'Delivery แจ้ง: Tracking Label', c:'ป้ายสี = เกณฑ์', hd:'b', unit:'เคส',
+       sheet:OPS, gid:DLV_GID, form:true, dept:'admin', empty:'ไม่มีเคส Tracking Label ในช่วงนี้'}
     ]
   }
 };
@@ -6307,11 +6322,15 @@ const MONTHS=['มกราคม','กุมภาพันธ์','มีน�
 
 function toKey(s){
   s=String(s||'').trim();
-  let m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
-  if(m){let y=+m[3];if(y<100)y+=2000;if(y>2500)y-=543;
+  /* v132: ปี พ.ศ. ที่พิมพ์มา 2 หลัก (26/8/69) หรือ 4 หลัก (2569) แปลงเป็น ค.ศ. · รองรับ Date(2026,7,26) จาก gviz */
+  let m=s.match(/^Date\((\d{4}),(\d{1,2}),(\d{1,2})/);
+  if(m){let y=+m[1];if(y>2500)y-=543;return `${y}-${String(+m[2]+1).padStart(2,'0')}-${m[3].padStart(2,'0')}`;}
+  m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+  if(m){let y=+m[3];if(y<100)y+=(y>=60?2500:2000);if(y>2500)y-=543;
         return `${y}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;}
   m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
-  return m?`${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`:'';
+  if(!m)return '';let y=+m[1];if(y>2500)y-=543;
+  return `${y}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
 }
 const show=k=>{if(!k)return '—';const[y,m,d]=k.split('-');return `${d}/${m}/${y.slice(2)}`;};
 
@@ -6344,10 +6363,44 @@ function toRows(csv){
             item:det,tag:iG>=0?(r[iG]||'').trim():'',qty:q?Number(q.replace(/,/g,'')):null};
   }).filter(Boolean);
 }
+/* แท็บฟอร์ม Delivery.: วันที่พบปัญหา (E) ถ้าว่าง/เสีย ใช้ประทับเวลา (D) · สัปดาห์คิดจากวันที่เอง (ในชีตมี #NUM!/#REF!) */
+const esc=v=>String(v==null?'':v).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function isoWk(k){const d=new Date(k+'T00:00:00Z');const n=(d.getUTCDay()+6)%7;
+  d.setUTCDate(d.getUTCDate()-n+3);const f=new Date(Date.UTC(d.getUTCFullYear(),0,4));
+  return 1+Math.round(((d-f)/864e5-3+((f.getUTCDay()+6)%7))/7);}
+function toFormRows(csv){
+  const raw=parseCSV(csv);let hi=-1;
+  for(let i=0;i<Math.min(6,raw.length);i++) if(raw[i].some(c=>/ประทับเวลา/.test(c))){hi=i;break;}
+  if(hi<0)return [];
+  const H=raw[hi].map(c=>String(c).replace(/\s+/g,''));
+  const col=x=>H.findIndex(h=>h.includes(x));
+  const iTS=col('ประทับเวลา'),iD=col('วันที่พบปัญหา'),iB=col('carbox'),iR=col('ช่วงเวลา'),
+        iG=col('เกณฑ์'),iT=col('รายละเอียด');
+  const cur=new Date().getFullYear();
+  const ok=k=>k&&+k.slice(0,4)>=2020&&+k.slice(0,4)<=cur+1;
+  return raw.slice(hi+1).map(r=>{
+    const tag=(r[iG]||'').trim(),det=(r[iT]||'').trim();
+    if(!tag&&!det)return null;
+    let d=toKey(r[iD]); if(!ok(d))d=toKey(r[iTS]); if(!ok(d))return null;
+    const box=(r[iB]||'').trim(),rnd=(r[iR]||'').trim().replace(/ช้้/g,'ช้').replace(/บ่่/g,'บ่');
+    const meta=[box,rnd].filter(Boolean).join(' · ');
+    const row={date:d,y:d.slice(0,4),m:d.slice(5,7),wk:isoWk(d),tag,raw:det,qty:null};
+    row.dept=DEPT_OF(row);
+    row.html=esc(det||tag).replace(/\n+/g,' · ')+(meta?`<br><span style="opacity:.6;font-size:.85em">${esc(meta)}</span>`:'');
+    return row;
+  }).filter(Boolean).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
+}
+const CSV_CACHE={};
 async function grab(p){
-  const r=await fetch(`https://docs.google.com/spreadsheets/d/${p.sheet}/gviz/tq?tqx=out:csv&gid=${p.gid}`);
-  if(!r.ok)throw new Error('HTTP '+r.status);
-  return toRows(await r.text());
+  const key=p.sheet+'|'+p.gid;
+  if(!CSV_CACHE[key])CSV_CACHE[key]=fetch(`https://docs.google.com/spreadsheets/d/${p.sheet}/gviz/tq?tqx=out:csv&gid=${p.gid}`)
+    .then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.text();});
+  let txt;
+  try{txt=await CSV_CACHE[key];}catch(e){delete CSV_CACHE[key];throw e;}
+  if(!p.form)return toRows(txt);
+  return toFormRows(txt)
+    .filter(r=>!p.dept||r.dept===p.dept)
+    .map(r=>({...r,item:r.html+(p.showDept?`<br><span class="tag" style="font-size:.78em;background:#F3EEFE;border-color:#E2D7FB;color:#6D28D9">→ ${DEPT_NAME[r.dept]}</span>`:'')}));
 }
 
 let TEAM='delivery',DATA={},live=false,calYM=null;
@@ -6568,6 +6621,7 @@ function stamp(){const d=new Date();
     +(live?'':' · ข้อมูลสำรอง');}
 
 async function load(){
+  for(const k in CSV_CACHE)delete CSV_CACHE[k];
   ['fy','fm'].forEach(i=>el(i).value='');RWK=[];RYEAR_INIT=false;FD.value='';calYM=null;
   el('stat').className='stat';el('stat').textContent='กำลังดึงข้อมูล…';el('reload').disabled=true;
   const ps=cfg().panels;
