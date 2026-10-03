@@ -6268,7 +6268,7 @@ const JOB='1bLDgYE8bXZ_iLdEG6FeBLyNf4OhcXKjMZq8Cks7jJmc';   /* Job Dairy Deliver
    คือฟอร์มที่ทีม Delivery แจ้งปัญหาที่เจอตอนรับ Car/Box มาแพ็ก
    → Delivery เห็นทุกเคสที่ตัวเองแจ้ง · Warehouse เห็นเคสของในรถ/กล่องผิด · Admin เห็นเคส Tracking Label / ใบปะหน้า
    แก้กติกาแบ่งแผนกได้ที่ DEPT_OF ข้างล่าง */
-const DLV_GID='1897671003';
+const DLV_GID='1897671003',WH_GID='1792859356';
 /* v133: ออเดอร์ยกเลิก — ชีต Case Admin แท็บ "Cancel จาก Odoo" (ชุดเดียวกับหน้า Cancel) */
 const CAN_SHEET='12C-YRzItKvcZ0ThZkY25F50s663zItob27ByEsH3U3c',CAN_GID='1213140401';
 /* v134: Return — ชุดเดียวกับหน้า Return (Return จาก Odoo) · ถ้า export ไม่ได้ ใช้ลิงก์เผยแพร่ของชีตเดียวกัน */
@@ -6300,13 +6300,14 @@ const TEAMS={
   warehouse:{
     title:'รายงานทีม Warehouse',
     sub:'รับสินค้าเข้าระบบ · การแจ้งปัญหาประจำวัน',
-    source:'Job Daily Operation (แท็บ GR Warehouse) และ แจ้งรายการมีปัญหาประจำวันของ Operation (แท็บ Delivery. · เฉพาะเคสของในรถ/กล่องผิด)',
+    source:'Job Daily Operation (แท็บ GR Warehouse) และ แจ้งรายการมีปัญหาประจำวันของ Operation (แท็บ Warehouse)',
     panels:[
       /* v137: รายการรับสินค้าเข้าระบบ — n8n เติมจาก Odoo ทุกวัน 16:30 */
       {k:'gr',t:'รับสินค้าเข้าระบบ', c:'GR Warehouse', hd:'a', unit:'รายการ',
        sheet:JOB, gid:'976094805', empty:'ไม่มีการรับสินค้าเข้าในช่วงนี้'},
-      {k:'issue',t:'แจ้งปัญหาประจำวัน', c:'ป้ายสี = เกณฑ์ปัญหา', hd:'c', unit:'เคส',
-       sheet:OPS, gid:DLV_GID, form:true, dept:'warehouse', empty:'ไม่มีการแจ้งปัญหาในช่วงนี้'}
+      /* v139: ปัญหาของ Warehouse ใช้แท็บ Warehouse ของชีตแจ้งปัญหาเอง (ไม่ใช่เคสที่ Delivery แจ้ง) */
+      {k:'issue',t:'แจ้งปัญหาประจำวัน', c:'ป้ายสี = ผู้แจ้ง', hd:'c', unit:'เคส',
+       sheet:OPS, gid:WH_GID, cols:['วันที่พบปัญหา','ผู้แจ้ง · รายละเอียด'], empty:'ไม่มีการแจ้งปัญหาในช่วงนี้'}
     ]
   },
   admin:{
