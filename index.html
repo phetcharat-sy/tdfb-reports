@@ -973,6 +973,49 @@ body.present #vRPT .toolbar{display:flex}
 body.present #vRPT #save,body.present #vRPT #present,body.present #vRPT #reload{display:none}
 #vRPT #shot.cap-full .panel{display:block}
 #vRPT #shot.cap-full .scroll{max-height:none;overflow:visible;height:auto}
+
+/* ===================== v-mobile: เวอร์ชันมือถือ =====================
+   body.mobile ถูกใส่โดย fitZoom เมื่อจอกว้าง ≤ 820px · หน่วย px ด้านล่างเป็นขนาดออกแบบ (ก่อน zoom) */
+body.mobile .navArrow{display:none!important}
+body.mobile .main{margin-left:0;padding-top:150px}
+body.mobile .side-toggle{zoom:2.6;top:10px;left:10px;width:48px;height:48px;font-size:26px;
+  box-shadow:0 4px 14px rgba(0,0,0,.35)}
+body.mobile .side{zoom:1.7;width:540px;max-width:92vw}
+body.mobile.side-open::after{content:"";position:fixed;inset:0;background:rgba(10,8,25,.55);z-index:65}
+/* แถบตัวกรอง: ห่อหลายบรรทัด ช่องใหญ่ขึ้นให้กดง่าย */
+body.mobile #vKPI .wrap,body.mobile #vRPT .wrap{padding:0 28px 60px!important}
+body.mobile #vKPI .toolbar,body.mobile #vRPT .toolbar{padding:22px;gap:18px;border-radius:24px}
+body.mobile #vKPI .kf,body.mobile #vRPT .kf{flex:1 1 40%}
+body.mobile #vKPI .kf select,body.mobile #vRPT .kf select,
+body.mobile #vKPI .kf .btn,body.mobile #vRPT .kf .btn{width:100%;font-size:40px;padding:20px 22px}
+body.mobile #vKPI .kf>label,body.mobile #vRPT .kf>label{font-size:28px}
+body.mobile #kClear,body.mobile #kSave,body.mobile #clear,body.mobile #save{flex:1 1 40%;font-size:38px!important;padding:22px!important}
+body.mobile #kPresent,body.mobile #present,body.mobile #sopPresent{display:none!important}
+body.mobile #vKPI .stat,body.mobile #vRPT .stat{flex:1 1 100%;margin-left:0;font-size:32px}
+body.mobile .wsel-p,body.mobile .kcal-p{zoom:1.6}
+/* หัวข้อหน้า */
+body.mobile #vKPI header,body.mobile #vRPT header{flex-direction:column;align-items:flex-start}
+body.mobile #vKPI .period,body.mobile #vRPT .period{text-align:left}
+body.mobile #vKPI h1,body.mobile #vRPT h1{font-size:76px}
+/* การ์ด/กราฟเป็นคอลัมน์เดียว */
+body.mobile #vKPI .g2,body.mobile #vKPI .g3,body.mobile #vKPI .cgrid2,body.mobile #vKPI .pkpair,
+body.mobile #vKPI .pkcards,body.mobile #vKPI .fcacc-grid,body.mobile #vKPI .top{grid-template-columns:1fr!important}
+body.mobile #vKPI .sgrid{grid-template-columns:1fr 1fr!important}
+body.mobile #vKPI .cbox{height:620px}
+/* ตารางกว้าง: เลื่อนซ้าย-ขวาได้ในตัวตาราง */
+body.mobile #vKPI table.dt{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
+body.mobile #vKPI .cpanel,body.mobile #vKPI .tscroll{overflow-x:auto}
+/* หน้ารายงานประจำวัน: ไม่ยืดเต็มจอ เรียงลงเป็นคอลัมน์เดียว */
+body.mobile:not(.cap) #vRPT .wrap{height:auto!important;overflow:visible!important;display:block}
+body.mobile:not(.cap) #vRPT #shot{overflow:visible;display:block}
+body.mobile #vRPT .kpis{grid-template-columns:1fr 1fr!important}
+body.mobile #vRPT .panels{grid-template-columns:1fr!important;display:grid}
+body.mobile:not(.cap) #vRPT .panel{display:block}
+body.mobile:not(.cap) #vRPT .scroll{max-height:1800px;overflow:auto}
+body.mobile #vRPT .panel h2.sec{white-space:normal;flex-wrap:wrap}
+body.mobile #vRPT .foot{flex-direction:column}
+body.mobile #vKPI #kDayBtn,body.mobile #vRPT #fdBtn,body.mobile #vKPI #kWBtn,body.mobile #vRPT #fwBtn{width:100%;font-size:40px;padding:20px 22px}
+body.mobile .side .brand{padding-left:112px;padding-right:16px}body.mobile .side .brand b{font-size:44px}body.mobile .side .brand span{font-size:20px}
 </style>
 </head>
 <body>
@@ -8180,7 +8223,7 @@ el('save').onclick=async function(){
    ทำให้คนที่เปิดจอ/โน้ตบุ๊กขนาดอื่น หรือ Chrome zoom 100% เห็นใหญ่ล้นจอ ต้องย่อเองเหลือ 33–50%
    ตอนนี้: คำนวณ zoom = ค่าฐาน × (ความกว้างจอ ÷ 2380) ทุกคนจะเห็นสัดส่วนเดียวกันเสมอ */
 (function(){
-  const DESIGN_W=2380, BASE=0.55, BASE_PRESENT=1.15;   /* ขนาดตั้งต้น */
+  const DESIGN_W=2380, BASE=0.55, BASE_PRESENT=1.15, MOBILE_W=1250;   /* ขนาดตั้งต้น */
   /* v-usize: แต่ละคนปรับขนาดเองได้ (⌘+ / ⌘− / ⌘0 หรือปุ่ม A− A+ ในเมนูซ้าย)
      จำค่าไว้ในเบราว์เซอร์ของคนนั้น เปิดครั้งหน้าก็ยังเป็นขนาดเดิม · ไม่กระทบคนอื่น */
   const UKEY='ldash.size';
@@ -8194,7 +8237,12 @@ el('save').onclick=async function(){
     if(window.__noFit||!document.body)return;
     const base=document.body.classList.contains('present')?BASE_PRESENT:BASE;
     const w=document.documentElement.clientWidth||window.innerWidth;
-    const z=Math.max(0.15,Math.min(3,base*w/DESIGN_W*US));
+    /* v-mobile: จอแคบ (มือถือ/แท็บเล็ตแนวตั้ง) จัดหน้าที่ความกว้างออกแบบ ~1250px แทน
+       ตัวหนังสือจึงอ่านได้ ไม่เล็กจิ๋วแบบย่อทั้งหน้าจอคอม */
+    const mob=w<=820;
+    document.body.classList.toggle('mobile',mob);
+    const z=mob?Math.max(0.15,Math.min(3,w/MOBILE_W*US))
+               :Math.max(0.15,Math.min(3,base*w/DESIGN_W*US));
     const v=z.toFixed(3);
     document.body.style.setProperty('--z',v);   /* v-rptfill: ให้ CSS รู้ค่า zoom (ใช้คำนวณความสูงเต็มจอ) */
     if(document.body.style.zoom!==v){ document.body.style.zoom=v;
