@@ -5498,8 +5498,9 @@ function secReturn(){
 /* ================= KPI Human Error On Picking =================
    แหล่งข้อมูล: ชีต "แจ้งรายการมีปัญหาประจำวันของ Operation" แท็บ Delivery. (gid 1897671003)
    = เคสที่ทีม Delivery แจ้งตอนรับ Car/Box จากคลังมาแพ็ค
-   นับเป็นเคส = ทุกเคสที่แจ้ง (ของสลับช่อง / ไม่อยู่ใน Car / ได้เกิน / ได้ไม่ครบ / Lot-บาร์โค้ดไม่ตรง / Tracking Label-ใบปะหน้า)
-   ไม่นับ: ข้อเสนอแนะ ("อยากให้…")
+   v-dept: นับเฉพาะเคสของแผนก Warehouse (ของสลับช่อง / ไม่อยู่ใน Car / ได้เกิน / ได้ไม่ครบ / Lot-บาร์โค้ดไม่ตรง)
+   ใช้คอลัมน์ "แผนก" ถ้ามี · ไม่มี/ว่าง → กติกาเดิม: Tracking Label / ใบปะหน้า = ไม่ใช่ Warehouse
+   ไม่นับ: เคสแผนกอื่น และข้อเสนอแนะ ("อยากให้…")
    1 แถวในชีต = 1 เคส · ตัวหาร = จำนวนชิ้นที่หยิบทั้งหมดจากชีต Picking ในช่วงเดียวกัน · เป้า < 0.05% */
 const S_PERR='1vPoYKpkQkAq1ZXRG3aCQUMM9jDYIUEzIWFxjATKVOuU', G_PERR='1897671003';
 const PERR_TARGET=0.05;
@@ -5523,7 +5524,7 @@ function perrDate(v){
 function perrKind(tag,detail){
   const t=tag||'';
   if(/อยาก|เสนอ/.test(t))return {grp:'skip',kind:'ข้อเสนอแนะ'};
-  if(PERR_LABEL_RE.test(t)&&!/คลัง/.test(detail||''))return {grp:'pick',kind:'Tracking Label / ใบปะหน้า'};
+  if(PERR_LABEL_RE.test(t)&&!/คลัง/.test(detail||''))return {grp:'admin',kind:'Tracking Label / ใบปะหน้า'};
   let kind='อื่นๆ';
   if(/lot|บาร์โค้ด/i.test(t))kind='Lot / บาร์โค้ดไม่ตรง';
   else if(/ไม่ได้อยู่/.test(t))kind='สินค้าไม่อยู่ใน Car';
@@ -5541,14 +5542,18 @@ async function loadPerr(force){
     const t=table(rows,/เกณฑ์|ประทับเวลา|วันที่พบปัญหา/);
     if(!t)throw new Error('หาหัวตารางไม่เจอ');
     const c={ts:t.col('ประทับเวลา'),dt:t.col('วันที่พบปัญหา'),box:t.col('carbox','box'),
-             rd:t.col('ช่วงเวลา'),tag:t.col('เกณฑ์'),det:t.col('รายละเอียด')};
+             rd:t.col('ช่วงเวลา'),tag:t.col('เกณฑ์'),det:t.col('รายละเอียด'),dp:t.col('แผนก')};
     if(c.tag<0)throw new Error('หาคอลัมน์ เกณฑ์ ไม่เจอ · หัวตาราง: '+t.H.slice(0,9).join(' / '));
     const g=(r,i)=>i>=0?String(r[i]||'').trim():'';
     const list=t.rows.map(r=>{
       const tag=g(r,c.tag); if(!tag)return null;      /* แถวที่มีแต่ตารางด้านข้าง (คอลัมน์ K เป็นต้นไป) ไม่นับ */
       const det=g(r,c.det);
       const date=perrDate(g(r,c.dt))||perrDate(g(r,c.ts));
-      return {date,tag,det,box:g(r,c.box),round:g(r,c.rd).replace(/้+/g,'้'),...perrKind(tag,det)};
+      const k=perrKind(tag,det), dp=g(r,c.dp);
+      /* v-dept: คอลัมน์ แผนก (ถ้ามีค่า) ชี้ขาด — Warehouse เท่านั้นที่นับ */
+      if(dp&&k.grp!=='skip'){ const isWH=/warehouse|คลัง/i.test(dp);
+        if(!isWH)k.grp='other'; else k.grp='pick'; }
+      return {date,tag,det,box:g(r,c.box),round:g(r,c.rd).replace(/้+/g,'้'),...k};
     }).filter(Boolean);
     if(!list.length)throw new Error('ไม่พบแถวข้อมูล');
     PERR={list};
@@ -6665,7 +6670,13 @@ const DEPT_OF=r=>{
   if(LABEL_RE.test(r.tag)&&!/คลัง/.test(r.raw||''))return 'admin';
   return 'warehouse';
 };
-const DEPT_NAME={warehouse:'Warehouse',admin:'Admin'};
+const DEPT_NAME={warehouse:'Warehouse',admin:'Admin',delivery:'Delivery'};
+/* v-dept: ถ้าชีตมีคอลัมน์ "แผนก" ใช้ค่านั้นก่อน · ช่องว่าง/ไม่มีคอลัมน์ → ใช้กติกา DEPT_OF เดิม */
+const DEPT_TXT=v=>{v=String(v||'').trim(); if(!v)return '';
+  if(/warehouse|คลัง/i.test(v))return 'warehouse';
+  if(/delivery|แพ็ค|แพค|ขนส่ง|จัดส่ง/i.test(v))return 'delivery';
+  if(/admin|แอดมิน/i.test(v))return 'admin';
+  return '';};
 
 const TEAMS={
   delivery:{
@@ -6678,7 +6689,8 @@ const TEAMS={
       {k:'mo',   t:'MO ประจำวัน',      c:'รายการจัดทำ MO Delivery', hd:'a', unit:'รายการ',
        sheet:JOB, gid:'0',          empty:'ไม่มีรายการทำ MO'},
       {k:'issue',t:'แจ้งปัญหาประจำวัน', c:'ป้ายสี = เกณฑ์', hd:'c', unit:'เคส',
-       sheet:OPS, gid:DLV_GID, form:true, showDept:true, empty:'ไม่พบปัญหา'}
+       /* v-dept: รายงาน Delivery ไม่เอาเคสที่เป็นของแผนก Warehouse (เคสพวกนั้นไปนับใน KPI Human Error On Picking) */
+       sheet:OPS, gid:DLV_GID, form:true, notDept:'warehouse', empty:'ไม่พบปัญหา'}
     ]
   },
   warehouse:{
@@ -6776,7 +6788,7 @@ function toFormRows(csv){
   const H=raw[hi].map(c=>String(c).replace(/\s+/g,''));
   const col=x=>H.findIndex(h=>h.includes(x));
   const iTS=col('ประทับเวลา'),iD=col('วันที่พบปัญหา'),iB=col('carbox'),iR=col('ช่วงเวลา'),
-        iG=col('เกณฑ์'),iT=col('รายละเอียด');
+        iG=col('เกณฑ์'),iT=col('รายละเอียด'),iDp=col('แผนก');
   const cur=new Date().getFullYear();
   const ok=k=>k&&+k.slice(0,4)>=2020&&+k.slice(0,4)<=cur+1;
   return raw.slice(hi+1).map(r=>{
@@ -6786,7 +6798,7 @@ function toFormRows(csv){
     const box=(r[iB]||'').trim(),rnd=(r[iR]||'').trim().replace(/ช้้/g,'ช้').replace(/บ่่/g,'บ่');
     const meta=[box,rnd].filter(Boolean).join(' · ');
     const row={date:d,y:d.slice(0,4),m:d.slice(5,7),wk:isoWk(d),tag,raw:det,qty:null};
-    row.dept=DEPT_OF(row);
+    row.dept=(iDp>=0&&DEPT_TXT(r[iDp]))||DEPT_OF(row);
     row.html=esc(det||tag).replace(/\n+/g,' · ');
     return row;
   }).filter(Boolean).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
@@ -6859,7 +6871,7 @@ async function grab(p){
   if(p.ret)return toReturnRows(txt);
   if(!p.form)return toRows(txt);
   return toFormRows(txt)
-    .filter(r=>!p.dept||r.dept===p.dept)
+    .filter(r=>(!p.dept||r.dept===p.dept)&&(!p.notDept||r.dept!==p.notDept))
     .map(r=>({...r,item:r.html}));
 }
 
