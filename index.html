@@ -337,7 +337,8 @@ body.sopmode.present #vKPI .sopframe{height:100vh}
 #vKPI table.dt td{padding:17px 18px}
 #vKPI .foot{font-size:29px}
 /* KPI Human Error On Picking — ตาราง "รายการที่แจ้ง" ตัวหนังสือใหญ่ขึ้น */
-#vKPI table.dt.perr-t{font-size:44px;line-height:1.35}
+#vKPI table.dt.perr-t{font-size:44px;line-height:1.35;table-layout:fixed}
+#vKPI table.dt.perr-t td{word-break:break-word}
 #vKPI table.dt.perr-t th{font-size:36px}
 #vKPI table.dt.perr-t td{padding:20px 20px;vertical-align:middle}
 #vKPI table.dt.perr-t .chip{font-size:34px;padding:5px 16px}
@@ -5455,7 +5456,7 @@ function secPickErr(){
      <div class="cpanel"><div class="cbox" style="height:${Math.max(260,Object.keys(kinds).length*70+80)}px"><canvas id="c_perrk"></canvas></div></div>
 
      <h2 class="sec">รายการที่แจ้ง <em>${fmt(rows.length)} เคส · ใหม่ → เก่า</em><span></span></h2>
-     <div class="tscroll"><table class="dt perr-t"><thead><tr>
+     <div class="tscroll"><table class="dt perr-t"><colgroup><col style="width:13%"><col style="width:11%"><col style="width:11%"><col style="width:25%"><col style="width:40%"></colgroup><thead><tr>
        <th>วันที่พบ</th><th>Car / Box</th><th>รอบ</th><th>ประเภท</th><th>รายละเอียด</th></tr></thead><tbody>`
    +(rows.length?rows.map(r=>`<tr><td style="white-space:nowrap">${r.date?fmtDay(r.date):'—'}</td>
        <td style="white-space:nowrap">${esc(r.box||'—')}</td><td style="white-space:nowrap">${esc(r.round||'—')}</td>
