@@ -1621,7 +1621,7 @@ function kpiCardInner(o){
 /* ---------- หน้าย่อยของ Warehouse ---------- */
 const S_REPL='1QenNK8fW03G5bfQYStkufPa8RybxuK-W9d0ktz-mr4Y';
 const CH={};
-let CFZ=1.18;                    /* ตัวคูณขนาดฟอนต์ในกราฟ (โหมดพรีเซนต์ = 1.6) */
+let CFZ=1.6;                     /* ตัวคูณขนาดฟอนต์ในกราฟ (โหมดพรีเซนต์ = 1.6) */
 const cf=n=>Math.round(n*CFZ);
 const C={teal:'#0D9488',tealD:'#0F766E',plum:'#6366F1',plumD:'#4F46E5',
          amber:'#D89A2E',rose:'#EF4444',good:'#10B981',mute:'#64748B'};
@@ -6269,7 +6269,7 @@ function kPresent(on){
   if(on&&!document.fullscreenElement)document.documentElement.requestFullscreen?.().catch(()=>{});
   if(!on&&document.fullscreenElement)document.exitFullscreen?.();
   /* กราฟต้องวาดใหม่ตามกล่องที่เปลี่ยนขนาด */
-  CFZ=on?1.6:1.18;
+  CFZ=on?2.0:1.6;
   renderKPI();   /* วาดกราฟใหม่ด้วยขนาดฟอนต์ของโหมดนั้น */
 }
 el('kPresent').addEventListener('click',()=>kPresent(true));
