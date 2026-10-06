@@ -700,7 +700,7 @@ body.cap #vKPI .tscroll{max-height:none!important;overflow:visible}
   font-size:26.2px;padding:1px 10px;border-radius:5px;margin-bottom:4px}#vRPT .empty{color:var(--mute);text-align:center;padding:70px 18px;font-size:24.4px;line-height:1.95}#vRPT .empty b{display:block;color:var(--ink);font-weight:normal;margin-bottom:6px;font-size:28.2px}#vRPT .scroll{flex:1;min-height:0;overflow:auto}#vRPT .scroll::-webkit-scrollbar{width:8px}#vRPT .scroll::-webkit-scrollbar-thumb{background:#CBD0D9;border-radius:4px}#vRPT .foot{margin-top:14px;flex:none;padding-top:12px;border-top:1px solid var(--line);
   color:var(--mute);font-size:20.7px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}#vRPT /* โหมดพรีเซนต์ */
 body.present .teams, body.present #vRPT .toolbar{display:none}body.present #vRPT .wrap{padding:14px 26px 16px;max-width:none;height:100vh}body.present #vRPT #shot{padding:26px 30px}body.present #vRPT .kpi .v{font-size:86.6px}body.present #vRPT table{font-size:29.6px}body.present #vRPT h1{font-size:63.8px}#vRPT .exit{position:fixed;top:12px;right:16px;z-index:99;display:none}body.present #vRPT .exit{display:block}#vRPT /* โหมดถ่ายรูป */
-body.cap .wrap{height:auto;overflow:visible;padding:0}#vRPT #shot.cap-slide{width:1600px;height:900px;flex:none;overflow:hidden;border-radius:0;padding:34px 52px}#vRPT #shot.cap-full{height:auto;flex:none;overflow:visible}#vRPT #shot.cap-full .panels{flex:none}#vRPT #shot.cap-full .scroll{overflow:visible;max-height:none}#vRPT #shot.cap-full .panel{min-height:0}#vRPT @media(max-width:1600px){#shot{padding-left:32px;padding-right:32px}}#vRPT @media(max-width:1400px){.panels{grid-template-columns:1fr 1fr!important}.kpis{grid-template-columns:repeat(3,1fr)!important}}#vRPT @media(max-width:1000px){.wrap{padding-left:4%;padding-right:4%}#shot{padding-left:18px;padding-right:18px}}#vRPT @media(max-width:900px){.panels{grid-template-columns:1fr!important}.kpis{grid-template-columns:1fr 1fr!important}h1{font-size:41.5px}}
+body.cap .wrap{height:auto;overflow:visible;padding:0}#vRPT #shot.cap-slide{width:1600px;height:900px;flex:none;overflow:hidden;border-radius:0;padding:34px 52px}#vRPT #shot.cap-full{height:auto;flex:none;overflow:visible}#vRPT #shot.cap-full .panels{flex:none}#vRPT #shot.cap-full .scroll{overflow:visible;max-height:none}#vRPT #shot.cap-full .panel{min-height:0}#vRPT #shot.cap-tall header{flex-wrap:wrap;gap:10px 24px}#vRPT #shot.cap-tall .panels{grid-template-columns:1fr!important}#vRPT @media(max-width:1600px){#shot{padding-left:32px;padding-right:32px}}#vRPT @media(max-width:1400px){.panels{grid-template-columns:1fr 1fr!important}.kpis{grid-template-columns:repeat(3,1fr)!important}}#vRPT @media(max-width:1000px){.wrap{padding-left:4%;padding-right:4%}#shot{padding-left:18px;padding-right:18px}}#vRPT @media(max-width:900px){.panels{grid-template-columns:1fr!important}.kpis{grid-template-columns:1fr 1fr!important}h1{font-size:41.5px}}
 
 /* ---------- แถบเมนูด้านข้าง ---------- */
 .shell{display:flex;min-height:100vh}
@@ -6953,22 +6953,29 @@ document.addEventListener('keydown',e=>{
   openCal(false);
 });
 
-/* ---------- บันทึกรูป: ใช้ตัวบันทึกเดียวกับหน้า KPI (สไลด์ 16:9 / แยกทีละหัวข้อ / ทั้งหน้า / ทั้ง 2 แบบ)
-   ตอนถ่ายจะกางตารางออกเต็ม ไม่ให้รายการที่ต้องเลื่อนดูหายไปจากภาพ ---------- */
-el('save').addEventListener('click',()=>{
-  LOGI_SHOT.menu(el('save'),async mode=>{
-    const sh=el('shot');
-    const tag=[el('fy').value, el('fm').value&&MONTH_EN_R[+el('fm').value-1],
-               RWK.length&&('W'+RWK.join('_')), FD.value].filter(Boolean).join('-')||'all';
-    document.body.classList.add('cap'); sh.classList.add('cap-full');
-    await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
-    try{
-      await LOGI_SHOT.run({root:sh,btn:el('save'),zoomEls:[document.body],mode,
-        name:`report-${TEAM}-${tag}`,title:el('title').textContent});
-    }finally{
-      sh.classList.remove('cap-full'); document.body.classList.remove('cap');
-    }
-  });
+/* ---------- บันทึกรูป (หน้ารายงาน): ภาพเดียวแนวตั้งอย่างเดียว ไม่มีเมนูให้เลือก
+   ตอนถ่ายจะบีบหน้าให้แคบ (กว้าง 1200px) การ์ด KPI เรียง 2–3 คอลัมน์ และกล่องรายการเรียงลงมาทีละกล่อง
+   ได้ภาพผอมยาว เปิดดูในมือถือ/LINE ได้ไม่ต้องซูม · ตารางกางออกเต็ม ไม่มีรายการหายจากภาพ ---------- */
+const RPT_SHOT_W=1200;
+el('save').addEventListener('click',async()=>{
+  const sh=el('shot'), kp=el('kpis'), pn=el('panels');
+  const tag=[el('fy').value, el('fm').value&&MONTH_EN_R[+el('fm').value-1],
+             RWK.length&&('W'+RWK.join('_')), FD.value].filter(Boolean).join('-')||'all';
+  const keep=[sh.style.width,sh.style.maxWidth,kp.style.gridTemplateColumns,pn.style.gridTemplateColumns];
+  const n=kp.children.length;
+  document.body.classList.add('cap'); sh.classList.add('cap-full','cap-tall');
+  sh.style.width=RPT_SHOT_W+'px'; sh.style.maxWidth='none';
+  kp.style.gridTemplateColumns=`repeat(${n<=3?Math.max(n,1):n===4?2:3},1fr)`;
+  pn.style.gridTemplateColumns='1fr';
+  await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+  await new Promise(r=>setTimeout(r,200));
+  try{
+    await LOGI_SHOT.run({root:sh,btn:el('save'),zoomEls:[document.body],mode:'page',
+      name:`report-${TEAM}-${tag}`,title:el('title').textContent});
+  }finally{
+    sh.classList.remove('cap-full','cap-tall'); document.body.classList.remove('cap');
+    [sh.style.width,sh.style.maxWidth,kp.style.gridTemplateColumns,pn.style.gridTemplateColumns]=keep;
+  }
 });
 
 /* โหลดข้อมูลรายงานเมื่อเปิดแท็บครั้งแรกเท่านั้น */
