@@ -121,6 +121,7 @@ body.present{zoom:1.15}
 body.sopmode #vKPI .sop-present{display:block;position:fixed;top:14px;right:18px;z-index:9998;
   box-shadow:0 3px 14px rgba(31,46,26,.22)}
 body.sopmode.present #vKPI .sop-present{display:none}
+body.crmode #vKPI .sop-present{display:none!important}   /* หน้า ยกเลิกและคืนสินค้า ใช้ปุ่มพรีเซนต์ในหน้าเอง */
 /* หน้าเอกสาร SOP — เต็มจอ ไม่มีตัวกรอง/หัวเรื่อง/ท้ายหน้าเหมือนหน้าอื่น */
 body.sopmode #vKPI .toolbar,
 body.sopmode #vKPI #kShot > header,
@@ -3942,19 +3943,34 @@ function drawCREmbed(){
     const d=f.contentDocument; if(!d||!d.documentElement)return;
     const z=parseFloat(document.body.style.zoom)||1;
     /* v-cr2: ขยายตัวหนังสือ 1.75 เท่า (เดิมเล็กไป อ่านยาก) — ปรับตัวเลขนี้ตัวเดียวถ้าอยากใหญ่/เล็กลงอีก */
-    const CR_TEXT=1.75;
+    const CR_TEXT=2.1;   /* v-cr3: ขยายเพิ่มอีก (เดิม 1.75) */
     const px=Math.min(26,Math.max(15,0.0115*f.clientWidth*z))/z*CR_TEXT;
     const v=px.toFixed(2)+'px';
     if(d.documentElement.style.fontSize!==v)d.documentElement.style.setProperty('font-size',v,'important');
   }catch(e){} };
+  /* v-cr3: โหมดพรีเซนต์ — ให้กรอบสูงเท่าจอพอดี แล้วเลื่อนดูในกรอบเอง (เดิมเห็นแค่ส่วนบน ที่เหลือตกขอบจอ) */
   const fit=()=>{ try{
     scale();
     const d=f.contentDocument; if(!d||!d.body)return;
-    f.style.height=Math.ceil(d.documentElement.scrollHeight)+'px';
+    if(document.body.classList.contains('present')){
+      const z=parseFloat(document.body.style.zoom)||1;
+      f.style.height=Math.floor(window.innerHeight/z)+'px';
+      f.setAttribute('scrolling','yes');
+    }else{
+      f.style.height=Math.ceil(d.documentElement.scrollHeight)+'px';
+    }
   }catch(e){} };
+  if(!window.__crResize){ window.__crResize=1;
+    window.addEventListener('resize',()=>{ const g=document.getElementById('crFrame'); if(g&&g.__fit)g.__fit(); });
+    document.addEventListener('fullscreenchange',()=>setTimeout(()=>{ const g=document.getElementById('crFrame'); if(g&&g.__fit)g.__fit(); },150)); }
+  f.__fit=fit;
   if(f.dataset.ready){ fit(); return; }
   let doc=t.content.textContent;
-  doc=doc.replace('</head>','<style>.root{max-width:none!important;padding-left:3%!important;padding-right:3%!important}</style></head>');
+  doc=doc.replace('</head>','<style>.root{max-width:none!important;padding-left:3%!important;padding-right:3%!important}'
+    /* v-cr3: กราฟรายสัปดาห์ — ให้แท่งกระจายเต็มความกว้างการ์ด ไม่กองซ้าย */
+    +'#weeks{grid-template-columns:none!important;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr)}'
+    +'#weeks .stack{width:min(55%,7rem)}#weeks .wk>span[style*="font-size:.7rem"]{font-size:.85rem!important}'
+    +'</style></head>');
   f.addEventListener('load',()=>{
     fit(); setTimeout(fit,200); setTimeout(fit,800);
     try{ const d=f.contentDocument;
@@ -5733,6 +5749,7 @@ function renderKPI(){
   el('kTitle').textContent=tt[0];
   el('kSub').textContent=tt[1];
   document.body.classList.toggle('sopmode', SEC==='sop'||SEC==='ret'||SEC==='can'||SEC==='cr');
+  document.body.classList.toggle('crmode', SEC==='cr');
   if(!isOv){
     el('detail').innerHTML = ((SEC==='ret'||SEC==='can'||SEC==='cr'||SEC==='sop'||SEC==='fc')?'':catBar())
                            + (SEC==='ontime'?secOnTime() : SEC==='oos'?secOOS()
