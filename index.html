@@ -2575,15 +2575,26 @@ function secDock(){
      ทำให้เลือกเดือน/วันแล้วข้อมูลไม่ขยับ — ใช้วันที่จริงจากคอลัมน์ "วันที่ของมาส่ง/รับเข้าระบบ/วันที่จัดเก็บ" มาช่วยกรองเพิ่ม */
   const dockDateMs=r=>{const a=dparse(r.send||''),b=dparse(r.recv||''),c=dparse(r.store||'');
     return !isNaN(a)?a:(!isNaN(b)?b:(!isNaN(c)?c:NaN));};
+  /* v133: เดือนของแถว = เดือนของ "สัปดาห์" (วันพฤหัสของ ISO week) ไม่ใช่วันที่ของแถว
+     เดิมสัปดาห์ที่คร่อมเดือน (เช่น W40 = 28 ก.ย.–4 ต.ค.) ถูกหั่นครึ่ง → % รายสัปดาห์เพี้ยน */
+  const dockWkYM=r=>{
+    const wN=parseInt(r.week), ms=dockDateMs(r);
+    if(!wN)return isNaN(ms)?'':dkey(new Date(ms)).slice(0,7);
+    let y=+(fYear()||new Date().getFullYear());
+    if(!isNaN(ms)){const dd=new Date(ms); y=dd.getFullYear();
+      if(dd.getMonth()===11&&wN===1)y++;
+      else if(dd.getMonth()===0&&wN>=52)y--;}
+    return wkToYM(y,wN);
+  };
   const dockOK=r=>{
     if(!weekOK(r.week))return false;
     const ms=dockDateMs(r);
-    if(isNaN(ms))return !DAYSEL; /* ไม่มีวันที่ให้เช็ค: ผ่านเว้นแต่เลือก Day เจาะจงมา ซึ่งยืนยันไม่ได้ */
-    const d=dkey(new Date(ms));
-    if(fYear()&&d.slice(0,4)!==fYear())return false;
-    if(DAYSEL)return d===DAYSEL;
-    const ym=fYear()&&fMonth()?fYear()+'-'+String(MONTH_ORDER.indexOf(fMonth())+1).padStart(2,'0'):'';
-    if(ym&&d.slice(0,7)!==ym)return false;
+    if(DAYSEL)return !isNaN(ms)&&dkey(new Date(ms))===DAYSEL;
+    const ym=dockWkYM(r);
+    if(!ym)return !fYear();
+    if(fYear()&&ym.slice(0,4)!==fYear())return false;
+    const selYM=fYear()&&fMonth()?fYear()+'-'+String(MONTH_ORDER.indexOf(fMonth())+1).padStart(2,'0'):'';
+    if(selYM&&ym!==selYM)return false;
     return true;
   };
   const rowsByDate=(DOCK_ROWS||[]).filter(dockOK);
@@ -2611,9 +2622,7 @@ function secDock(){
   const dkYr=+(fYear()||new Date().getFullYear());
   const dkKey=r=>{
     if(!dkMon)return r.week;
-    const ms=dockDateMs(r);
-    if(!isNaN(ms))return dkey(new Date(ms)).slice(0,7);
-    return parseInt(r.week)?wkToYM(dkYr,parseInt(r.week)):'?';
+    return dockWkYM(r)||'?';
   };
   const byW={};
   rows.forEach(r=>{const k=dkKey(r);
@@ -3504,8 +3513,12 @@ const fcPtLbl={id:'fcPtLbl',
        (ซึ่งอยู่ริมขวาสุดของกราฟพอดี) ทะลุขอบกล่องออกไปเป็นเส้นตรงยาวๆ ที่เจอซ้ำๆ */
     const need=Math.round(48*CFZ); const p=ch.options.layout&&ch.options.layout.padding;
     const needR=Math.round(50*CFZ);
-    if(typeof p==='object'&&p){ if((p.top||0)<need)p.top=need; if((p.right||0)<needR)p.right=needR; }
-    else ch.options.layout={padding:{top:need,right:needR}}; },
+    const lg=ch.legend, useLg=lg&&ch.options.plugins.legend&&ch.options.plugins.legend.display!==false;
+    if(useLg){ lg._fcGap=need;
+      if(!lg._fcWrapped){ const f=lg.fit; lg.fit=function(){ f.call(this); this.height+=(this._fcGap||0); }; lg._fcWrapped=1; } }
+    const top=useLg?0:need;
+    if(typeof p==='object'&&p){ if((p.top||0)<top)p.top=top; if((p.right||0)<needR)p.right=needR; }
+    else ch.options.layout={padding:{top,right:needR}}; },
   afterDatasetsDraw(ch,a,op){
     if(!op||!op.display)return;
     const x=ch.ctx, m=ch.getDatasetMeta(1); if(!m||m.hidden)return;
@@ -3574,7 +3587,7 @@ function fcLineChart(id,key,s0,unit,maxHist){
   const ny=fcNiceY([...s.hist,...s.fc,...(hasAct?s.act.filter(v=>v!=null):[])]);
   const o={responsive:true,maintainAspectRatio:false,
     interaction:{mode:'index',intersect:false},
-    plugins:{legend:{display:true,labels:{color:'#475569',font:{size:cf(25)},usePointStyle:true}},
+    plugins:{legend:{display:true,align:'center',labels:{color:'#475569',font:{size:cf(19)},usePointStyle:true,boxHeight:cf(11),padding:cf(16)}},
       tooltip:{backgroundColor:'#1E293B',padding:10,cornerRadius:6,
         titleFont:{size:cf(25)},bodyFont:{size:cf(23)},
         callbacks:{
@@ -3628,7 +3641,7 @@ function fcAccChart(id,key,bt,unit){
   const ny=fcNiceY([...wk.map(w=>w.actual),...wk.map(w=>w.pred)]);
   const o={responsive:true,maintainAspectRatio:false,
     interaction:{mode:'index',intersect:false},
-    plugins:{legend:{display:true,labels:{color:'#475569',font:{size:cf(26)},usePointStyle:true}},
+    plugins:{legend:{display:true,align:'center',labels:{color:'#475569',font:{size:cf(19)},usePointStyle:true,boxHeight:cf(11),padding:cf(16)}},
       tooltip:{backgroundColor:'#1E293B',padding:10,cornerRadius:6,
         titleFont:{size:cf(25)},bodyFont:{size:cf(23)},
         callbacks:{title:c=>wk[c[0].dataIndex].range}}},
@@ -4085,7 +4098,7 @@ function secShip(){
    + ring
    +`<div class="sgrid">
        ${card('ออเดอร์จัดส่งทั้งหมด',S.orders)}
-       ${card('ค้างส่ง <small style="opacity:.5">v5</small>',S.pending,S.pending?'rose':'teal')}
+       ${card('ค้างส่ง',S.pending,S.pending?'rose':'teal')}
        ${card('ขนส่งที่ใช้มากสุด',esc(S.topCarrier),'plum')}
        ${card('วันพีคสุด ('+(S.peak||'-')+')',S.peakQty,'amber')}</div>
 
@@ -4161,17 +4174,20 @@ function drawShip(){
   /* โดนัทสถานะพัสดุ — สำเร็จ vs ค้างส่ง พร้อม % ตรงกลางวง */
   const done=Math.max(0,S.orders-S.pending);
   const stTot=done+S.pending||1;
-  const donePct=Math.round(done/stTot*1000)/10;
+  /* v134: เดิมปัดทศนิยม 1 ตำแหน่ง → ค้างส่ง 26 จาก 145k = 0.0% วงขึ้น 100% ไม่เห็นสีแดง */
+  const stP=pctSet([done,S.pending],stTot);
+  const donePct=stP.data[0], pendPct=stP.data[1];
+  const pendDraw=S.pending>0?Math.max(pendPct,1.5):0;
   destroy('shSt');
   CH.shSt=new Chart(document.getElementById('c_shSt'),{type:'doughnut',
     data:{labels:['จัดส่งสำเร็จ','ค้างส่ง'],datasets:[{
-      data:[Math.round(done/stTot*1000)/10, Math.round(S.pending/stTot*1000)/10],
+      data:[100-pendDraw, pendDraw],
       backgroundColor:[C.good,C.rose],borderWidth:0}]},
     options:{responsive:true,maintainAspectRatio:false,cutout:'62%',layout:{padding:10},
       plugins:{legend:{position:'right',labels:{color:C.mute,font:{size:cf(22)},boxWidth:20}},
-        donutMid:{display:true,top:pct1(donePct),bot:'จัดส่งสำเร็จ'},
+        donutMid:{display:true,top:donePct.toFixed(stP.digits)+'%',bot:'จัดส่งสำเร็จ'},
         tooltip:{titleFont:{size:cf(22)},bodyFont:{size:cf(21)},padding:12,
-          callbacks:{label:c=>c.label+': '+c.formattedValue+'% ('
+          callbacks:{label:c=>c.label+': '+stP.data[c.dataIndex].toFixed(stP.digits)+'% ('
             +fmt(c.dataIndex===0?done:S.pending)+' ออเดอร์)'}}}}});
   Object.assign(CH.shSt.data,{_cnt:[done,S.pending],_unit:'ออเดอร์'});
 
@@ -4610,9 +4626,11 @@ function drawPack(){
   CH.pkShare=new Chart(document.getElementById('c_pkShare'),{type:'doughnut',
     data:{labels:S.pArr,datasets:[{data:sharePct,
       backgroundColor:S.pArr.map((n,i)=>col(i)),borderWidth:0}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:'55%',layout:{padding:10},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'55%',
+      /* รายชื่อขยับเข้ามาจากขอบขวา ~9% ของความกว้างกล่อง */
+      layout:{padding:c=>({top:10,bottom:10,left:10,right:Math.round(c.chart.width*0.09)})},
       plugins:{legend:{position:'right',labels:{color:C.mute,font:{size:cf(24)},boxWidth:20}},
-        pieLbl:{display:true,minPercent:3,size:30,fit:true},
+        pieLbl:{display:true,minPercent:3,size:20,fit:true},
         tooltip:{titleFont:{size:cf(22)},bodyFont:{size:cf(21)},padding:12,
           callbacks:{label:c=>c.label+': '+c.formattedValue+'% ('
             +fmt(shareVal[c.dataIndex])+' กล่อง)'}}}}});
