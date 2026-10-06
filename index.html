@@ -336,6 +336,11 @@ body.sopmode.present #vKPI .sopframe{height:100vh}
 #vKPI table.dt th{font-size:31px}
 #vKPI table.dt td{padding:17px 18px}
 #vKPI .foot{font-size:29px}
+/* KPI Human Error On Picking — ตาราง "รายการที่แจ้ง" ตัวหนังสือใหญ่ขึ้น */
+#vKPI table.dt.perr-t{font-size:44px;line-height:1.35}
+#vKPI table.dt.perr-t th{font-size:36px}
+#vKPI table.dt.perr-t td{padding:20px 20px;vertical-align:middle}
+#vKPI table.dt.perr-t .chip{font-size:34px;padding:5px 16px}
 /* v-kpi3: หัวข้อ KPI แต่ละใบใหญ่ขึ้น (ชื่อ KPI · Target · เลขลำดับ) */
 #vKPI .kpi-head{gap:16px;margin-top:30px;margin-bottom:6px}
 #vKPI .kpi-head b{font-size:54px}
@@ -5329,8 +5334,8 @@ function secReturn(){
 /* ================= KPI Human Error On Picking =================
    แหล่งข้อมูล: ชีต "แจ้งรายการมีปัญหาประจำวันของ Operation" แท็บ Delivery. (gid 1897671003)
    = เคสที่ทีม Delivery แจ้งตอนรับ Car/Box จากคลังมาแพ็ค
-   นับเป็น "หยิบผิด" = ทุกเคสที่เป็นความผิดพลาดฝั่งคลัง (ของสลับช่อง / ไม่อยู่ใน Car / ได้เกิน / ได้ไม่ครบ / Lot-บาร์โค้ดไม่ตรง)
-   ไม่นับ: เคส Tracking Label / ใบปะหน้า (เป็นงาน Admin — กติกาเดียวกับรายงานประจำวัน) และข้อเสนอแนะ ("อยากให้…")
+   นับเป็นเคส = ทุกเคสที่แจ้ง (ของสลับช่อง / ไม่อยู่ใน Car / ได้เกิน / ได้ไม่ครบ / Lot-บาร์โค้ดไม่ตรง / Tracking Label-ใบปะหน้า)
+   ไม่นับ: ข้อเสนอแนะ ("อยากให้…")
    1 แถวในชีต = 1 เคส · ตัวหาร = จำนวนชิ้นที่หยิบทั้งหมดจากชีต Picking ในช่วงเดียวกัน · เป้า < 0.05% */
 const S_PERR='1vPoYKpkQkAq1ZXRG3aCQUMM9jDYIUEzIWFxjATKVOuU', G_PERR='1897671003';
 const PERR_TARGET=0.05;
@@ -5354,7 +5359,7 @@ function perrDate(v){
 function perrKind(tag,detail){
   const t=tag||'';
   if(/อยาก|เสนอ/.test(t))return {grp:'skip',kind:'ข้อเสนอแนะ'};
-  if(PERR_LABEL_RE.test(t)&&!/คลัง/.test(detail||''))return {grp:'admin',kind:'Tracking Label / ใบปะหน้า'};
+  if(PERR_LABEL_RE.test(t)&&!/คลัง/.test(detail||''))return {grp:'pick',kind:'Tracking Label / ใบปะหน้า'};
   let kind='อื่นๆ';
   if(/lot|บาร์โค้ด/i.test(t))kind='Lot / บาร์โค้ดไม่ตรง';
   else if(/ไม่ได้อยู่/.test(t))kind='สินค้าไม่อยู่ใน Car';
@@ -5413,7 +5418,6 @@ function secPickErr(){
   const errs=all.filter(r=>r.grp==='pick');
   const errsIn=errs.filter(r=>inPick(r.date));
   const before=errs.length-errsIn.length;
-  const lbl=all.filter(r=>r.grp==='admin').length;
   const noDate=PERR.list.filter(r=>!r.date&&r.grp==='pick').length;
   const qty=picks.reduce((a,r)=>a+r.qty,0);
   const rate=qty?errsIn.length/qty*100:null;
@@ -5437,10 +5441,9 @@ function secPickErr(){
       : ringHTML(accuracy,100-PERR_TARGET,
           `<span>หยิบถูกต้อง · อัตราหยิบผิด <b>${rateTxt}</b></span><span>เป้าหมาย หยิบผิด <b>&lt; ${PERR_TARGET}%</b> (ถูกต้อง ≥ ${100-PERR_TARGET}%)</span>`))
    +`<div class="sgrid">${card('อัตราการหยิบผิด',`<span class="${rate!=null&&rate>=PERR_TARGET?'bad':''}">${rateTxt}</span>`,rate!=null&&rate>=PERR_TARGET?'rose':'teal')}
-      ${card('จำนวนเคสหยิบผิด',errsIn.length,'rose')}
-      ${card('จำนวนที่หยิบทั้งหมด (ชิ้น)',qty,'teal')}
-      ${card('เคส Label (Admin · ไม่นับ)',lbl,'amber')}</div>
-     <div class="chint">1 แถวในชีตแจ้งปัญหา = 1 เคส · อัตรา = เคสหยิบผิด ÷ จำนวนชิ้นที่หยิบ (ชีต Picking)
+      ${card('จำนวนเคส',errsIn.length,'rose')}
+      ${card('จำนวนที่หยิบทั้งหมด (ชิ้น)',qty,'teal')}</div>
+     <div class="chint">1 แถวในชีตแจ้งปัญหา = 1 เคส · อัตรา = จำนวนเคส ÷ จำนวนชิ้นที่หยิบ (ชีต Picking)
        ${pMin?` · ข้อมูลการหยิบมีตั้งแต่ ${fmtDay(pMin)} ถึง ${fmtDay(pMax)}`:''}
        ${before?` · มี ${fmt(before)} เคสก่อนช่วงนั้น แสดงในตารางแต่ไม่นับเข้าอัตรา`:''}
        ${noDate?` · ${fmt(noDate)} เคสอ่านวันที่ไม่ได้`:''}</div>
@@ -5452,7 +5455,7 @@ function secPickErr(){
      <div class="cpanel"><div class="cbox" style="height:${Math.max(260,Object.keys(kinds).length*70+80)}px"><canvas id="c_perrk"></canvas></div></div>
 
      <h2 class="sec">รายการที่แจ้ง <em>${fmt(rows.length)} เคส · ใหม่ → เก่า</em><span></span></h2>
-     <div class="tscroll"><table class="dt"><thead><tr>
+     <div class="tscroll"><table class="dt perr-t"><thead><tr>
        <th>วันที่พบ</th><th>Car / Box</th><th>รอบ</th><th>ประเภท</th><th>รายละเอียด</th></tr></thead><tbody>`
    +(rows.length?rows.map(r=>`<tr><td style="white-space:nowrap">${r.date?fmtDay(r.date):'—'}</td>
        <td style="white-space:nowrap">${esc(r.box||'—')}</td><td style="white-space:nowrap">${esc(r.round||'—')}</td>
