@@ -3941,7 +3941,9 @@ function drawCREmbed(){
   const scale=()=>{ try{
     const d=f.contentDocument; if(!d||!d.documentElement)return;
     const z=parseFloat(document.body.style.zoom)||1;
-    const px=Math.min(26,Math.max(15,0.0115*f.clientWidth*z))/z;
+    /* v-cr2: ขยายตัวหนังสือ 1.75 เท่า (เดิมเล็กไป อ่านยาก) — ปรับตัวเลขนี้ตัวเดียวถ้าอยากใหญ่/เล็กลงอีก */
+    const CR_TEXT=1.75;
+    const px=Math.min(26,Math.max(15,0.0115*f.clientWidth*z))/z*CR_TEXT;
     const v=px.toFixed(2)+'px';
     if(d.documentElement.style.fontSize!==v)d.documentElement.style.setProperty('font-size',v,'important');
   }catch(e){} };
