@@ -6546,6 +6546,11 @@ const CAN_SHEET='12C-YRzItKvcZ0ThZkY25F50s663zItob27ByEsH3U3c',CAN_GID='12131404
 const RET_GID='902439572';
 const PUB_CSV=g=>`https://docs.google.com/spreadsheets/d/e/2PACX-1vT91y2Hh3wgzuk5AvadFevKYMtzqWsGbgvXoDILmhIfEHDJQCh3c79v81SB-MjYmwjOg-PfkC6R7-sE/pub?gid=${g}&single=true&output=csv`;
 const CAN_CATS=['ยกเลิกก่อนหยิบ','ยกเลิกก่อนแพ็ค','ยกเลิกหลังแพ็ค'];
+/* v-crrpt: แท็บ "ยกเลิกและคืนสินค้า" (Job Daily Admin) — workflow เติมจาก Odoo ทุกคืน */
+const CR_GID='106155722';
+const CR_CAT={'ยกเลิกก่อนหยิบ':'pick','ยกเลิกก่อนแพ็ค':'pack','ยกเลิกหลังแพ็ค':'wait','ยกเลิกในวัน':'wait',
+  'ยกเลิกจากผู้ซื้อ':'ret','จัดส่งไม่สำเร็จ':'ret','เคลมสินค้า':'oth','ยกเลิกจากผู้ขาย':'oth','สินค้าสูญหาย':'oth','สินค้าสญหาย':'oth'};
+const CR_PRE_TAG={pick:'ยกเลิกก่อนหยิบ',pack:'ยกเลิกก่อนแพ็ค',wait:'ยกเลิกหลังแพ็ค'};
 const LABEL_RE=/tracking|label|ลาเบล|แทร็ก|แทรก|แท็ก|ใบปะหน้า|ใบปปะหน้า/i;
 const DEPT_OF=r=>{
   /* เคสฉลาก/ใบปะหน้า → Admin เว้นแต่รายละเอียดบอกชัดว่าคลังเป็นคนพลาด */
@@ -6583,15 +6588,17 @@ const TEAMS={
   },
   admin:{
     title:'รายงานทีม Admin',
-    sub:'ออเดอร์ยกเลิก · Return · การแจ้งปัญหาประจำวัน',
-    source:'Case Admin (Cancel จาก Odoo และ Return จาก Odoo — ชุดเดียวกับหน้า Cancel / Return) และ แจ้งรายการมีปัญหาประจำวันของ Operation (แท็บ Admin)',
+    sub:'ยกเลิกในวัน · ของออกไปแล้ว · การแจ้งปัญหาประจำวัน',
+    source:'แท็บ "ยกเลิกและคืนสินค้า" ในไฟล์ Job Daily Admin (ชุดเดียวกับหน้า ยกเลิกและคืนสินค้า) และ แจ้งรายการมีปัญหาประจำวันของ Operation (แท็บ Admin)',
     panels:[
-      {k:'cancel',t:'ออเดอร์ยกเลิก', c:'ป้ายสี = ขั้นที่ยกเลิก', hd:'d', unit:'ออเดอร์',
-       sheet:CAN_SHEET, gid:CAN_GID, cancel:true, noQty:true, dayCount:true,
-       cols:['วันที่','ขั้นที่ยกเลิก · เลขออเดอร์ · ช่องทาง'], empty:'ไม่มีออเดอร์ยกเลิกในช่วงนี้'},
-      {k:'ret',t:'Return', c:'ป้ายสี = สาเหตุ', hd:'b', unit:'ออเดอร์',
-       sheet:CAN_SHEET, gid:RET_GID, ret:true, noQty:true, dayCount:true,
-       cols:['วันที่ได้รับคืน','สาเหตุ · เลขออเดอร์ · สินค้า'], empty:'ไม่มี Return ในช่วงนี้'},
+      /* v-crrpt: ใช้ข้อมูลชุดเดียวกับหน้า "ยกเลิกและคืนสินค้า" · ยกเลิกในวัน = ก่อนหยิบ/ก่อนแพ็ค/หลังแพ็ค
+         ของออกไปแล้ว = ตีกลับ (ยกเลิกจากผู้ซื้อ/จัดส่งไม่สำเร็จ) + เคลม/อื่นๆ · ไม่นับใบ RT ที่ถูกยกเลิก และ "รอระบุสาเหตุ" */
+      {k:'cancel',t:'ยกเลิกในวัน', c:'ป้ายสี = ขั้นที่ยกเลิก', hd:'d', unit:'ออเดอร์',
+       sheet:'CR', gid:CR_GID, cr:'pre', cancel:true, noQty:true, dayCount:true,
+       cols:['วันที่','ขั้นที่ยกเลิก · เลขออเดอร์ · สินค้า'], empty:'ไม่มีออเดอร์ยกเลิกในวันในช่วงนี้'},
+      {k:'ret',t:'ของออกไปแล้ว', c:'ป้ายสี = สาเหตุ', hd:'b', unit:'ออเดอร์',
+       sheet:'CR', gid:CR_GID, cr:'post', ret:true, noQty:true, dayCount:true,
+       cols:['วันที่','สาเหตุ · เลขออเดอร์ · สินค้า'], empty:'ไม่มีของที่ออกไปแล้วกลับมาในช่วงนี้'},
       {k:'issue',t:'แจ้งปัญหาประจำวัน', c:'ป้ายสี = ประเภทสาเหตุ', hd:'c', unit:'เคส',
        sheet:OPS, gid:'1007119536', noQty:true,
        cols:['วันที่','ประเภทสาเหตุ · ปัญหาที่พบ'], empty:'ไม่มีการแจ้งปัญหาในช่วงนี้'}
@@ -6690,6 +6697,26 @@ function toCancelRows(csv){
             item:`<b>${esc(ord||'—')}</b>${ch?` <span style="opacity:.65">· ${esc(ch)}</span>`:''}`};
   }).filter(Boolean).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
 }
+function toCRRows(csv,side){
+  const raw=parseCSV(csv).filter(r=>r.some(x=>String(x).trim()!==''));
+  if(!raw.length)return [];
+  const H=raw[0].map(c=>String(c).trim()),ix=n=>H.indexOf(n);
+  const g=(r,n)=>{const i=ix(n);return i<0?'':String(r[i]==null?'':r[i]).trim();};
+  const seen=new Set();
+  return raw.slice(1).map(r=>{
+    const d=toKey(g(r,'วันที่'));if(!d)return null;
+    const why=g(r,'สาเหตุ'),st=g(r,'สถานะใบ RT');
+    if(st==='ยกเลิก'&&!why)return null;               /* ใบ RT ถูกยกเลิก → ไม่นับ (กติกาเดียวกับหน้า ยกเลิกและคืนสินค้า) */
+    const c=CR_CAT[why]; if(!c)return null;            /* รอระบุสาเหตุ → ไม่อยู่ทั้ง 2 ฝั่ง */
+    const pre=c==='pick'||c==='pack'||c==='wait';
+    if((side==='pre')!==pre)return null;
+    const ord=g(r,'เลขออเดอร์'),key=ord+'|'+c; if(ord&&seen.has(key))return null; seen.add(key);
+    const pf=g(r,'Platform'),pr=g(r,'สินค้า');
+    return {date:d,y:d.slice(0,4),m:d.slice(5,7),wk:isoWk(d),tag:pre?CR_PRE_TAG[c]:why,qty:null,
+            item:`<b>${esc(ord||'—')}</b>${pf?` <span style="opacity:.65">· ${esc(pf)}</span>`:''}`
+                 +(pr?`<br><span style="opacity:.65;font-size:.85em">${esc(pr)}</span>`:'')};
+  }).filter(Boolean).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
+}
 function toReturnRows(csv){
   const raw=parseCSV(csv);let hi=-1;
   for(let i=0;i<Math.min(6,raw.length);i++) if(raw[i].some(c=>/วันที่ได้รับสินค้า/.test(c))){hi=i;break;}
@@ -6712,12 +6739,14 @@ async function grab(p){
   const viaPub=()=>fetch(PUB_CSV(p.gid));
   const okCSV=r=>r.ok?r.text().then(t=>{if(t.trim().startsWith('<'))throw new Error('not csv');return t;})
                      :Promise.reject(new Error('HTTP '+r.status));
+  if(!CSV_CACHE[key]&&p.cr)CSV_CACHE[key]=fetch(PUB_CSV(p.gid)+'&t='+Date.now(),{cache:'no-store'}).then(okCSV);
   if(!CSV_CACHE[key])CSV_CACHE[key]=(p.cancel||p.ret)
       ? fetch(`https://docs.google.com/spreadsheets/d/${p.sheet}/export?format=csv&gid=${p.gid}`).then(okCSV)
           .catch(()=>viaPub().then(okCSV)).catch(()=>viaGviz().then(okCSV))
       : viaGviz().then(okCSV);
   let txt;
   try{txt=await CSV_CACHE[key];}catch(e){delete CSV_CACHE[key];throw e;}
+  if(p.cr)return toCRRows(txt,p.cr);
   if(p.cancel)return toCancelRows(txt);
   if(p.ret)return toReturnRows(txt);
   if(!p.form)return toRows(txt);
