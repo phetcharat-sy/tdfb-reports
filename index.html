@@ -3970,6 +3970,9 @@ function drawCREmbed(){
     /* v-cr3: กราฟรายสัปดาห์ — ให้แท่งกระจายเต็มความกว้างการ์ด ไม่กองซ้าย */
     +'#weeks{grid-template-columns:none!important;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr)}'
     +'#weeks .stack{width:min(55%,7rem)}#weeks .wk>span[style*="font-size:.7rem"]{font-size:.85rem!important}'
+    /* v-cr4: โหมดพรีเซนต์ — แสดงทุกส่วนต่อกันในหน้าเดียว เลื่อนลงดูได้ (เดิมแบ่ง 5 สไลด์ เห็นทีละนิด) */
+    +'body.present section[data-slide]{display:flex!important}body.present div[data-slide]{display:grid!important}'
+    +'body.present .slidebar{display:none!important}'
     +'</style></head>');
   f.addEventListener('load',()=>{
     fit(); setTimeout(fit,200); setTimeout(fit,800);
