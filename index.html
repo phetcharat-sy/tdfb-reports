@@ -5326,20 +5326,168 @@ function secReturn(){
 /* KPI Human Error On Picking — ยังไม่มีชีตต้นทาง
    ชีต Picking ที่ใช้อยู่ไม่มีคอลัมน์บันทึก "หยิบผิด" จึงยังคำนวณ KPI นี้ไม่ได้
    ภาพรวมการหยิบรายคนย้ายไปเมนู "Picking" แล้ว หน้านี้เตรียมช่องไว้ก่อน */
+/* ================= KPI Human Error On Picking =================
+   แหล่งข้อมูล: ชีต "แจ้งรายการมีปัญหาประจำวันของ Operation" แท็บ Delivery. (gid 1897671003)
+   = เคสที่ทีม Delivery แจ้งตอนรับ Car/Box จากคลังมาแพ็ค
+   นับเป็น "หยิบผิด" = ทุกเคสที่เป็นความผิดพลาดฝั่งคลัง (ของสลับช่อง / ไม่อยู่ใน Car / ได้เกิน / ได้ไม่ครบ / Lot-บาร์โค้ดไม่ตรง)
+   ไม่นับ: เคส Tracking Label / ใบปะหน้า (เป็นงาน Admin — กติกาเดียวกับรายงานประจำวัน) และข้อเสนอแนะ ("อยากให้…")
+   1 แถวในชีต = 1 เคส · ตัวหาร = จำนวนชิ้นที่หยิบทั้งหมดจากชีต Picking ในช่วงเดียวกัน · เป้า < 0.05% */
+const S_PERR='1vPoYKpkQkAq1ZXRG3aCQUMM9jDYIUEzIWFxjATKVOuU', G_PERR='1897671003';
+const PERR_TARGET=0.05;
+const fmtDay=k=>+k.slice(8,10)+' '+MON_S[+k.slice(5,7)-1]+' '+k.slice(2,4);
+const PERR_LABEL_RE=/tracking|label|ลาเบล|แทร็ก|แทรก|แท็ก|ใบปะหน้า|ใบปปะหน้า/i;
+let PERR=null, PERR_ERR='', PERR_LOADING=false, PERR_CTX=null;
+SHEET_STATE.perr='ยังไม่เปิด';
+
+/* วันที่ในชีตนี้มีหลายแบบ: 26/8/69 (พ.ศ. 2 หลัก) · 30/8/26 (ค.ศ. 2 หลัก) · 16/6/2026, 19:00:11 */
+function perrDate(v){
+  const t=String(v||'').trim();
+  const m=t.match(/^(\d{1,2})[/.\-](\d{1,2})[/.\-](\d{2,4})/);
+  if(!m)return '';
+  let y=+m[3];
+  if(y<100)y=y>=50?y+2500-543:y+2000;      /* 69 → 2569 → 2026 · 26 → 2026 */
+  else if(y>2400)y-=543;
+  const d=new Date(Date.UTC(y,+m[2]-1,+m[1]));
+  if(isNaN(d)||+m[2]>12||+m[1]>31)return '';
+  return d.toISOString().slice(0,10);
+}
+function perrKind(tag,detail){
+  const t=tag||'';
+  if(/อยาก|เสนอ/.test(t))return {grp:'skip',kind:'ข้อเสนอแนะ'};
+  if(PERR_LABEL_RE.test(t)&&!/คลัง/.test(detail||''))return {grp:'admin',kind:'Tracking Label / ใบปะหน้า'};
+  let kind='อื่นๆ';
+  if(/lot|บาร์โค้ด/i.test(t))kind='Lot / บาร์โค้ดไม่ตรง';
+  else if(/ไม่ได้อยู่/.test(t))kind='สินค้าไม่อยู่ใน Car';
+  else if(/car_?packag|สลับ|ช่อง/i.test(t))kind='ของสลับช่อง / ไม่ตรงช่อง';
+  else if(/ไม่ครบ|ขาด/.test(t))kind='ได้รับไม่ครบ';
+  else if(/เกิน/.test(t))kind='ได้รับเกิน';
+  return {grp:'pick',kind};
+}
+async function loadPerr(force){
+  if(force){ PERR=null; PERR_ERR=''; }
+  if(PERR||PERR_LOADING)return PERR;
+  PERR_LOADING=true;
+  try{
+    const rows=await smallSheet(S_PERR,G_PERR,v=>SHEET_STATE.perr=v);
+    const t=table(rows,/เกณฑ์|ประทับเวลา|วันที่พบปัญหา/);
+    if(!t)throw new Error('หาหัวตารางไม่เจอ');
+    const c={ts:t.col('ประทับเวลา'),dt:t.col('วันที่พบปัญหา'),box:t.col('carbox','box'),
+             rd:t.col('ช่วงเวลา'),tag:t.col('เกณฑ์'),det:t.col('รายละเอียด')};
+    if(c.tag<0)throw new Error('หาคอลัมน์ เกณฑ์ ไม่เจอ · หัวตาราง: '+t.H.slice(0,9).join(' / '));
+    const g=(r,i)=>i>=0?String(r[i]||'').trim():'';
+    const list=t.rows.map(r=>{
+      const tag=g(r,c.tag); if(!tag)return null;      /* แถวที่มีแต่ตารางด้านข้าง (คอลัมน์ K เป็นต้นไป) ไม่นับ */
+      const det=g(r,c.det);
+      const date=perrDate(g(r,c.dt))||perrDate(g(r,c.ts));
+      return {date,tag,det,box:g(r,c.box),round:g(r,c.rd).replace(/้+/g,'้'),...perrKind(tag,det)};
+    }).filter(Boolean);
+    if(!list.length)throw new Error('ไม่พบแถวข้อมูล');
+    PERR={list};
+    SHEET_STATE.perr=fmt(list.length)+' เคส';
+  }catch(e){ PERR=null; PERR_ERR=e.message; SHEET_STATE.perr='ผิดพลาด — '+e.message; }
+  PERR_LOADING=false;
+  return PERR;
+}
+
 function secPickErr(){
-  return `<div class="sgrid">
-      ${card('อัตราการหยิบผิด (เป้า &lt; 0.05%)','—')}
-      ${card('จำนวนครั้งที่หยิบผิด','—','rose')}
-      ${card('จำนวนที่หยิบทั้งหมด','—','teal')}
-      ${card('สถานะข้อมูล','ยังไม่เชื่อมชีต','amber')}</div>
-    <div class="empty2">ยังไม่มีข้อมูลสำหรับ KPI นี้
-      <div style="font-size:26px;color:var(--mute);line-height:1.7;margin-top:14px">
-        ชีต Picking ปัจจุบันไม่มีคอลัมน์ที่บันทึกการหยิบผิด · ต้องมีอย่างน้อย:
-        <b>วันที่ · ผู้หยิบ · เลขใบหยิบหรือออเดอร์ · จำนวนที่หยิบ · จำนวนครั้งที่หยิบผิด</b>
-        (ใส่สาเหตุมาด้วยได้ จะแยกสัดส่วนสาเหตุให้)<br>
-        ส่งลิงก์ชีตพร้อม gid มาได้เลย เดี๋ยวต่อข้อมูลให้<br>
-        ภาพรวมการหยิบสินค้ารายคนย้ายไปที่เมนู <b>Picking</b> แล้ว
-      </div></div>`;
+  if(!PERR||!PICK){
+    const err=PERR_ERR||PICK_ERR;
+    if(!err)return '<div class="empty2">กำลังโหลดข้อมูล…</div>';
+    return `<div class="empty2">อ่านชีตไม่ได้ — ${esc(err)}</div>`;
+  }
+  const ym=fYear()&&fMonth()?fYear()+'-'+String(MONTH_ORDER.indexOf(fMonth())+1).padStart(2,'0'):'';
+  const dOK=d=>{
+    if(!d)return false;
+    if(fYear()&&d.slice(0,4)!==fYear())return false;
+    if(DAYSEL)return d===DAYSEL;
+    if(WKSEL.length&&!weekOK(isoWeek(d)))return false;
+    if(ym&&d.slice(0,7)!==ym)return false;
+    return true;
+  };
+  /* ตัวหารมาจากชีต Picking — ช่วงก่อนที่ชีต Picking เริ่มเก็บ ไม่มีตัวหาร จึงไม่นับเคสช่วงนั้นเข้าอัตรา */
+  const pDates=PICK.list.map(r=>r.date).filter(Boolean).sort();
+  const pMin=pDates[0]||'', pMax=pDates[pDates.length-1]||'';
+  const inPick=d=>d&&d>=pMin;
+  const picks=PICK.list.filter(r=>dOK(r.date));
+  const all=PERR.list.filter(r=>dOK(r.date));
+  const errs=all.filter(r=>r.grp==='pick');
+  const errsIn=errs.filter(r=>inPick(r.date));
+  const before=errs.length-errsIn.length;
+  const lbl=all.filter(r=>r.grp==='admin').length;
+  const noDate=PERR.list.filter(r=>!r.date&&r.grp==='pick').length;
+  const qty=picks.reduce((a,r)=>a+r.qty,0);
+  const rate=qty?errsIn.length/qty*100:null;
+
+  /* จัดกลุ่มตามช่วงเวลา: ภาพรวม = รายเดือน · เลือกเดือน = รายสัปดาห์ · เลือก Week/Day = รายวัน */
+  const g=tGrp();
+  const keyOf=d=>g==='month'?d.slice(0,7):g==='week'?isoWkKey(d):d;
+  const lblOf=k=>g==='month'?ymLbl(k):g==='week'?'W'+(+k.slice(-2)):fmtDay(k);
+  const B={};
+  picks.forEach(r=>{const k=keyOf(r.date);(B[k]=B[k]||{q:0,e:0}).q+=r.qty;});
+  errsIn.forEach(r=>{const k=keyOf(r.date);(B[k]=B[k]||{q:0,e:0}).e++;});
+  const keys=Object.keys(B).filter(k=>B[k].q>0).sort();
+  const kinds={}; errs.forEach(r=>kinds[r.kind]=(kinds[r.kind]||0)+1);
+  PERR_CTX={keys,B,lblOf,kinds};
+
+  const accuracy=rate==null?0:Math.max(0,100-rate);
+  const rateTxt=rate==null?'—':rate.toFixed(rate>=0.1?2:3)+'%';
+  const rows=[...errs].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  return (rate==null
+      ? '<div class="empty2">ไม่มีข้อมูลการหยิบ (ชีต Picking) ในช่วงที่เลือก จึงคำนวณอัตราไม่ได้</div>'
+      : ringHTML(accuracy,100-PERR_TARGET,
+          `<span>หยิบถูกต้อง · อัตราหยิบผิด <b>${rateTxt}</b></span><span>เป้าหมาย หยิบผิด <b>&lt; ${PERR_TARGET}%</b> (ถูกต้อง ≥ ${100-PERR_TARGET}%)</span>`))
+   +`<div class="sgrid">${card('อัตราการหยิบผิด',`<span class="${rate!=null&&rate>=PERR_TARGET?'bad':''}">${rateTxt}</span>`,rate!=null&&rate>=PERR_TARGET?'rose':'teal')}
+      ${card('จำนวนเคสหยิบผิด',errsIn.length,'rose')}
+      ${card('จำนวนที่หยิบทั้งหมด (ชิ้น)',qty,'teal')}
+      ${card('เคส Label (Admin · ไม่นับ)',lbl,'amber')}</div>
+     <div class="chint">1 แถวในชีตแจ้งปัญหา = 1 เคส · อัตรา = เคสหยิบผิด ÷ จำนวนชิ้นที่หยิบ (ชีต Picking)
+       ${pMin?` · ข้อมูลการหยิบมีตั้งแต่ ${fmtDay(pMin)} ถึง ${fmtDay(pMax)}`:''}
+       ${before?` · มี ${fmt(before)} เคสก่อนช่วงนั้น แสดงในตารางแต่ไม่นับเข้าอัตรา`:''}
+       ${noDate?` · ${fmt(noDate)} เคสอ่านวันที่ไม่ได้`:''}</div>
+
+     <h2 class="sec">อัตราหยิบผิด <em>${g==='month'?'รายเดือน':g==='week'?'รายสัปดาห์':'รายวัน'} · เส้นประ = เป้า ${PERR_TARGET}%</em><span></span></h2>
+     <div class="cpanel"><div class="cbox"><canvas id="c_perr"></canvas></div></div>
+
+     <h2 class="sec">ประเภทความผิดพลาด <em>จำนวนเคส</em><span></span></h2>
+     <div class="cpanel"><div class="cbox" style="height:${Math.max(260,Object.keys(kinds).length*70+80)}px"><canvas id="c_perrk"></canvas></div></div>
+
+     <h2 class="sec">รายการที่แจ้ง <em>${fmt(rows.length)} เคส · ใหม่ → เก่า</em><span></span></h2>
+     <div class="tscroll"><table class="dt"><thead><tr>
+       <th>วันที่พบ</th><th>Car / Box</th><th>รอบ</th><th>ประเภท</th><th>รายละเอียด</th></tr></thead><tbody>`
+   +(rows.length?rows.map(r=>`<tr><td style="white-space:nowrap">${r.date?fmtDay(r.date):'—'}</td>
+       <td style="white-space:nowrap">${esc(r.box||'—')}</td><td style="white-space:nowrap">${esc(r.round||'—')}</td>
+       <td>${chip(r.kind)}</td><td>${esc(r.det||r.tag)}</td></tr>`).join('')
+     :'<tr><td colspan="5" style="text-align:center;color:var(--mute)">ไม่มีเคสหยิบผิดในช่วงนี้</td></tr>')
+   +`</tbody></table></div>`;
+}
+
+function drawPickErr(){
+  if(!PERR_CTX)return;
+  const {keys,B,lblOf,kinds}=PERR_CTX;
+  const el1=document.getElementById('c_perr');
+  if(el1&&keys.length){
+    destroy('perr');
+    const vals=keys.map(k=>B[k].e/B[k].q*100);
+    const o=baseOpts(false);
+    o.scales.y.ticks.callback=v=>(+v).toFixed(2)+'%';
+    o.scales.y.suggestedMax=Math.max(PERR_TARGET*1.6,...vals)*1.15;
+    o.plugins.barPct={display:true,digits:3,target:PERR_TARGET};
+    o.plugins.tooltip.callbacks={label:c=>{const b=B[keys[c.dataIndex]];
+      return `หยิบผิด ${(+c.raw).toFixed(3)}%  ·  ${fmt(b.e)} เคส / ${fmt(b.q)} ชิ้น`;}};
+    CH.perr=new Chart(el1,{type:'bar',data:{labels:keys.map(lblOf),datasets:[{data:vals,
+      backgroundColor:vals.map(v=>v>=PERR_TARGET?C.rose:C.teal),borderRadius:6,maxBarThickness:70,minBarLength:2}]},options:o});
+  }
+  const el2=document.getElementById('c_perrk');
+  const ks=Object.entries(kinds).sort((a,b)=>b[1]-a[1]);
+  if(el2&&ks.length){
+    destroy('perrk');
+    const o=baseOpts(false); o.indexAxis='y';
+    o.scales.x.ticks.precision=0;
+    o.scales.y.grid={display:false};
+    o.plugins.tooltip.callbacks={label:c=>fmt(c.raw)+' เคส'};
+    CH.perrk=new Chart(el2,{type:'bar',data:{labels:ks.map(x=>x[0]),datasets:[{data:ks.map(x=>x[1]),
+      backgroundColor:C.rose,borderRadius:6,maxBarThickness:46}]},options:o});
+  }
 }
 
 /* ================= Replenishment ================= */
@@ -5563,6 +5711,7 @@ function renderKPI(){
            else if(SEC==='diff')drawDiff(); else if(SEC==='dock')drawDock();
            else if(SEC==='fc')drawForecast();
            else if(SEC==='pick')drawPick();
+           else if(SEC==='perr')drawPickErr();
            else if(SEC==='pack')drawPack();
            else if(SEC==='ship')drawShip();
            else if(SEC==='sop')drawSOP();
@@ -6290,6 +6439,7 @@ window.KPI_SEC=async(sec)=>{
   renderKPI();
   if((SEC==='repl'||SEC==='fc')&&!REPL){ await loadRepl(); renderKPI(); }
   if(SEC==='pick'&&!PICK){ await loadPick(); renderKPI(); }
+  if(SEC==='perr'&&(!PERR||!PICK)){ await Promise.all([loadPerr(),loadPick()]); if(SEC==='perr')renderKPI(); }
   if(SEC==='pack'&&!PACK){ await loadPack(); if(SEC==='pack')fillFiltersKPI(); renderKPI(); }
   if(SEC==='ship'&&!SHIP){ await loadShip(); renderKPI(); }
 };
@@ -6297,6 +6447,7 @@ window.KPI_SEC=async(sec)=>{
 /* ให้หน้า Replenishment เริ่มโหลดชีตของตัวเองทันที ไม่ต้องรอชีต On-Time ที่ใหญ่กว่ามาก */
 if(/^#kpi-(repl|fc)/.test(location.hash||'')) loadRepl().then(()=>{ if(SEC==='repl'||SEC==='fc')renderKPI(); });
 if(/^#kpi-pick/.test(location.hash||'')) loadPick().then(()=>{ if(SEC==='pick')renderKPI(); });
+if(/^#kpi-perr/.test(location.hash||'')) Promise.all([loadPerr(),loadPick()]).then(()=>{ if(SEC==='perr')renderKPI(); });
 if(/^#kpi-pack/.test(location.hash||'')) loadPack().then(()=>{ if(SEC==='pack')renderKPI(); });
 if(/^#kpi-ship/.test(location.hash||'')) loadShip().then(()=>{ if(SEC==='ship')renderKPI(); });
 
