@@ -1127,7 +1127,8 @@ body.mobile .side .brand{padding-left:112px;padding-right:16px}body.mobile .side
 #vKPI .othead em{font-style:normal;font-size:25px;color:var(--pm)}
 #vKPI .otsel{display:flex;align-items:center;border:1px solid var(--pl);border-radius:14px;overflow:hidden}
 #vKPI .otsel span{font-size:24px;color:var(--pm);padding:12px 18px;border-right:1px solid var(--pl)}
-#vKPI .otsel select{font:inherit;font-size:25px;color:#fff;background:#1A1640;border:0;padding:12px 18px;min-width:360px}
+#vKPI .otsel select{font:inherit;font-size:25px;color:#fff;background:#1A1640;border:0;padding:12px 18px;min-width:520px}
+#vKPI .otsel option{color:#fff;background:#1A1640}
 #vKPI .otbox{height:430px;position:relative}
 /* แถวล่าง */
 #vKPI .ovbot{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px}
@@ -1156,6 +1157,17 @@ body.mobile .side .brand{padding-left:112px;padding-right:16px}body.mobile .side
 @media(max-width:1000px){#vKPI .ovtop,#vKPI .kgrid,#vKPI .dpair{grid-template-columns:1fr}}
 body.present #vKPI .kpi2 .v{font-size:96px}
 body.present #vKPI .otc .v{font-size:100px}
+
+/* v-ov5: ตารางแถวล่าง (ต่ำกว่าเกณฑ์ / ผ่านเกณฑ์) ตัวใหญ่ขึ้น อ่านง่าย */
+#vKPI .opanel{padding:32px 32px 26px}
+#vKPI .opanel h3{font-size:44px;margin-bottom:22px}
+#vKPI table.ovt{font-size:34px}
+#vKPI table.ovt th{font-size:28px;padding:16px 16px}
+#vKPI table.ovt td{padding:20px 16px}
+#vKPI table.ovt td:first-child{font-weight:600}
+#vKPI table.ovt td.sp{width:170px}
+#vKPI .spark{width:150px;height:46px}
+#vKPI .ovempty{font-size:32px}
 </style>
 <style id="hlegV17">
 /* v-hleg: ป้ายสีกราฟแบบ HTML ของหน้า Packing — นำกลับมาจากเวอร์ชัน (17) */
@@ -1357,15 +1369,12 @@ body.present #vKPI .otc .v{font-size:100px}
   <section class="ovtrend">
     <div class="othead"><b>แนวโน้มรายสัปดาห์</b><em id="ovTrendNote"></em><span class="dsp"></span>
       <label class="otsel"><span>เลือก KPI</span><select id="ovTrendSel" autocomplete="off">
-        <optgroup label="Warehouse">
-          <option value="dock">On-Time รวม (รับเข้า+จัดเก็บ)</option>
-          <option value="oos">Out of Stock</option>
-          <option value="sv">Stock Variance</option>
-          <option value="perr">Human Error On Picking</option>
-        </optgroup>
-        <optgroup label="Admin">
-          <option value="ship">การจัดส่ง (Shipping)</option>
-        </optgroup>
+        <!-- ไม่ใช้ optgroup: หัวกลุ่มของ dropdown บน Mac แสดงเป็นตัวจางๆ ดูเหมือนบั๊ก → ใส่ชื่อแผนกนำหน้าแทน -->
+        <option value="dock">Warehouse · On-Time รวม (รับเข้า+จัดเก็บ)</option>
+        <option value="oos">Warehouse · Out of Stock</option>
+        <option value="sv">Warehouse · Stock Variance</option>
+        <option value="perr">Warehouse · Human Error On Picking</option>
+        <option value="ship">Admin · การจัดส่ง (Shipping)</option>
       </select></label></div>
     <div class="otbox"><canvas id="c_ovTrend"></canvas></div>
   </section>
@@ -6294,7 +6303,8 @@ function renderKPI(){
       disp:pct(cur.oos),v:cur.oos,pass:cur.oos>=99,
       delta:deltaHTML(cur.oos,prev?prev.oos:null,true),
       base:`${fmt(cur.okQty)} จาก ${fmt(cur.items)} ชิ้น`}
-      :{dept:'wh',key:'oos',n:1,ic:'cube',l:'Out of Stock',t:'Target ≥ 99%',wait:true,note:'ไม่มีข้อมูลในช่วงที่เลือก'},
+      :{dept:'wh',key:'oos',n:1,ic:'cube',l:'Out of Stock',t:'Target ≥ 99%',wait:true,
+        note:OTP_ERR?('อ่านชีตไม่ได้ — '+OTP_ERR):OTP_LOADING?'กำลังโหลดข้อมูล… (ชีต On-Time/Out of Stock ไฟล์ใหญ่ ใช้เวลาสักครู่)':'ไม่มีข้อมูลในช่วงที่เลือก'},
     diffV!=null?{dept:'wh',key:'sv',n:2,ic:'list',l:'Stock Variance',t:'Target < 2%',tgt:2,dir:'lt',
       disp:pct(diffV),v:diffV,pass:diffV<2,
       delta:deltaHTML(diffV,diffP,false),
