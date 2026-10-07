@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Logistics Dashboard</title>
+<title>Logistics Dashboard v.1</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600;700&family=Baloo+2:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -714,6 +714,7 @@ body.cap .wrap{height:auto;overflow:visible;padding:0}#vKPI .shpfc #shpfcReload{
   box-shadow:3px 0 22px rgba(20,24,40,.16)}
 .side .brand{padding:36px 28px 26px;border-bottom:1px solid rgba(255,255,255,.10);line-height:1.25}
 .side .brand b{display:block;font-size:47.9px;letter-spacing:1px;color:#fff;font-weight:bold}
+.side .brand .ver{font-style:normal;font-size:.42em;font-weight:700;letter-spacing:.04em;color:#0E2A26;background:#7FD3BF;padding:.18em .55em;border-radius:999px;vertical-align:.45em;margin-left:.2em}
 .side .brand span{font-size:21.7px;color:#8FB0AE;letter-spacing:.2em;text-transform:uppercase}
 .sidenav{padding:16px 14px;flex:1}
   .sidenav .grp{white-space:nowrap}
@@ -1037,6 +1038,122 @@ body.mobile .side .brand{padding-left:112px;padding-right:16px}body.mobile .side
   text-transform:uppercase;text-shadow:0 2px 10px color-mix(in srgb,var(--dc) 60%,transparent)}
 #vKPI h2.sec.dept em{color:color-mix(in srgb,#fff 75%,var(--dc))}
 #vKPI h2.sec.dept span{height:2px;background:linear-gradient(90deg,var(--dc),transparent)}
+
+/* ================= v-ov2: ดีไซน์ใหม่หน้า "ภาพรวม KPI ทุกแผนก" ================= */
+.sidenav button{display:flex;align-items:center;gap:18px}
+.sidenav button .nic{flex:none;width:38px;height:38px;display:inline-flex;opacity:.85}
+.sidenav button .nic svg{width:100%;height:100%}
+.sidenav button.on .nic{opacity:1}
+.sidenav button .ntx{min-width:0;overflow:hidden;text-overflow:ellipsis}
+#vKPI #ovBox{--ok:#22C59A;--okd:#0E9C76;--ng:#F2545B;--pan:rgba(255,255,255,.035);--pl:rgba(255,255,255,.09);--pt:#ECE9FF;--pm:#A9A3CF}
+#vKPI #ovBox .dsp{flex:1}
+/* การ์ดบนสุด */
+#vKPI .ovtop{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:22px;margin:6px 0 30px}
+#vKPI .otc{display:flex;gap:26px;align-items:flex-start;padding:34px 34px;border-radius:24px;color:#fff;
+  border:1px solid var(--pl);background:#1A1640;box-shadow:0 10px 30px rgba(0,0,0,.25);min-width:0}
+#vKPI .otc.a{background:linear-gradient(135deg,#14A08C 0%,#0B6B61 100%);border-color:transparent}
+#vKPI .otc.b{background:linear-gradient(135deg,#7A55F0 0%,#4A2BB5 100%);border-color:transparent}
+#vKPI .otc.d.hot .oti{background:rgba(242,170,40,.18);color:#F5B53F}
+#vKPI .otc .oti{flex:none;width:88px;height:88px;border-radius:22px;background:rgba(255,255,255,.16);
+  display:flex;align-items:center;justify-content:center;color:#fff}
+#vKPI .otc.c .oti{background:rgba(155,123,255,.18);color:#C5B4FF}
+#vKPI .otc .oti svg{width:52px;height:52px}
+#vKPI .otb{min-width:0;flex:1}
+#vKPI .otc .l{font-size:32px;opacity:.92;font-weight:600}
+#vKPI .otc .v{font-size:86px;font-weight:800;letter-spacing:-1px;line-height:1.1;margin:4px 0 6px}
+#vKPI .otc .v small{font-size:.55em;opacity:.75;font-weight:700}
+#vKPI .otc.d.hot .v{color:#FF7A80}
+#vKPI .otc .n{font-size:26px}
+#vKPI .otc .tn.up{color:#B9FFE6;font-weight:700} #vKPI .otc .tn.down{color:#FFD0D2;font-weight:700}
+#vKPI .otc.c .tn,#vKPI .otc.d .tn{color:var(--pm)}
+#vKPI .otc .tm{opacity:.78}
+#vKPI .pbar{position:relative;display:flex;align-items:center;gap:16px;margin:10px 0 6px}
+#vKPI .pbar::before{content:"";flex:1;height:14px;border-radius:8px;background:rgba(255,255,255,.12)}
+#vKPI .pbar i{position:absolute;left:0;top:50%;transform:translateY(-50%);height:14px;border-radius:8px;
+  background:linear-gradient(90deg,#22C59A,#5BE3BC);max-width:calc(100% - 90px)}
+#vKPI .pbar span{font-size:26px;color:var(--pm);width:74px;text-align:right}
+/* แผงแผนก */
+#vKPI .dpanel{background:var(--pan);border:1px solid var(--pl);border-radius:28px;padding:30px 30px 34px;margin-bottom:26px}
+#vKPI .dhead{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:24px}
+#vKPI .dhead .dic{width:76px;height:76px;border-radius:20px;display:flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,.07);color:#fff}
+#vKPI .dhead .dic svg{width:46px;height:46px}
+#vKPI .dhead .dname{font-size:52px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:#fff}
+#vKPI .dhead em{font-style:normal;font-size:27px;color:var(--pm)}
+#vKPI .dscore{font-size:30px;color:var(--pm);font-weight:600}
+#vKPI .dscore b{font-size:48px;margin-right:6px}
+#vKPI .dscore b.ok{color:var(--ok)} #vKPI .dscore b.warn{color:#F5B53F} #vKPI .dscore .none{color:var(--pm)}
+#vKPI .dgo{display:inline-flex;align-items:center;gap:12px;font:inherit;font-size:27px;font-weight:700;color:#fff;
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.28);border-radius:16px;padding:14px 24px;cursor:pointer}
+#vKPI .dgo svg{width:28px;height:28px}
+#vKPI .dgo:hover{background:rgba(255,255,255,.12)}
+#vKPI .dpair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:26px}
+#vKPI .dpair .dpanel{margin-bottom:26px}
+#vKPI .kgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:22px}
+#vKPI .kgrid .kcell:nth-child(5){grid-column:1/-1}
+#vKPI .kgrid.one{grid-template-columns:1fr}
+/* การ์ด KPI */
+#vKPI .kpi2{display:flex;gap:24px;height:100%;padding:32px 30px;border-radius:22px;background:#F1FBF7;color:#18233A;
+  border:1px solid #D4F1E5;box-shadow:0 8px 24px rgba(0,0,0,.18)}
+#vKPI .kpi2.fail{background:#FFF1F1;border-color:#F8C9CB}
+#vKPI .kpi2.wait{background:#F3F1FA;border-color:#E2DEF2}
+#vKPI .kpi2 .kic{flex:none;width:80px;height:80px;border-radius:20px;display:flex;align-items:center;justify-content:center;
+  background:#D3F2E6;color:var(--okd)}
+#vKPI .kpi2.fail .kic{background:#FFDCDD;color:#E5484D}
+#vKPI .kpi2.wait .kic{background:#E6E2F5;color:#7D75A8}
+#vKPI .kpi2 .kic svg{width:46px;height:46px}
+#vKPI .kpi2 .kbody{min-width:0;flex:1}
+#vKPI .kpi2 .kt{font-size:36px;font-weight:800;line-height:1.25}
+#vKPI .kpi2 .ktg{font-size:26px;color:#5D6478;margin-top:2px}
+#vKPI .kpi2 .kv{display:flex;align-items:center;flex-wrap:wrap;gap:12px 18px;margin:18px 0 10px}
+#vKPI .kpi2 .v{font-size:78px;font-weight:800;letter-spacing:-1px;line-height:1}
+#vKPI .kpi2.fail .v{color:#E5484D}
+#vKPI .kpi2.wait .v{color:#A29CC4}
+#vKPI .kbadge{display:inline-flex;align-items:center;gap:8px;font-size:25px;font-weight:700;padding:7px 18px;border-radius:999px}
+#vKPI .kbadge svg{width:26px;height:26px}
+#vKPI .kbadge.pass{background:#CFF3E3;color:var(--okd)}
+#vKPI .kbadge.fail{background:#FFD5D7;color:#D93C42}
+#vKPI .kbadge.wait{background:#E4E0F4;color:#6E6799}
+#vKPI .kpi2 .delta{display:block;font-size:27px;margin:0;line-height:1.5}
+#vKPI .kpi2 .delta em{display:inline;margin-left:10px;font-size:24px;color:#6B7286;font-weight:normal}
+#vKPI .kpi2 .delta.up{color:var(--okd)} #vKPI .kpi2 .delta.down{color:#E5484D}
+#vKPI .kpi2 .kbase,#vKPI .kpi2 .knote{font-size:22px;color:#6B7286;margin-top:10px;line-height:1.5}
+/* แนวโน้ม */
+#vKPI .ovtrend{background:var(--pan);border:1px solid var(--pl);border-radius:28px;padding:28px 30px 26px;margin-bottom:26px}
+#vKPI .othead{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:14px}
+#vKPI .othead b{font-size:38px;color:#fff}
+#vKPI .othead em{font-style:normal;font-size:25px;color:var(--pm)}
+#vKPI .otsel{display:flex;align-items:center;border:1px solid var(--pl);border-radius:14px;overflow:hidden}
+#vKPI .otsel span{font-size:24px;color:var(--pm);padding:12px 18px;border-right:1px solid var(--pl)}
+#vKPI .otsel select{font:inherit;font-size:25px;color:#fff;background:#1A1640;border:0;padding:12px 18px;min-width:360px}
+#vKPI .otbox{height:430px;position:relative}
+/* แถวล่าง */
+#vKPI .ovbot{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.3fr) minmax(0,1.3fr);gap:22px}
+#vKPI .opanel{background:var(--pan);border:1px solid var(--pl);border-radius:24px;padding:26px 26px 22px;min-width:0}
+#vKPI .opanel h3{margin:0 0 18px;font-size:34px;color:#fff}
+#vKPI .sumrow{display:flex;align-items:center;gap:28px;flex-wrap:wrap}
+#vKPI .donut{width:220px;height:220px;flex:none}
+#vKPI .donut .dn{fill:#fff;font-size:40px;font-weight:800}
+#vKPI .donut .dl{fill:var(--pm);font-size:20px}
+#vKPI .leg{list-style:none;margin:0;padding:0;flex:1;min-width:220px}
+#vKPI .leg li{display:flex;align-items:center;gap:14px;font-size:26px;color:var(--pt);padding:9px 0}
+#vKPI .leg li i{width:20px;height:20px;border-radius:50%;flex:none}
+#vKPI .leg li b{margin-left:auto;font-weight:600;color:var(--pm)}
+#vKPI table.ovt{width:100%;border-collapse:collapse;font-size:24px;color:var(--pt)}
+#vKPI table.ovt th{font-size:21px;font-weight:600;color:var(--pm);text-align:left;padding:12px 12px;background:rgba(255,255,255,.05)}
+#vKPI table.ovt td{padding:14px 12px;border-top:1px solid rgba(255,255,255,.07)}
+#vKPI table.ovt .num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+#vKPI table.ovt .pos{color:var(--ok)} #vKPI table.ovt .neg{color:var(--ng)}
+#vKPI table.ovt td.sp{width:120px}
+#vKPI .spark{width:110px;height:34px;display:block}
+#vKPI .spark polyline{fill:none;stroke-width:2.6;vector-effect:non-scaling-stroke}
+#vKPI .spark.ok polyline{stroke:var(--ok)} #vKPI .spark.bad polyline{stroke:var(--ng)}
+#vKPI .ovempty{font-size:26px;color:var(--pm);padding:30px 0}
+@media(max-width:1500px){#vKPI .ovtop,#vKPI .kgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #vKPI .ovbot{grid-template-columns:1fr}}
+@media(max-width:1000px){#vKPI .ovtop,#vKPI .kgrid,#vKPI .dpair{grid-template-columns:1fr}}
+body.present #vKPI .kpi2 .v{font-size:96px}
+body.present #vKPI .otc .v{font-size:100px}
 </style>
 <style id="hlegV17">
 /* v-hleg: ป้ายสีกราฟแบบ HTML ของหน้า Packing — นำกลับมาจากเวอร์ชัน (17) */
@@ -1129,7 +1246,7 @@ body.mobile .side .brand{padding-left:112px;padding-right:16px}body.mobile .side
 <button class="side-toggle" id="sideToggle" aria-label="เปิด/ปิดเมนู">☰</button>
 <div class="shell">
   <aside class="side" id="side">
-    <div class="brand"><b>Logistics</b><span>Dashboard</span></div>
+    <div class="brand"><b>Logistics <i class="ver">v.1</i></b><span>Dashboard</span></div>
     <nav class="sidenav">
       <div class="grp">ภาพรวม</div>
       <button data-view="kpi" data-sec="overview" class="on">KPI ทุกแผนก</button>
@@ -1211,16 +1328,46 @@ body.mobile .side .brand{padding-left:112px;padding-right:16px}body.mobile .side
   </header>
 
   <div id="ovBox">
-  <div class="top" id="top"></div>
+  <div class="ovtop" id="top"></div>
 
-  <h2 class="sec dept dept-wh"><b class="dept-name">Warehouse</b> <em id="whNote"></em><span></span></h2>
-  <div class="kpis" id="wh"></div>
+  <section class="dpanel dp-wh">
+    <div class="dhead"><span class="dic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21V9l9-5 9 5v12"/><path d="M7 21v-8h10v8"/><path d="M7 17h10"/></svg></span><b class="dname">Warehouse</b><em id="whNote"></em>
+      <span class="dsp"></span><span class="dscore" id="whScore"></span>
+      <button type="button" class="dgo" data-go="oos">ดูรายละเอียด <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div>
+    <div class="kgrid" id="wh"></div>
+  </section>
 
-  <h2 class="sec dept dept-dl"><b class="dept-name">Delivery</b><span></span></h2>
-  <div class="kpis" id="dl"></div>
+  <div class="dpair">
+  <section class="dpanel dp-dl">
+    <div class="dhead"><span class="dic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 6h12v10H2z"/><path d="M14 9h4l4 4v3h-8"/><circle cx="6.5" cy="18" r="2"/><circle cx="17.5" cy="18" r="2"/></svg></span><b class="dname">Delivery</b><em>Packing · Human Error</em>
+      <span class="dsp"></span><span class="dscore" id="dlScore"></span>
+      <button type="button" class="dgo" data-go="pack">ดูรายละเอียด <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div>
+    <div class="kgrid one" id="dl"></div>
+  </section>
+  <section class="dpanel dp-ad">
+    <div class="dhead"><span class="dic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg></span><b class="dname">Admin</b><em>Shipping · On-Time</em>
+      <span class="dsp"></span><span class="dscore" id="adScore"></span>
+      <button type="button" class="dgo" data-go="ship">ดูรายละเอียด <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div>
+    <div class="kgrid one" id="ad"></div>
+  </section>
+  </div>
 
-  <h2 class="sec dept dept-ad"><b class="dept-name">Admin</b><span></span></h2>
-  <div class="kpis" id="ad"></div>
+  <section class="ovtrend">
+    <div class="othead"><b>แนวโน้มรายสัปดาห์</b><em id="ovTrendNote"></em><span class="dsp"></span>
+      <label class="otsel"><span>เลือก KPI</span><select id="ovTrendSel" autocomplete="off">
+        <option value="dock">On-Time รวม (รับเข้า+จัดเก็บ)</option>
+        <option value="otp">On-Time Performance</option>
+        <option value="oos">Out of Stock</option>
+        <option value="sv">Stock Variance</option>
+      </select></label></div>
+    <div class="otbox"><canvas id="c_ovTrend"></canvas></div>
+  </section>
+
+  <div class="ovbot">
+    <section class="opanel" id="ovSum"></section>
+    <section class="opanel" id="ovFail"></section>
+    <section class="opanel" id="ovPass"></section>
+  </div>
 
   </div><!-- /ovBox -->
   <div id="detail" hidden></div>
@@ -1642,7 +1789,9 @@ async function loadDock(){
           cRecv=t.col('รับเข้าระบบ','วันที่รับเข้า','วันรับเข้า'),
           cInD=t.col('รับเข้า(วัน)','ระยะเวลารับเข้า','จำนวนวันรับเข้า'),
           cStD=t.col('จัดเก็บ(วัน)','ระยะเวลาจัดเก็บ','จำนวนวันจัดเก็บ'),
-          cQA=t.col('QA');
+          /* ต้องใช้คอลัมน์ I "วันที่ QA ใช้ตรวจ" (จำนวนวัน) เท่านั้น
+             ห้ามจับแค่คำว่า QA — จะไปโดนคอลัมน์ H "Created on ใบ QA" (เป็นวันที่) แล้วได้เลขวันในเดือนแทน */
+          cQA=t.col('วันที่QAใช้ตรวจ','QAใช้ตรวจ');
     DOCK_MAP={'LOT / SERIAL':cLot,'Product':cName,'ประเภท':cType,'ปลายทาง (TO)':cTo,
               'วันที่มาส่ง':cSend,'รับเข้าระบบ':cRecv,'จัดเก็บ':cStore,
               'รับเข้า (วัน)':cInD,'จัดเก็บ (วัน)':cStD,'QA (วัน)':cQA};
@@ -1711,17 +1860,20 @@ function kpiCard(o){
   /* v-2col: ห่อหัว+การ์ดไว้ใน .kcell เพื่อวางบรรทัดละ 2 KPI */
   return `<div class="kcell">${kpiCardInner(o)}</div>`;
 }
+/* v-ov2: การ์ด KPI แบบใหม่ (ไอคอน · ชื่อ · Target · ค่า + ป้าย · เทียบช่วงก่อน · ฐานการคำนวณ) */
+const OVI={"box": "<path d=\"M21 8l-9-5-9 5 9 5 9-5z\"/><path d=\"M3 8v8l9 5 9-5V8\"/><path d=\"M12 13v8\"/>", "cube": "<path d=\"M12 2l9 5v10l-9 5-9-5V7z\"/><path d=\"M3 7l9 5 9-5\"/><path d=\"M12 12v10\"/>", "clock": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 7v5l3 2\"/>", "list": "<rect x=\"5\" y=\"3\" width=\"14\" height=\"18\" rx=\"2\"/><path d=\"M9 8h6M9 12h6M9 16h4\"/>", "truck": "<path d=\"M2 6h12v10H2z\"/><path d=\"M14 9h4l4 4v3h-8\"/><circle cx=\"6.5\" cy=\"18\" r=\"2\"/><circle cx=\"17.5\" cy=\"18\" r=\"2\"/>", "alert": "<path d=\"M12 3l10 18H2z\"/><path d=\"M12 10v4.5M12 17.6v.1\"/>", "target": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><circle cx=\"12\" cy=\"12\" r=\"5\"/><circle cx=\"12\" cy=\"12\" r=\"1.3\"/>", "user": "<circle cx=\"12\" cy=\"8\" r=\"4\"/><path d=\"M4 21c0-4 3.6-6 8-6s8 2 8 6\"/>", "wh": "<path d=\"M3 21V9l9-5 9 5v12\"/><path d=\"M7 21v-8h10v8\"/><path d=\"M7 17h10\"/>", "bars": "<path d=\"M5 20V11M11 20V5M17 20v-6M3 20h18\"/>", "cal": "<rect x=\"3\" y=\"5\" width=\"18\" height=\"16\" rx=\"2\"/><path d=\"M3 10h18M8 3v4M16 3v4\"/>", "hand": "<path d=\"M7 11V5.5a1.5 1.5 0 0 1 3 0V11M10 10V4a1.5 1.5 0 0 1 3 0v6M13 10V5.5a1.5 1.5 0 0 1 3 0V12M16 9.5a1.5 1.5 0 0 1 3 0V14a7 7 0 0 1-7 7h-1a6 6 0 0 1-5-3l-2.6-4.4a1.5 1.5 0 0 1 2.6-1.5L7 14\"/>", "refresh": "<path d=\"M20 11a8 8 0 0 0-14.3-4.4L4 8\"/><path d=\"M4 3v5h5\"/><path d=\"M4 13a8 8 0 0 0 14.3 4.4L20 16\"/><path d=\"M20 21v-5h-5\"/>", "pack": "<path d=\"M3 7l9-4 9 4v10l-9 4-9-4z\"/><path d=\"M7.5 5l9 4v4\"/>", "send": "<path d=\"M22 2L11 13\"/><path d=\"M22 2l-7 20-4-9-9-4z\"/>", "ret": "<path d=\"M9 14L4 9l5-5\"/><path d=\"M4 9h11a5 5 0 0 1 0 10h-3\"/>", "link": "<path d=\"M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1\"/><path d=\"M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1\"/>", "trend": "<path d=\"M3 17l6-6 4 4 8-8\"/><path d=\"M15 7h6v6\"/>", "check": "<path d=\"M5 12.5l4.5 4.5L19 7\"/>", "grid": "<rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1.5\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1.5\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\" rx=\"1.5\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\" rx=\"1.5\"/>", "err": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 7.5v5.5M12 16.4v.1\"/>", "arrow": "<path d=\"M5 12h14M13 6l6 6-6 6\"/>"};
+const ovIcon=k=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${OVI[k]||OVI.bars}</svg>`;
 function kpiCardInner(o){
-  const num=o.n!=null?`<span class="no">${o.n}</span>`:'';
-  const head=`<div class="kpi-head">${num}<b>${o.l}</b><span>${o.t}</span></div>`;
-  if(o.wait)return head+`<div class="kpi wait">
-    <div class="row"><span class="waitstat">รอข้อมูล</span><span class="badge wait">ยังไม่ได้เชื่อมชีต</span></div>
-    ${o.note?`<div class="note-corner">${esc(o.note)}</div>`:''}</div>`;
-  const ok=o.pass;
-  return head+`<div class="kpi ${ok?'pass':'fail'}">
-    <div class="row"><div class="v">${o.disp}</div></div>
-    <span class="badge ${ok?'pass':'fail'}">${ok?'ผ่านเกณฑ์':'ต่ำกว่าเกณฑ์'}</span>
-    ${o.delta||''}</div>`;
+  const st=o.wait?'wait':(o.pass?'pass':'fail');
+  const badge=o.wait?'<span class="kbadge wait">รอข้อมูล</span>'
+    :o.pass?`<span class="kbadge pass">${ovIcon('check')}ผ่านเกณฑ์</span>`
+           :`<span class="kbadge fail">${ovIcon('alert')}ต่ำกว่าเกณฑ์</span>`;
+  return `<div class="kpi2 ${st}"><div class="kic">${ovIcon(o.ic)}</div><div class="kbody">
+    <div class="kt">${esc(o.l)}</div><div class="ktg">${esc(o.t)}</div>
+    ${o.wait
+      ?`<div class="kv"><span class="v">—</span>${badge}</div>${o.note?`<div class="knote">${esc(o.note)}</div>`:''}`
+      :`<div class="kv"><span class="v">${o.disp}</span>${badge}</div>${o.delta||''}${o.base?`<div class="kbase">${o.base}</div>`:''}`}
+  </div></div>`;
 }
 
 /* ---------- หน้าย่อยของ Warehouse ---------- */
@@ -6055,13 +6207,7 @@ function renderKPI(){
   el('kChip').style.display=bits.length?'inline-block':'none';
   el('kChip').textContent=bits.join(' · ');
 
-  el('top').innerHTML=`
-    <div class="big a"><div class="l">จำนวนออเดอร์</div>
-      <div class="v">${cur?fmt(cur.orders):'—'}</div>
-      <div class="n">${cur&&prev?`ช่วงก่อน ${fmt(prev.orders)} · ${cur.orders>=prev.orders?'▲':'▼'} ${fmt(Math.abs(cur.orders-prev.orders))} (${((cur.orders-prev.orders)/(prev.orders||1)*100).toFixed(1)}%)`:'ไม่มีข้อมูลเทียบ'}</div></div>
-    <div class="big b"><div class="l">จำนวนสินค้า (ชิ้น)</div>
-      <div class="v">${cur?fmt(cur.items):'—'}</div>
-      <div class="n">${cur&&prev?`ช่วงก่อน ${fmt(prev.items)} · ${cur.items>=prev.items?'▲':'▼'} ${fmt(Math.abs(cur.items-prev.items))} (${((cur.items-prev.items)/(prev.items||1)*100).toFixed(1)}%)`:'ไม่มีข้อมูลเทียบ'}</div></div>`;
+  /* การ์ดบนสุดวาดทีหลัง (ต้องรู้ผล KPI ทุกตัวก่อน) — ดูท้ายส่วนภาพรวม */
 
   /* ---- Stock Diff: กรองด้วยเงื่อนไขเดียวกับ KPI ตัวอื่น ---- */
   const monthIdxOf=k=>k?+k.slice(5,7)-1:-1;
@@ -6121,48 +6267,156 @@ function renderKPI(){
   const sub=(n,title,note)=>`<div class="subsec"><span class="no">${n}</span>${title}`
     +(note?` <em>${note}</em>`:'')+`<span class="line"></span></div>`;
 
-  el('wh').innerHTML=[
-    cur?kpiCard({n:1,l:'On-Time Performance',t:'Target ≥ 98%',
+  /* ===== v-ov2: รวบรวมผล KPI ทุกตัวไว้ในที่เดียว แล้วค่อยวาดการ์ด / สรุป / ตาราง ===== */
+  const KS=[
+    cur?{dept:'wh',key:'otp',n:1,ic:'clock',l:'On-Time Performance',t:'Target ≥ 98%',tgt:98,dir:'ge',
       disp:pct(cur.otp),v:cur.otp,pass:cur.otp>=98,
       delta:deltaHTML(cur.otp,prev?prev.otp:null,true),
-      base:`${fmt(cur.onTimeOrders)} จาก ${fmt(cur.denom)} ออเดอร์ที่ระบุสถานะได้ · ทั้งหมด ${fmt(cur.orders)}`}):
-      kpiCard({n:1,l:'On-Time Performance',t:'Target ≥ 98%',wait:true,note:'ไม่มีข้อมูลในช่วงที่เลือก'}),
-    cur?kpiCard({n:2,l:'Out of Stock',t:'Target ≥ 99%',
+      base:`${fmt(cur.onTimeOrders)} จาก ${fmt(cur.denom)} ออเดอร์ที่ระบุสถานะได้ · ทั้งหมด ${fmt(cur.orders)}`}
+      :{dept:'wh',key:'otp',n:1,ic:'clock',l:'On-Time Performance',t:'Target ≥ 98%',wait:true,note:'ไม่มีข้อมูลในช่วงที่เลือก'},
+    cur?{dept:'wh',key:'oos',n:2,ic:'cube',l:'Out of Stock',t:'Target ≥ 99%',tgt:99,dir:'ge',
       disp:pct(cur.oos),v:cur.oos,pass:cur.oos>=99,
       delta:deltaHTML(cur.oos,prev?prev.oos:null,true),
-      base:`${fmt(cur.okQty)} จาก ${fmt(cur.items)} ชิ้น`}):
-      kpiCard({n:2,l:'Out of Stock',t:'Target ≥ 99%',wait:true,note:'ไม่มีข้อมูลในช่วงที่เลือก'}),
-
-    diffV!=null?kpiCard({n:3,l:'Stock Variance',t:'Target < 2%',
-      disp:pct(diffV),v:diffV,bar:diffV*10,pass:diffV<2,
+      base:`${fmt(cur.okQty)} จาก ${fmt(cur.items)} ชิ้น`}
+      :{dept:'wh',key:'oos',n:2,ic:'cube',l:'Out of Stock',t:'Target ≥ 99%',wait:true,note:'ไม่มีข้อมูลในช่วงที่เลือก'},
+    diffV!=null?{dept:'wh',key:'sv',n:3,ic:'list',l:'Stock Variance',t:'Target < 2%',tgt:2,dir:'lt',
+      disp:pct(diffV),v:diffV,pass:diffV<2,
       delta:deltaHTML(diffV,diffP,false),
       base:(dNow.weighted
-          ? `ไม่ตรง ${fmt(dNow.bad)} จาก ${fmt(dNow.n)} (ถ่วงน้ำหนักด้วยคอลัมน์ “เกณฑ์” แบบตาราง Pivot)`
-            +` · ${fmt(dNow.badRows)} จาก ${fmt(dNow.rows)} แถว`
-          : `ไม่ตรง ${fmt(dNow.bad)} จาก ${fmt(dNow.n)} รายการที่นับ`)
-        +(lo?` · ช่วง ${showD(lo)} – ${showD(hi)}`:'')}):
-      kpiCard({n:3,l:'Stock Variance',t:'Target < 2%',wait:true,
-        note:STATIC_ERR.diff?('อ่านชีตไม่ได้ — '+STATIC_ERR.diff):'ไม่มีรายการนับสต็อกในช่วงที่เลือก'}),
-
-    allV!=null?kpiCard({n:4,l:'ON-TIME รวม (รับเข้า+จัดเก็บ)',
-      t:'Target ไม่ผ่านเกณฑ์ < 10%',
+          ? `ไม่ตรง ${fmt(dNow.bad)} จาก ${fmt(dNow.n)} (ถ่วงน้ำหนักด้วยคอลัมน์ “เกณฑ์”) · ${fmt(dNow.badRows)} จาก ${fmt(dNow.rows)} แถว`
+          : `ไม่ตรง ${fmt(dNow.bad)} จาก ${fmt(dNow.n)} รายการที่นับ`)}
+      :{dept:'wh',key:'sv',n:3,ic:'list',l:'Stock Variance',t:'Target < 2%',wait:true,
+        note:STATIC_ERR.diff?('อ่านชีตไม่ได้ — '+STATIC_ERR.diff):'ไม่มีรายการนับสต็อกในช่วงที่เลือก'},
+    allV!=null?{dept:'wh',key:'dock',n:4,ic:'truck',l:'On-Time รวม (รับเข้า+จัดเก็บ)',
+      t:'Target ไม่ผ่านเกณฑ์ < 10%',tgt:90,dir:'ge',
       disp:pct1(allV),v:allV,pass:(100-allV)<10,
       delta:deltaHTML(allV,allP,true),
-      base:`ไม่ผ่านเกณฑ์ ${pct1(100-allV)} (เป้า < 10%)`
-        +` · ค่าเฉลี่ยของ ${pct1(inV)} (รับเข้า) และ ${pct1(stV)} (จัดเก็บ) · ${fmt(kNow.n)} ใบรับเข้า`}):
-      kpiCard({n:4,l:'ON-TIME รวม (รับเข้า+จัดเก็บ)',t:'Dock to Stock · รายสัปดาห์',wait:true,
-        note:STATIC_ERR.dock?('อ่านชีตไม่ได้ — '+STATIC_ERR.dock):'ยังไม่มีข้อมูลของสัปดาห์นี้'}),
+      base:`ไม่ผ่านเกณฑ์ ${pct1(100-allV)} · รับเข้า ${pct1(inV)} · จัดเก็บ ${pct1(stV)} · ${fmt(kNow.n)} ใบรับเข้า (Week ${wkSel})`}
+      :{dept:'wh',key:'dock',n:4,ic:'truck',l:'On-Time รวม (รับเข้า+จัดเก็บ)',t:'Dock to Stock · รายสัปดาห์',wait:true,
+        note:STATIC_ERR.dock?('อ่านชีตไม่ได้ — '+STATIC_ERR.dock):'ยังไม่มีข้อมูลของสัปดาห์นี้'},
+    /* ยังไม่มีคอลัมน์ "หยิบผิด" ในชีต Picking — เตรียมช่องไว้ */
+    {dept:'wh',key:'perr',n:5,ic:'hand',l:'Human Error On Picking',t:'Target < 0.05%',wait:true,
+      note:'ยังไม่มีคอลัมน์บันทึกการหยิบผิดในชีต'},
+    {dept:'dl',key:'dlhe',n:1,ic:'user',l:'Human Error',t:'Target 0 เคส/เดือน',wait:true,
+      note:'ยังไม่ได้ระบุชีตต้นทาง'},
+    {dept:'ad',key:'adot',n:1,ic:'send',l:'Admin On-Time',t:'Target ≥ 85%',wait:true,
+      note:'ยังไม่ได้ระบุชีตต้นทาง'}
+  ];
+  const cardsOf=d=>KS.filter(k=>k.dept===d).map(kpiCard).join('');
+  el('wh').innerHTML=cardsOf('wh');
+  el('dl').innerHTML=cardsOf('dl');
+  el('ad').innerHTML=cardsOf('ad');
+  const scoreOf=d=>{const h=KS.filter(k=>k.dept===d&&!k.wait),p=h.filter(k=>k.pass).length;
+    return h.length?`<b class="${p===h.length?'ok':'warn'}">${p} / ${h.length}</b> KPI ผ่านเกณฑ์`
+                   :'<span class="none">รอข้อมูล</span>';};
+  el('whScore').innerHTML=scoreOf('wh');
+  el('dlScore').innerHTML=scoreOf('dl');
+  el('adScore').innerHTML=scoreOf('ad');
 
-    /* v122: KPI ใหม่ — ยังไม่มีคอลัมน์ "หยิบผิด" ในชีต Picking จึงยังคำนวณไม่ได้
-       เตรียมช่องไว้แบบเดียวกับการ์ด Human Error ของฝั่ง Delivery */
-    kpiCard({n:5,l:'Human Error On Picking',t:'Target < 0.05%',wait:true,
-      note:'ยังไม่มีคอลัมน์บันทึกการหยิบผิดในชีต — เตรียมช่องไว้แล้ว'})
-  ].join('');
+  const have=KS.filter(k=>!k.wait), passN=have.filter(k=>k.pass).length,
+        failN=have.length-passN, waitN=KS.length-have.length;
 
-  el('dl').innerHTML=kpiCard({n:1,l:'Human Error',t:'Target 0 เคส/เดือน',wait:true,
-    note:'ยังไม่ได้ระบุชีตต้นทาง — เตรียมช่องไว้แล้ว'});
-  el('ad').innerHTML=kpiCard({n:1,l:'Admin On-Time',t:'Target ≥ 85%',wait:true,
-    note:'ยังไม่ได้ระบุชีตต้นทาง — เตรียมช่องไว้แล้ว'});
+  /* ---- การ์ดบนสุด 4 ใบ ---- */
+  const chg=(a,b)=>{ if(a==null||b==null||!b)return '<span class="tn">ไม่มีข้อมูลเทียบ</span>';
+    const r=(a-b)/b*100;
+    return `<span class="tn ${r>=0?'up':'down'}">${r>=0?'▲':'▼'} ${r>=0?'+':'−'}${Math.abs(r).toFixed(1)}%</span> <span class="tm">จากช่วงก่อนหน้า</span>`;};
+  const passPct=have.length?Math.round(passN/have.length*100):0;
+  el('top').innerHTML=`
+    <div class="otc a"><div class="oti">${ovIcon('cube')}</div><div class="otb">
+      <div class="l">จำนวนออเดอร์</div><div class="v">${cur?fmt(cur.orders):'—'}</div>
+      <div class="n">${chg(cur&&cur.orders,prev&&prev.orders)}</div></div></div>
+    <div class="otc b"><div class="oti">${ovIcon('box')}</div><div class="otb">
+      <div class="l">จำนวนสินค้า (ชิ้น)</div><div class="v">${cur?fmt(cur.items):'—'}</div>
+      <div class="n">${chg(cur&&cur.items,prev&&prev.items)}</div></div></div>
+    <div class="otc c"><div class="oti">${ovIcon('target')}</div><div class="otb">
+      <div class="l">KPI ผ่านเกณฑ์</div><div class="v">${passN} <small>/ ${have.length}</small></div>
+      <div class="pbar"><i style="width:${passPct}%"></i><span>${passPct}%</span></div>
+      ${waitN?`<div class="n"><span class="tm">รอข้อมูลอีก ${waitN} KPI</span></div>`:''}</div></div>
+    <div class="otc d ${failN?'hot':''}"><div class="oti">${ovIcon('alert')}</div><div class="otb">
+      <div class="l">KPI ต้องดูแล</div><div class="v">${failN}</div>
+      <div class="n"><span class="tm">จาก ${have.length} KPI ที่มีข้อมูล</span></div></div></div>`;
+
+  /* ---- แนวโน้มรายสัปดาห์ (ของจริงจากชีต · 12 สัปดาห์ล่าสุดของปีที่เลือก) ---- */
+  const tYear=fYear()||(DATES.length?DATES[DATES.length-1].slice(0,4):'');
+  const wkOf=r=>parseInt(r.week)||(r.date?isoWeek(r.date):0);
+  const memoKey=tYear+'|'+RAW.length+'|'+(DIFF?DIFF.length:0)+'|'+(DOCK?Object.keys(DOCK).length:0);
+  if(!window.OV_TR||window.OV_TR.k!==memoKey){
+    const g={};
+    RAW.forEach(r=>{ if(!r.date||r.date.slice(0,4)!==tYear)return; const w=wkOf(r); if(!w)return; (g[w]=g[w]||[]).push(r); });
+    const otp={},oos={};
+    Object.keys(g).forEach(w=>{const s2=statsOf(g[w]); if(s2){otp[w]=s2.otp;oos[w]=s2.oos;}});
+    const sv={};
+    if(DIFF){const gd={};
+      DIFF.forEach(r=>{ if(!r.date||r.date.slice(0,4)!==tYear)return; const w=wkOf(r); if(!w)return; (gd[w]=gd[w]||[]).push(r); });
+      Object.keys(gd).forEach(w=>{const d=diffStat(gd[w]); if(d)sv[w]=d.pct;});}
+    const dock={};
+    if(DOCK)Object.keys(DOCK).forEach(w=>{const o=DOCK[w]; if(o&&o.n)dock[w]=(o.inOk+o.stOk)/(2*o.n)*100;});
+    window.OV_TR={k:memoKey,otp,oos,sv,dock};
+  }
+  const TR=window.OV_TR;
+  const last=(m,n)=>Object.keys(m).map(Number).filter(Boolean).sort((a,b)=>a-b).slice(-n).map(w=>({w,v:m[w]}));
+  const spark=(key,ok)=>{const pts=TR[key]?last(TR[key],8):[];
+    if(pts.length<2)return '<span class="tm">—</span>';
+    const vs=pts.map(p=>p.v),mn=Math.min(...vs),mx=Math.max(...vs),rg=(mx-mn)||1;
+    const d=pts.map((p,i)=>`${(i/(pts.length-1)*96+2).toFixed(1)},${(30-(p.v-mn)/rg*26).toFixed(1)}`).join(' ');
+    return `<svg class="spark ${ok?'ok':'bad'}" viewBox="0 0 100 32" preserveAspectRatio="none"><polyline points="${d}"/></svg>`;};
+
+  /* ---- สรุปสถานะ (โดนัท SVG — ถ่ายรูปติดแน่นอน) ---- */
+  const C2=2*Math.PI*70, tot=KS.length||1;
+  let off=0; const seg=(n,col)=>{ if(!n)return ''; const len=n/tot*C2;
+    const h=`<circle cx="90" cy="90" r="70" fill="none" stroke="${col}" stroke-width="26"
+      stroke-dasharray="${len.toFixed(2)} ${(C2-len).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 90 90)"/>`;
+    off+=len; return h;};
+  const pc=n=>Math.round(n/tot*100);
+  el('ovSum').innerHTML=`<h3>KPI Status Summary</h3><div class="sumrow">
+    <svg class="donut" viewBox="0 0 180 180"><circle cx="90" cy="90" r="70" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="26"/>
+      ${seg(passN,'#22C59A')}${seg(failN,'#F2545B')}${seg(waitN,'#8C86B3')}
+      <text x="90" y="88" text-anchor="middle" class="dn">${KS.length}</text><text x="90" y="114" text-anchor="middle" class="dl">KPI</text></svg>
+    <ul class="leg">
+      <li><i style="background:#22C59A"></i>ผ่านเกณฑ์<b>${passN} (${pc(passN)}%)</b></li>
+      <li><i style="background:#F2545B"></i>ต่ำกว่าเกณฑ์<b>${failN} (${pc(failN)}%)</b></li>
+      <li><i style="background:#8C86B3"></i>รอข้อมูล<b>${waitN} (${pc(waitN)}%)</b></li>
+    </ul></div>`;
+
+  /* ---- ตาราง: ต่ำกว่าเกณฑ์ / ผ่านเกณฑ์ (ความต่าง = ห่างจากเป้ากี่จุด) ---- */
+  const gap=k=>k.dir==='ge'?k.v-k.tgt:k.tgt-k.v;
+  const tgtTxt=k=>k.dir==='ge'?`≥ ${k.tgt}%`:`< ${k.tgt}%`;
+  const row=k=>{const g2=gap(k);
+    return `<tr><td>${esc(k.l)}</td><td class="num">${k.disp}</td><td class="num">${k.key==='dock'?'ไม่ผ่าน < 10%':tgtTxt(k)}</td>
+      <td class="num ${g2>=0?'pos':'neg'}">${g2>=0?'+':'−'}${Math.abs(g2).toFixed(2)} จุด</td><td class="sp">${spark(k.key,k.pass)}</td></tr>`;};
+  const tbl=(title,list,empty)=>`<h3>${title}</h3>${list.length
+    ?`<table class="ovt"><thead><tr><th>KPI</th><th class="num">ค่า</th><th class="num">Target</th><th class="num">ห่างจากเป้า</th><th>แนวโน้ม</th></tr></thead>
+      <tbody>${list.map(row).join('')}</tbody></table>`
+    :`<div class="ovempty">${empty}</div>`}`;
+  el('ovFail').innerHTML=tbl('KPI ที่ต่ำกว่าเกณฑ์',have.filter(k=>!k.pass),'ไม่มี KPI ที่ต่ำกว่าเกณฑ์ 🎉');
+  el('ovPass').innerHTML=tbl('KPI ที่ผ่านเกณฑ์',have.filter(k=>k.pass),'ยังไม่มี KPI ที่ผ่านเกณฑ์');
+
+  /* ---- กราฟแนวโน้ม ---- */
+  if(isOv){
+    const sel=el('ovTrendSel'), key=sel.value;
+    const META={dock:{t:90,lbl:'On-Time รวม (รับเข้า+จัดเก็บ)',tl:'เป้า 90%'},otp:{t:98,lbl:'On-Time Performance',tl:'เป้า 98%'},
+                oos:{t:99,lbl:'Out of Stock',tl:'เป้า 99%'},sv:{t:2,lbl:'Stock Variance',tl:'เป้า < 2%'}}[key];
+    const pts=last(TR[key]||{},12);
+    el('ovTrendNote').textContent=pts.length?`${META.lbl} · ${pts.length} สัปดาห์ล่าสุด${tYear?' · ปี '+tYear:''}`:'ยังไม่มีข้อมูลรายสัปดาห์';
+    requestAnimationFrame(()=>{
+      destroy('ovTrend');
+      const cv=document.getElementById('c_ovTrend'); if(!cv||!pts.length)return;
+      const gc=cv.getContext('2d'), grd=gc.createLinearGradient(0,0,0,cv.clientHeight||400);
+      grd.addColorStop(0,'rgba(139,108,255,.35)'); grd.addColorStop(1,'rgba(139,108,255,0)');
+      CH.ovTrend=new Chart(cv,{type:'line',
+        data:{labels:pts.map(p=>'W'+p.w),datasets:[
+          {label:META.lbl,data:pts.map(p=>+p.v.toFixed(2)),borderColor:'#9B7BFF',backgroundColor:grd,fill:true,
+           tension:.35,borderWidth:cf(4),pointRadius:cf(5),pointBackgroundColor:'#fff',pointBorderColor:'#9B7BFF',pointBorderWidth:cf(2)},
+          {label:META.tl,data:pts.map(()=>META.t),borderColor:'rgba(242,84,91,.75)',borderDash:[8,6],borderWidth:cf(2),pointRadius:0,fill:false}]},
+        options:{responsive:true,maintainAspectRatio:false,animation:false,
+          plugins:{legend:{display:true,labels:{color:'#C9C3EA',font:{size:cf(20)},boxWidth:cf(28)}},
+            tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y.toFixed(2)}%`},titleFont:{size:cf(20)},bodyFont:{size:cf(19)}}},
+          scales:{x:{ticks:{color:'#A9A3CF',font:{size:cf(19)}},grid:{display:false}},
+            y:{ticks:{color:'#A9A3CF',font:{size:cf(19)},callback:v=>v+'%'},grid:{color:'rgba(255,255,255,.07)'},
+               suggestedMin:key==='sv'?0:Math.max(0,Math.min(...pts.map(p=>p.v),META.t)-5),
+               suggestedMax:key==='sv'?Math.max(...pts.map(p=>p.v),META.t)+1:undefined,max:key==='sv'?undefined:100}}}});
+    });
+  }
 
   el('src').innerHTML='ชีต: On-Time/Out of Stock <b>'+SHEET_STATE.otp+'</b>'
     +' · Stock Variance <b>'+SHEET_STATE.diff+'</b>'
@@ -6419,6 +6673,22 @@ async function boot(){
   fillFiltersKPI();     /* ชีตนับสต็อกเพิ่งโหลดเสร็จ — เติมปีที่มีเฉพาะในชีตนั้นเข้า dropdown */
   renderKPI();
 }
+
+/* v-ov2: ปุ่ม "ดูรายละเอียด" ของแต่ละแผนก + ตัวเลือกกราฟแนวโน้ม + ไอคอนเมนูข้าง */
+(function(){
+  document.querySelectorAll('#ovBox .dgo').forEach(b=>b.addEventListener('click',()=>{
+    const t=document.querySelector(`.sidenav button[data-sec="${b.dataset.go}"]`); if(t)t.click();
+    window.scrollTo({top:0,behavior:'smooth'});
+  }));
+  const s=document.getElementById('ovTrendSel'); if(s)s.addEventListener('change',()=>renderKPI());
+  const MAP={overview:'grid',oos:'cube',diff:'list',dock:'truck',pick:'hand',perr:'err',repl:'refresh',
+             pack:'pack',ship:'send',cr:'ret',sop:'link',fc:'trend'};
+  document.querySelectorAll('.sidenav button').forEach(b=>{
+    const k=b.dataset.sec?MAP[b.dataset.sec]:(b.dataset.team?'cal':null);
+    if(!k||b.querySelector('.nic'))return;
+    b.innerHTML=`<i class="nic">${ovIcon(k)}</i><span class="ntx">${b.innerHTML}</span>`;
+  });
+})();
 el('kReload').addEventListener('click',()=>{
   /* v-pack3: เดิม boot() ไม่โหลด Packing ใหม่ ข้อมูลค้างจนกว่าจะกด F5 */
   if(PACK||PACK_ERR||SEC==='pack'){
@@ -6437,7 +6707,7 @@ el('kReload').addEventListener('click',()=>{
    layout จึงไม่เปลี่ยน) และสั่งให้กราฟวาดใหม่ที่ความละเอียดเท่ากับภาพที่ถ่าย */
 const SHOT_SLIDE_W=3840, SHOT_SLIDE_H=2160;
 const SHOT_BG='#100D26';
-const SHOT_PANEL_SEL='.big,.kpi,.cpanel,.fcacc-panel,.fcacc-cards,.sgrid,.brkcard,.panel,.kpis>.kpi,.kpis>.kcell';
+const SHOT_PANEL_SEL='.otc,.kgrid>.kcell,.ovtrend,.opanel,.big,.kpi,.cpanel,.fcacc-panel,.fcacc-cards,.sgrid,.brkcard,.panel,.kpis>.kpi,.kpis>.kcell';
 const shotWait=ms=>new Promise(r=>setTimeout(r,ms));
 const shotFrame=()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
 async function shotLoadZip(){
