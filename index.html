@@ -1357,9 +1357,15 @@ body.present #vKPI .otc .v{font-size:100px}
   <section class="ovtrend">
     <div class="othead"><b>แนวโน้มรายสัปดาห์</b><em id="ovTrendNote"></em><span class="dsp"></span>
       <label class="otsel"><span>เลือก KPI</span><select id="ovTrendSel" autocomplete="off">
-        <option value="dock">On-Time รวม (รับเข้า+จัดเก็บ)</option>
-        <option value="oos">Out of Stock</option>
-        <option value="sv">Stock Variance</option>
+        <optgroup label="Warehouse">
+          <option value="dock">On-Time รวม (รับเข้า+จัดเก็บ)</option>
+          <option value="oos">Out of Stock</option>
+          <option value="sv">Stock Variance</option>
+          <option value="perr">Human Error On Picking</option>
+        </optgroup>
+        <optgroup label="Admin">
+          <option value="ship">การจัดส่ง (Shipping)</option>
+        </optgroup>
       </select></label></div>
     <div class="otbox"><canvas id="c_ovTrend"></canvas></div>
   </section>
@@ -6356,7 +6362,8 @@ function renderKPI(){
   /* ---- แนวโน้มรายสัปดาห์ (ของจริงจากชีต · 12 สัปดาห์ล่าสุดของปีที่เลือก) ---- */
   const tYear=fYear()||(DATES.length?DATES[DATES.length-1].slice(0,4):'');
   const wkOf=r=>parseInt(r.week)||(r.date?isoWeek(r.date):0);
-  const memoKey=tYear+'|'+RAW.length+'|'+(DIFF?DIFF.length:0)+'|'+(DOCK?Object.keys(DOCK).length:0);
+  const memoKey=tYear+'|'+RAW.length+'|'+(DIFF?DIFF.length:0)+'|'+(DOCK?Object.keys(DOCK).length:0)
+    +'|'+(PICK?PICK.list.length:0)+'|'+(PERR?PERR.list.length:0)+'|'+(SHIP?SHIP.list.length:0);
   if(!window.OV_TR||window.OV_TR.k!==memoKey){
     const g={};
     RAW.forEach(r=>{ if(!r.date||r.date.slice(0,4)!==tYear)return; const w=wkOf(r); if(!w)return; (g[w]=g[w]||[]).push(r); });
@@ -6368,7 +6375,21 @@ function renderKPI(){
       Object.keys(gd).forEach(w=>{const d=diffStat(gd[w]); if(d)sv[w]=d.pct;});}
     const dock={};
     if(DOCK)Object.keys(DOCK).forEach(w=>{const o=DOCK[w]; if(o&&o.n)dock[w]=(o.inOk+o.stOk)/(2*o.n)*100;});
-    window.OV_TR={k:memoKey,otp,oos,sv,dock};
+    /* Human Error On Picking รายสัปดาห์ = เคส ÷ ชิ้นที่หยิบ (นับเฉพาะช่วงที่ชีต Picking มีข้อมูล เหมือนหน้า KPI) */
+    const perr={};
+    if(PERR&&PICK){
+      const pMin=PICK.list.map(r=>r.date).filter(Boolean).sort()[0]||'';
+      const q={},e={};
+      PICK.list.forEach(r=>{ if(!r.date||r.date.slice(0,4)!==tYear)return; const w=isoWeek(r.date); q[w]=(q[w]||0)+r.qty; });
+      PERR.list.forEach(r=>{ if(r.grp!=='pick'||!r.date||r.date<pMin||r.date.slice(0,4)!==tYear)return; const w=isoWeek(r.date); e[w]=(e[w]||0)+1; });
+      Object.keys(q).forEach(w=>{ if(q[w]>0)perr[w]=(e[w]||0)/q[w]*100; });
+    }
+    /* Shipping รายสัปดาห์ = % จัดส่งตรงตามเกณฑ์ในชีต */
+    const ship={};
+    if(SHIP){const gs={};
+      SHIP.list.forEach(r=>{ if(!r.day||r.day.slice(0,4)!==tYear)return; const w=isoWeek(r.day); (gs[w]=gs[w]||[]).push(r); });
+      Object.keys(gs).forEach(w=>{const st=shipStats(gs[w]); if(st&&st.critPct!=null)ship[w]=st.critPct;});}
+    window.OV_TR={k:memoKey,otp,oos,sv,dock,perr,ship};
   }
   const TR=window.OV_TR;
   const last=(m,n)=>Object.keys(m).map(Number).filter(Boolean).sort((a,b)=>a-b).slice(-n).map(w=>({w,v:m[w]}));
@@ -6394,10 +6415,16 @@ function renderKPI(){
   /* ---- กราฟแนวโน้ม ---- */
   if(isOv){
     const sel=el('ovTrendSel'), key=sel.value;
-    const META={dock:{t:90,lbl:'On-Time รวม (รับเข้า+จัดเก็บ)',tl:'เป้า 90%'},otp:{t:98,lbl:'On-Time Performance',tl:'เป้า 98%'},
-                oos:{t:99,lbl:'Out of Stock',tl:'เป้า 99%'},sv:{t:2,lbl:'Stock Variance',tl:'เป้า < 2%'}}[key];
+    const META={dock:{t:90,lbl:'On-Time รวม (รับเข้า+จัดเก็บ)',tl:'เป้า 90%'},
+                oos:{t:99,lbl:'Out of Stock',tl:'เป้า 99%'},
+                sv:{t:2,lbl:'Stock Variance',tl:'เป้า < 2%',low:true},
+                perr:{t:PERR_TARGET,lbl:'Human Error On Picking',tl:'เป้า < '+PERR_TARGET+'%',low:true,dp:3},
+                ship:{t:null,lbl:'การจัดส่ง (Shipping) · ตรงตามเกณฑ์',tl:''}}[key]||{t:null,lbl:key,tl:''};
+    const dp=META.dp||2;
     const pts=last(TR[key]||{},12);
-    el('ovTrendNote').textContent=pts.length?`${META.lbl} · ${pts.length} สัปดาห์ล่าสุด${tYear?' · ปี '+tYear:''}`:'ยังไม่มีข้อมูลรายสัปดาห์';
+    const loadingTr=(key==='perr'&&(!PERR||!PICK)&&!(PERR_ERR||PICK_ERR))||(key==='ship'&&!SHIP&&!SHIP_ERR);
+    el('ovTrendNote').textContent=pts.length?`${META.lbl} · ${pts.length} สัปดาห์ล่าสุด${tYear?' · ปี '+tYear:''}${META.t==null?' · ยังไม่มีเป้า KPI':''}`
+      :loadingTr?'กำลังโหลดข้อมูล…':'ยังไม่มีข้อมูลรายสัปดาห์';
     requestAnimationFrame(()=>{
       destroy('ovTrend');
       const cv=document.getElementById('c_ovTrend'); if(!cv||!pts.length)return;
@@ -6405,16 +6432,18 @@ function renderKPI(){
       grd.addColorStop(0,'rgba(139,108,255,.35)'); grd.addColorStop(1,'rgba(139,108,255,0)');
       CH.ovTrend=new Chart(cv,{type:'line',
         data:{labels:pts.map(p=>'W'+p.w),datasets:[
-          {label:META.lbl,data:pts.map(p=>+p.v.toFixed(2)),borderColor:'#9B7BFF',backgroundColor:grd,fill:true,
+          {label:META.lbl,data:pts.map(p=>+p.v.toFixed(dp)),borderColor:'#9B7BFF',backgroundColor:grd,fill:true,
            tension:.35,borderWidth:cf(4),pointRadius:cf(5),pointBackgroundColor:'#fff',pointBorderColor:'#9B7BFF',pointBorderWidth:cf(2)},
-          {label:META.tl,data:pts.map(()=>META.t),borderColor:'rgba(242,84,91,.75)',borderDash:[8,6],borderWidth:cf(2),pointRadius:0,fill:false}]},
+          ...(META.t!=null?[{label:META.tl,data:pts.map(()=>META.t),borderColor:'rgba(242,84,91,.75)',borderDash:[8,6],borderWidth:cf(2),pointRadius:0,fill:false}]:[])]},
         options:{responsive:true,maintainAspectRatio:false,animation:false,
           plugins:{legend:{display:true,labels:{color:'#C9C3EA',font:{size:cf(20)},boxWidth:cf(28)}},
-            tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y.toFixed(2)}%`},titleFont:{size:cf(20)},bodyFont:{size:cf(19)}}},
+            tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y.toFixed(dp)}%`},titleFont:{size:cf(20)},bodyFont:{size:cf(19)}}},
           scales:{x:{ticks:{color:'#A9A3CF',font:{size:cf(19)}},grid:{display:false}},
-            y:{ticks:{color:'#A9A3CF',font:{size:cf(19)},callback:v=>v+'%'},grid:{color:'rgba(255,255,255,.07)'},
-               suggestedMin:key==='sv'?0:Math.max(0,Math.min(...pts.map(p=>p.v),META.t)-5),
-               suggestedMax:key==='sv'?Math.max(...pts.map(p=>p.v),META.t)+1:undefined,max:key==='sv'?undefined:100}}}});
+            y:(()=>{const vs=pts.map(p=>p.v).concat(META.t!=null?[META.t]:[]);
+              const ax={ticks:{color:'#A9A3CF',font:{size:cf(19)},callback:v=>+(+v).toFixed(dp)+'%'},grid:{color:'rgba(255,255,255,.07)'}};
+              if(META.low){ax.min=0;ax.suggestedMax=Math.max(...vs)*1.25;}      /* ค่ายิ่งต่ำยิ่งดี เริ่มจาก 0 */
+              else{ax.suggestedMin=Math.max(0,Math.min(...vs)-5);ax.max=100;}
+              return ax;})()}}});
     });
   }
 
