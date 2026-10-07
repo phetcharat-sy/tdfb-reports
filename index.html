@@ -6651,6 +6651,11 @@ async function boot(){
   /* Stock Diff / Dock to Stock เป็นชีตเล็ก โหลดคู่ขนานไปเลย ไม่ต้องรอชีตใหญ่ */
   const tick=setInterval(()=>{ if(el('src'))renderKPI(); },2500);   /* ให้บรรทัดสถานะขยับตามจริง */
   const staticJob=loadStatic().finally(()=>clearInterval(tick));
+  /* v-ov4: หน้าภาพรวมใช้ Human Error On Picking (ชีต Picking + ชีตแจ้งปัญหา) และ Shipping ด้วย
+     เริ่มโหลดพร้อมกันตั้งแต่ต้น ไม่ต้องรอชีต On-Time/Out of Stock (ไฟล์ใหญ่ 80+ MB) โหลดเสร็จก่อน
+     เสร็จตัวไหนก็วาดหน้าภาพรวมใหม่ทันที */
+  Promise.all([loadPerr(),loadPick()]).then(()=>{ if(SEC==='overview')renderKPI(); });
+  loadShip().then(()=>{ if(SEC==='overview')renderKPI(); });
   try{
     const n=await loadOTP();
     OTP_LOADING=false;
@@ -6672,9 +6677,6 @@ async function boot(){
   await staticJob;
   fillFiltersKPI();     /* ชีตนับสต็อกเพิ่งโหลดเสร็จ — เติมปีที่มีเฉพาะในชีตนั้นเข้า dropdown */
   renderKPI();
-  /* v-ov3: หน้าภาพรวมต้องใช้ Human Error On Picking (Picking + ชีตแจ้งหยิบผิด) และ Shipping ด้วย */
-  Promise.all([loadPerr(),loadPick()]).then(()=>{ if(SEC==='overview')renderKPI(); });
-  loadShip().then(()=>{ if(SEC==='overview')renderKPI(); });
 }
 
 /* v-ov2: ปุ่ม "ดูรายละเอียด" ของแต่ละแผนก + ตัวเลือกกราฟแนวโน้ม + ไอคอนเมนูข้าง */
