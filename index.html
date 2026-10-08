@@ -1527,6 +1527,126 @@ body.mobile #vKPI #rfkSel{font-size:36px;padding:18px}
 body.mobile #vRPT .rf-modes button,body.mobile #vKPI .rf-modes button{flex:1 1 30%;font-size:40px;padding:20px 10px}
 body.mobile #vRPT .rf-ar,body.mobile #vKPI .rf-ar{width:96px;height:96px}
 body.mobile #vRPT #rfSel,body.mobile #vKPI #rfkSel{height:96px;font-size:40px}
+
+/* ===== v-kdark: หน้าย่อย KPI (ยกเว้น ภาพรวม KPI ทุกแผนก / รายงานประจำวัน / หน้าเอกสารที่ฝัง) — ธีมเข้มแบบภาพตัวอย่าง
+   เปลี่ยนเฉพาะหน้าตา (สี กรอบ ไอคอน การจัดวาง) ไม่แตะข้อมูล วิธีคำนวณ หรือสิ่งที่แสดง ===== */
+body.kdark #vKPI #detail{--card:#141A3D;--soft:#1A2150;--line:rgba(255,255,255,.11);--ink:#EEEAFB;--mute:#A9A3CF;
+  --ink-faint:#C9C3EA;--teal-d:#2DD4BF;--plum-d:#A78BFA;--bad:#FB7185;--good:#34D399;--amber:#FBBF24}
+/* หัวหน้า */
+body.kdark #vKPI #kShot>header{border-bottom:0;padding-bottom:0;margin-bottom:22px;align-items:center}
+body.kdark #vKPI #kShot>header>.khd{display:flex;align-items:center;gap:28px;min-width:0}
+#vKPI .kico{display:none}
+body.kdark #vKPI .kico{flex:none;width:128px;height:128px;border-radius:30px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(145deg,#137C78,#0B4A52);border:1px solid rgba(45,212,191,.35);box-shadow:0 10px 26px rgba(0,0,0,.35)}
+body.kdark #vKPI .kico svg{width:66px;height:66px}
+body.kdark #vKPI #kShot>header h1{border-left:0;padding-left:0}
+body.kdark #vKPI #kShot>header .sub{margin-left:0;color:#B9B0F0}
+body.kdark #vKPI #kShot>header .period{background:rgba(255,255,255,.05) url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2252%22%20height%3D%2252%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23E9E4FF%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Crect%20x%3D%223%22%20y%3D%224.5%22%20width%3D%2218%22%20height%3D%2217%22%20rx%3D%222.5%22/%3E%3Cpath%20d%3D%22M16%202.5v4M8%202.5v4M3%2010h18%22/%3E%3C/svg%3E") no-repeat 30px 50%/52px 52px;
+  border:1px solid rgba(255,255,255,.10);border-radius:24px;padding:18px 30px 20px 104px;line-height:1.35}
+body.kdark #vKPI #kShot>header .period b{font-weight:600}
+body.kdark #vKPI .kchip{background:linear-gradient(120deg,#7C3AED,#6D4BD8);font-weight:bold;border-radius:12px}
+/* ตัวกรองย่อย (ชิป) */
+body.kdark #vKPI #detail .fbar button{background:rgba(255,255,255,.04);border:2px solid rgba(255,255,255,.16);color:var(--ink);
+  border-radius:16px;padding:10px 28px}
+body.kdark #vKPI #detail .fbar button:hover{background:rgba(45,212,191,.10);border-color:#2DD4BF}
+body.kdark #vKPI #detail .fbar button.on{background:linear-gradient(100deg,#0F766E,#14B8A6);border-color:#14B8A6;color:#fff;
+  box-shadow:0 6px 16px rgba(20,184,166,.28)}
+body.kdark #vKPI #detail .fbar button.on.rose{background:linear-gradient(100deg,#BE123C,#E11D48);border-color:#E11D48}
+body.kdark #vKPI #detail .fbar button.on.amber{background:linear-gradient(100deg,#B45309,#D97706);border-color:#D97706}
+body.kdark #vKPI #detail .fbar button .ck{border-color:rgba(255,255,255,.35);background:transparent}
+body.kdark #vKPI #detail .fbar button.on .ck{background:#fff;border-color:#fff;color:#0F766E}
+/* วงแหวน = แถบไฮไลต์แนวนอน */
+body.kdark #vKPI #detail .ring{flex-direction:row;justify-content:center;gap:70px;text-align:left;padding:46px 60px;
+  background:linear-gradient(120deg,#0E5E63 0%,#0D3E5C 45%,#1A2560 100%);
+  border:1px solid rgba(45,212,191,.40);box-shadow:0 14px 34px rgba(0,0,0,.35)}
+body.kdark #vKPI #detail .ring.miss{background:linear-gradient(120deg,#6B1A33 0%,#4A1838 45%,#24204F 100%);border-color:rgba(251,113,133,.45)}
+body.kdark #vKPI #detail .ring svg{width:380px;height:380px}
+body.kdark #vKPI #detail .ring .tr{stroke:rgba(255,255,255,.12);stroke-width:15}
+body.kdark #vKPI #detail .ring .fl{stroke:#2DD4BF;stroke-width:15}
+body.kdark #vKPI #detail .ring .fl.miss{stroke:#FB7185}
+body.kdark #vKPI #detail .ringwrap b{font-size:84px}
+body.kdark #vKPI #detail .ringwrap b.miss{color:#FFD1D9}
+body.kdark #vKPI #detail .ring .cap{align-items:flex-start;max-width:900px;font-size:34px}
+body.kdark #vKPI #detail .ring .cap .tag{font-size:32px;padding:16px 30px 16px 84px;border-radius:20px;margin-bottom:14px;
+  background:rgba(13,148,136,.32) url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2242%22%20height%3D%2242%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23fff%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%229.5%22/%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%225.5%22/%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%221.5%22/%3E%3C/svg%3E") no-repeat 26px 50%/42px 42px;border:1px solid rgba(45,212,191,.55)}
+body.kdark #vKPI #detail .ring .cap .tag.miss{background-color:rgba(225,29,72,.30);border-color:rgba(251,113,133,.6)}
+/* การ์ดตัวเลข: ไอคอนในกรอบทางซ้าย · สีการ์ดตามความหมายเดิม (เขียว = ผ่าน · แดง = ไม่ผ่าน) */
+body.kdark #vKPI #detail .scard{position:relative;overflow:hidden;display:grid;grid-template-columns:auto minmax(0,1fr);grid-auto-rows:auto;column-gap:26px;row-gap:2px;
+  align-content:center;text-align:left;padding:28px 30px;border-radius:24px;
+  background:linear-gradient(135deg,#1A3170 0%,#16224E 100%);border:1px solid rgba(96,165,250,.40);box-shadow:0 10px 26px rgba(0,0,0,.28)}
+body.kdark #vKPI #detail .scard::before{content:"";position:static;grid-row:1 / span 6;align-self:center;width:104px;height:104px;border-radius:24px;
+  background:rgba(96,165,250,.20) url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2254%22%20height%3D%2254%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23fff%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M21%208l-9-5-9%205v8l9%205%209-5z%22/%3E%3Cpath%20d%3D%22M3%208l9%205%209-5%22/%3E%3Cpath%20d%3D%22M12%2013v8%22/%3E%3C/svg%3E") no-repeat center/54px 54px;border:1px solid rgba(255,255,255,.18)}
+body.kdark #vKPI #detail .scard>*{grid-column:2}
+body.kdark #vKPI #detail .scard .sl{color:#DCD7F7;letter-spacing:0}
+body.kdark #vKPI #detail .scard .sv{color:#fff}
+body.kdark #vKPI #detail .scard:nth-child(4n)::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2254%22%20height%3D%2254%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23fff%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M14%202H6a2%202%200%200%200-2%202v16a2%202%200%200%200%202%202h12a2%202%200%200%200%202-2V8z%22/%3E%3Cpath%20d%3D%22M14%202v6h6%22/%3E%3Cpath%20d%3D%22M8%2013h8M8%2017h8%22/%3E%3C/svg%3E")}
+body.kdark #vKPI #detail .scard:has(>.sv.teal){background:linear-gradient(135deg,#0F6E68 0%,#0B4650 100%);border-color:rgba(45,212,191,.45)}
+body.kdark #vKPI #detail .scard:has(>.sv.teal)::before{background-color:rgba(45,212,191,.22);background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2254%22%20height%3D%2254%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23fff%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%229.5%22/%3E%3Cpath%20d%3D%22M8%2012.5l2.8%202.8L16.5%209.5%22/%3E%3C/svg%3E")}
+body.kdark #vKPI #detail .scard:has(>.sv .bad),body.kdark #vKPI #detail .scard:has(>.sv.rose){background:linear-gradient(135deg,#6A1D35 0%,#40173A 100%);border-color:rgba(251,113,133,.45)}
+body.kdark #vKPI #detail .scard:has(>.sv .bad)::before,body.kdark #vKPI #detail .scard:has(>.sv.rose)::before{background-color:rgba(251,113,133,.24);background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2254%22%20height%3D%2254%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23fff%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%229.5%22/%3E%3Cpath%20d%3D%22M12%207v5l3.5%202%22/%3E%3C/svg%3E")}
+body.kdark #vKPI #detail .scard:has(>.sv .bad) .sv,body.kdark #vKPI #detail .scard:has(>.sv.rose) .sv{color:#FF8FA3}
+body.kdark #vKPI #detail .scard:has(>.sv.amber){background:linear-gradient(135deg,#6B4510 0%,#3F2B16 100%);border-color:rgba(251,191,36,.45)}
+body.kdark #vKPI #detail .scard:has(>.sv.amber)::before{background-color:rgba(251,191,36,.22);background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2254%22%20height%3D%2254%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23fff%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M10.3%203.9L1.8%2018a2%202%200%200%200%201.7%203h17a2%202%200%200%200%201.7-3L13.7%203.9a2%202%200%200%200-3.4%200z%22/%3E%3Cpath%20d%3D%22M12%209v4%22/%3E%3Cpath%20d%3D%22M12%2017h.01%22/%3E%3C/svg%3E")}
+body.kdark #vKPI #detail .scard:has(>.sv.amber) .sv{color:#FCD34D}
+body.kdark #vKPI #detail .scard:has(>.sv.plum){background:linear-gradient(135deg,#3B2A86 0%,#251D5C 100%);border-color:rgba(167,139,250,.5)}
+body.kdark #vKPI #detail .scard:has(>.sv.plum)::before{background-color:rgba(167,139,250,.24);background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2254%22%20height%3D%2254%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23fff%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M4%2020V10M10%2020V4M16%2020v-7M22%2020H2%22/%3E%3C/svg%3E")}
+body.kdark #vKPI #detail .scard:has(>.sv.mute){background:linear-gradient(135deg,#232A55 0%,#1A1F45 100%);border-color:rgba(255,255,255,.14)}
+body.kdark #vKPI #detail .scard:has(>.sv.mute) .sv{color:#C9C3EA}
+body.kdark #vKPI #detail .scard:has(>.sv.shp-min){background:linear-gradient(135deg,#6B5410 0%,#3F3216 100%);border-color:rgba(242,209,75,.5)}
+body.kdark #vKPI #detail .scard:has(>.sv.shp-max){background:linear-gradient(135deg,#6A1D35 0%,#40173A 100%);border-color:rgba(243,165,165,.5)}
+body.kdark #vKPI #detail .scard[class]::before{background-repeat:no-repeat;background-position:center;background-size:54px 54px}
+body.kdark #vKPI #detail .scard:has(>.sv)::before{background-repeat:no-repeat;background-position:center;background-size:54px 54px}
+/* หัวข้อ + แผงกราฟ */
+body.kdark #vKPI #detail h2.sec{color:#F3EFFB}
+body.kdark #vKPI #detail h2.sec::before{content:"";flex:none;width:12px;height:1.05em;border-radius:6px;
+  background:linear-gradient(180deg,#2DD4BF,#7C5BE6)}
+body.kdark #vKPI #detail h2.sec span{background:rgba(255,255,255,.10)}
+body.kdark #vKPI #detail .cpanel{background:#141A3D;border:1px solid rgba(255,255,255,.10);
+  border-radius:24px;box-shadow:0 10px 26px rgba(0,0,0,.25)}
+/* ตาราง */
+body.kdark #vKPI #detail table.dt{background:#121839;color:var(--ink)}
+body.kdark #vKPI #detail table.dt th{background:#1C2458;color:#D4CEF5;font-weight:600;box-shadow:inset 0 -1px 0 rgba(255,255,255,.10)}
+body.kdark #vKPI #detail table.dt td{border-top:1px solid rgba(255,255,255,.07)}
+body.kdark #vKPI #detail table.dt tr:hover td,body.kdark #vKPI #detail table.dt.big-rows tbody tr:nth-child(even) td,
+body.kdark #vKPI #detail table.dt.dock-dt tbody tr:nth-child(even) td{background:rgba(255,255,255,.035)}
+body.kdark #vKPI #detail table.dt td .bad{display:inline-block;background:#E11D48;color:#fff;padding:3px 16px;border-radius:10px}
+body.kdark #vKPI #detail table.dt td .good{display:inline-block;background:#059669;color:#fff;padding:3px 16px;border-radius:10px}
+body.kdark #vKPI #detail table.dt td span[style*="--amber"]{display:inline-block;background:#B45309;color:#fff!important;padding:3px 16px;border-radius:10px}
+body.kdark #vKPI #detail .tscroll{border:1px solid rgba(255,255,255,.10);border-radius:20px}
+body.kdark #vKPI #detail .tscroll::-webkit-scrollbar-track{background:#121839}
+body.kdark #vKPI #detail .tscroll::-webkit-scrollbar-thumb{background:#3A4378;border-color:#121839}
+body.kdark #vKPI #detail .why{background:rgba(255,255,255,.08);color:var(--mute)}
+body.kdark #vKPI #detail .why.has{background:rgba(167,139,250,.18);color:#D8CCFF}
+body.kdark #vKPI #detail .empty2{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.14);color:var(--mute)}
+body.kdark #vKPI #detail .badge.pass{background:rgba(52,211,153,.18)}
+body.kdark #vKPI #detail .badge.fail{background:rgba(251,113,133,.18)}
+body.kdark #vKPI #detail input,body.kdark #vKPI #detail select{background:#1A2150;color:var(--ink);border-color:rgba(255,255,255,.18)}
+body.kdark #vKPI .foot{border-top-color:rgba(255,255,255,.10)}
+@media(max-width:1100px){body.kdark #vKPI #detail .ring{flex-direction:column;text-align:center}
+  body.kdark #vKPI #detail .ring .cap{align-items:center}}
+/* Forecast · Packing · Picking — กล่องที่เดิมเป็นพื้นขาว */
+body.kdark #vKPI #detail .rbar,body.kdark #vKPI #detail .pkbar{background:rgba(255,255,255,.10)}
+body.kdark #vKPI #detail .fcacc{background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.10);box-shadow:0 10px 26px rgba(0,0,0,.25)}
+body.kdark #vKPI #detail .fcacc-card{background:linear-gradient(135deg,#1A3170 0%,#16224E 100%);border-color:rgba(96,165,250,.35)}
+body.kdark #vKPI #detail .fcacc-card i{color:#2DD4BF}
+body.kdark #vKPI #detail .fcacc-card b{color:#DCD7F7}
+body.kdark #vKPI #detail .fcacc-card span{color:#fff}
+body.kdark #vKPI #detail .fcacc-card span.up{color:#FBBF24}
+body.kdark #vKPI #detail .fcacc-card span.down{color:#2DD4BF}
+body.kdark #vKPI #detail .fcacc-card small{color:#A9A3CF}
+body.kdark #vKPI #detail .fcacc-panel{background:#141A3D;border-color:rgba(255,255,255,.10)}
+body.kdark #vKPI #detail .fcacc-h{color:#F3EFFB}
+body.kdark #vKPI #detail .fcacc-h em{color:#A9A3CF}
+body.kdark #vKPI #detail .fcacc-tblwrap{border-top-color:rgba(255,255,255,.10)}
+body.kdark #vKPI #detail .fcacc-tbl th{background:#1C2458;color:#D4CEF5}
+body.kdark #vKPI #detail .fcacc-tbl td{color:#EEEAFB;border-top-color:rgba(255,255,255,.07)}
+body.kdark #vKPI #detail .fcacc-tbl .up{color:#FBBF24}
+body.kdark #vKPI #detail .fcacc-tbl .down{color:#2DD4BF}
+body.kdark #vKPI #detail tr.ddrow td{background:rgba(251,146,60,.14)!important}
+/* html2canvas วาดเงาเบลอของกล่องใหญ่เพี้ยน (เป็นแถบสี่เหลี่ยมทึบ) ตอนบันทึกรูป → ใช้กรอบแทนเงา */
+body.kdark #vKPI #detail .cpanel,body.kdark #vKPI #detail .ring,body.kdark #vKPI #detail .scard,
+body.kdark #vKPI #detail .fcacc,body.kdark #vKPI #detail .fcacc-panel{box-shadow:none}
+body.kdark #vKPI #detail .ring::after{display:none}
 </style>
 </head>
 <body>
@@ -1623,10 +1743,10 @@ body.mobile #vRPT #rfSel,body.mobile #vKPI #rfkSel{height:96px;font-size:40px}
 
 <div id="kShot">
   <header>
-    <div>
+    <div class="khd"><span class="kico" id="kIco" aria-hidden="true"></span><div>
       <h1 id="kTitle">ภาพรวม KPI ทุกแผนก</h1>
       <div class="sub" id="kSub">Warehouse · Delivery · Admin</div>
-    </div>
+    </div></div>
     <div class="period">ข้อมูลของวันที่<b id="kPeriod">—</b><span class="kchip" id="kChip" style="display:none"></span>
       <div id="cmpNote" style="font-size:17px;margin-top:4px">เทียบกับเดือนก่อน</div></div>
   </header>
@@ -2472,6 +2592,28 @@ const pieLbl={id:'pieLbl',
   }};
 if(window.Chart&&!Chart.registry.plugins.get('linePt'))Chart.register(linePt);
 if(window.Chart&&!Chart.registry.plugins.get('pieLbl'))Chart.register(pieLbl);
+
+/* ===== v-kdark: กราฟในหน้าย่อยธีมเข้ม — เปลี่ยนเฉพาะสีตัวหนังสือ/เส้นตาราง ให้อ่านออกบนพื้นเข้ม ไม่แตะข้อมูล ===== */
+const KD_TXT={'#1e1b33':'#EEEAFB','#64748b':'#B7B0E0','#475569':'#C9C3EA','#6b6485':'#B7B0E0','#22252c':'#EEEAFB'};
+const kdCv=cv=>{try{return document.body.classList.contains('kdark')&&!!cv&&!!cv.closest('#detail');}catch(e){return false;}};
+const kdOn=ch=>kdCv(ch&&ch.canvas);
+const kDark={id:'kDark',
+  beforeInit(ch){ const x=ch.ctx; if(!x||x.__kd)return; x.__kd=1; const f=x.fillText;
+    x.fillText=function(...a){ const fs=String(this.fillStyle).toLowerCase(), m=KD_TXT[fs];
+      if(m&&kdCv(this.canvas)){ this.fillStyle=m; f.apply(this,a); this.fillStyle=fs; } else f.apply(this,a); };
+    const fr=x.fillRect;   /* พื้นขาวรองตัวเลขบนกราฟ → พื้นเข้ม */
+    x.fillRect=function(...a){ const fs=String(this.fillStyle).toLowerCase();
+      if(kdCv(this.canvas)&&/^(#ffffff|rgba\(255, 255, 255)/.test(fs)){ this.fillStyle='rgba(18,24,57,.92)'; fr.apply(this,a); this.fillStyle=fs; }
+      else fr.apply(this,a); };
+    const st=x.strokeText;   /* ขอบขาวรอบตัวเลขบนกราฟ → ขอบสีพื้นเข้ม */
+    x.strokeText=function(...a){ const ss=String(this.strokeStyle).toLowerCase();
+      if(kdCv(this.canvas)&&/^(#ffffff|rgba\(255, 255, 255)/.test(ss)){ this.strokeStyle='rgba(18,24,57,.92)'; st.apply(this,a); this.strokeStyle=ss; }
+      else st.apply(this,a); }; },
+  beforeUpdate(ch){ if(!kdOn(ch))return; const sc=(ch.config.options&&ch.config.options.scales)||{};
+    Object.values(sc).forEach(s=>{ if(!s)return; s.grid=s.grid||{};
+      if(typeof s.grid.color!=='function')s.grid.color='rgba(255,255,255,.08)';
+      s.border=Object.assign({},s.border||{},{color:'rgba(255,255,255,.14)'}); }); }};
+if(window.Chart&&!Chart.registry.plugins.get('kDark'))Chart.register(kDark);
 
 function ringHTML(pct_,target,caption){
   const CIRC=565.48;
@@ -6572,6 +6714,10 @@ function renderKPI(){
   el('kSub').textContent=tt[1];
   document.body.classList.toggle('sopmode', SEC==='sop'||SEC==='sopcr'||SEC==='ret'||SEC==='can'||SEC==='cr');
   document.body.classList.toggle('crmode', SEC==='cr');
+  /* v-kdark: ธีมเข้มของหน้าย่อย KPI (ไม่ใช้กับหน้าภาพรวม และหน้าเอกสาร/หน้าที่ฝังไฟล์แยก) */
+  document.body.classList.toggle('kdark', !['overview','sop','sopcr','cr','ret','can'].includes(SEC));
+  try{ const nb=document.querySelector('.sidenav button.on .nic');
+    el('kIco').innerHTML=nb?nb.innerHTML.replace(/currentColor/g,'#fff'):''; }catch(e){}
   if(!isOv){
     el('detail').innerHTML = ((SEC==='ret'||SEC==='can'||SEC==='cr'||SEC==='sop'||SEC==='sopcr'||SEC==='fc')?'':catBar())
                            + (SEC==='ontime'?secOnTime() : SEC==='oos'?secOOS()
@@ -6733,7 +6879,9 @@ function renderKPI(){
       note:'ยังไม่ได้ระบุชีตต้นทาง'},
     /* Admin = การจัดส่ง (Shipping) — หน้า Shipping ยังไม่มีเป้า KPI จึงแสดงค่าอย่างเดียว ไม่ตัดสินผ่าน/ไม่ผ่าน */
     ovShip?{dept:'ad',key:'ship',n:1,ic:'send',l:'การจัดส่ง (Shipping)',t:'จัดส่งตรงตามเกณฑ์ในชีต',info:true,
-      disp:ovShip.critPct!=null?pct1(ovShip.critPct):'—',
+      /* v-shipov: เดิมปัดทศนิยม 1 ตำแหน่ง → 99.95% กลายเป็น "100%" ทั้งที่ยังมีรายการไม่ตรงเกณฑ์
+       ใช้รูปแบบเดียวกับวงแหวนหน้า Shipping: ทศนิยม 2 ตำแหน่ง และเพิ่มให้ถ้ายังไม่ถึง 100% จริง (ค่าที่คำนวณเหมือนเดิม) */
+    disp:ovShip.critPct!=null?(v=>{let d=2;while(d<4&&v<100&&+v.toFixed(d)>=100)d++;return v.toFixed(d)+'%';})(ovShip.critPct):'—',
       base:`${fmt(ovShip.orders)} ออเดอร์ · ค้างส่ง ${fmt(ovShip.pending)}`+(ovShip.critBad?` · ไม่ตรงเกณฑ์ ${fmt(ovShip.critBad)} รายการ`:'')}
       :{dept:'ad',key:'ship',n:1,ic:'send',l:'การจัดส่ง (Shipping)',t:'จัดส่งตรงตามเกณฑ์ในชีต',wait:true,
         note:SHIP_ERR?('อ่านชีตไม่ได้ — '+SHIP_ERR):!SHIP?'กำลังโหลดข้อมูล…':'ไม่มีข้อมูลในช่วงที่เลือก'}
