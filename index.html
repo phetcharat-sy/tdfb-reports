@@ -2095,21 +2095,22 @@ const OV_PAL=(()=>{
              '239,68,68':'242,84,91','220,38,38':'229,72,77',
              '216,154,46':'245,181,63','180,83,9':'226,140,40'};
   const LINE='155,123,255';                       /* ม่วงของกราฟแนวโน้มหน้าภาพรวม */
+  const TEAL=new Set(['13,148,136','15,118,110']); /* เส้นหลักสีเขียวอมฟ้าเดิม (teal / tealD) → ม่วง */
   const hex2=h=>{h=h.replace('#','');return [0,2,4].map(i=>parseInt(h.substr(i,2),16)).join(',');};
   const toHex=t=>'#'+t.split(',').map(n=>(+n).toString(16).padStart(2,'0')).join('').toUpperCase();
   const mapStr=(v,line)=>{
     if(typeof v!=='string')return v;
     const t=v.trim();
     let m=t.match(/^#([0-9a-f]{6})$/i);
-    if(m){const k=hex2(t); const r=(line&&k==='13,148,136')?LINE:RGB[k]; return r?toHex(r):v;}
+    if(m){const k=hex2(t); const r=(line&&TEAL.has(k))?LINE:RGB[k]; return r?toHex(r):v;}
     m=t.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+)\s*)?\)$/i);
-    if(m){const k=m[1]+','+m[2]+','+m[3]; const r=(line&&k==='13,148,136')?LINE:RGB[k];
+    if(m){const k=m[1]+','+m[2]+','+m[3]; const r=(line&&TEAL.has(k))?LINE:RGB[k];
       return r?(m[4]!=null?`rgba(${r},${m[4]})`:`rgb(${r})`):v;}
     return v;
   };
   const mapAny=(v,line)=>Array.isArray(v)?v.map(x=>mapStr(x,line))
     :(typeof v==='function'?function(){return mapAny(v.apply(this,arguments),line);}:mapStr(v,line));
-  const KEYS_LINE=['borderColor','backgroundColor'];             /* สีตัวเส้น + พื้นใต้เส้น */
+  const KEYS_LINE=['borderColor','backgroundColor','pointBackgroundColor','pointBorderColor']; /* เส้น พื้นใต้เส้น จุด (เฉพาะสีเดียวทั้งเส้น — ถ้าเป็นรายจุด ผ่าน/ไม่ผ่าน ยังคงเขียว/แดง) */
   const KEYS=['backgroundColor','borderColor','pointBackgroundColor','pointBorderColor',
               'hoverBackgroundColor','hoverBorderColor','pointHoverBackgroundColor'];
   return {id:'ovPal',beforeInit(ch){
