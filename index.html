@@ -1666,6 +1666,11 @@ body.rptfull:not(.cap):not(.mobile) #vRPT .panel .scroll{flex:1 0 auto!important
 #vRPT .panel .scroll>.empty{border-radius:22px}
 /* กล่องตัดมุมตามขอบโค้ง (กล่องสูงเท่าเนื้อหาเสมอเวลากางทุกแถว จึงไม่มีอะไรถูกตัดหาย) */
 body.rptfull #vRPT .panel .scroll,#vRPT #shot.cap-full .panel .scroll{overflow:hidden!important}
+
+/* v-grtype: ป้ายประเภทสินค้า (รับสินค้าเข้าระบบ) */
+#vRPT .tag.t-rm{background:#D7F2E4;color:#0E6B4C}
+#vRPT .tag.t-pk{background:#FDEBD3;color:#9A5A0C}
+#vRPT .tag.t-fg{background:#E6E0FB;color:#5338B8}
 </style>
 </head>
 <body>
@@ -7921,7 +7926,7 @@ function toRows(csv){
   const find=(...p)=>{for(const x of p){const i=H.findIndex(h=>h.includes(x));if(i>=0)return i;}return -1;};
   const iD=find('วันที่พบปัญหา','วันที่จัดทำ','วันที่ได้รับ','วันที่'),iW=find('สัปดาห์'),
         iT=find('รายละเอียด','ปัญหาที่พบ','รายการสินค้า'),iQ=find('จำนวน'),
-        iG=find('เกณฑ์','ประเภทสาเหตุ','ผู้แจ้ง');
+        iG=find('เกณฑ์','ประเภทสาเหตุ','ผู้แจ้ง','ประเภทสินค้า','ประเภท','หมวดสินค้า','หมวด','Category');
   return raw.slice(hi+1).map(r=>{
     const det=(r[iT]||'').trim(),d=toKey(r[iD]);
     if(!det||!d)return null;
@@ -8023,7 +8028,18 @@ async function grab(p){
   if(p.cr)return toCRRows(txt,p.cr);
   if(p.cancel)return toCancelRows(txt);
   if(p.ret)return toReturnRows(txt);
-  if(!p.form)return toRows(txt);
+  if(!p.form){
+    const rows=toRows(txt);
+    /* v-grtype: รับสินค้าเข้าระบบ — ประเภทเดียวกันอยู่ติดกัน (Raw Material → Packaging → Finish Goods → อื่น ๆ)
+       แล้วเรียงชื่อสินค้า · เรียงเฉพาะการแสดงผล ยอดรวม/จำนวนรายการเหมือนเดิม */
+    if(p.k==='gr'){
+      const ord=t=>/raw/i.test(t)?0:/packag/i.test(t)?1:/finish/i.test(t)?2:t?3:4;
+      rows.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1
+        :(ord(a.tag)-ord(b.tag))||String(a.tag).localeCompare(String(b.tag))
+        ||String(a.item).localeCompare(String(b.item),'th',{numeric:true}));
+    }
+    return rows;
+  }
   return toFormRows(txt)
     .filter(r=>(!p.dept||r.dept===p.dept)&&(!p.notDept||r.dept!==p.notDept))
     .map(r=>({...r,item:r.html}));
@@ -8124,7 +8140,7 @@ function tableHTML(rows,empty,noQty,p){
   let last='',b='';
   rows.forEach(r=>{const n=r.date!==last;
     b+=`<tr class="${n?'newday':''}"><td class="d">${n?show(r.date)+(p.dayCount?`<br><b style="color:var(--ink);font-size:1.1em">${perDay[r.date]}</b> <span style="font-size:.85em">${p.unit}</span>`:''):''}</td>
-        <td>${r.tag?`<span class="tag">${p.tagIco?`<i class="tgi">${ico(p.tagIco,'#0F766E',2.2)}</i>`:''}${r.tag}</span><br>`:''}${r.item}</td>
+        <td>${r.tag?`<span class="tag${/raw/i.test(r.tag)?' t-rm':/packag/i.test(r.tag)?' t-pk':/finish/i.test(r.tag)?' t-fg':''}">${p.tagIco?`<i class="tgi">${ico(p.tagIco,'#0F766E',2.2)}</i>`:''}${r.tag}</span><br>`:''}${r.item}</td>
         ${noQty?'':`<td class="num">${r.qty!=null?fmt(r.qty):'—'}</td>`}</tr>`;last=r.date;});
   const hd=p.cols||['วันที่พบปัญหา','เกณฑ์ · รายละเอียด'];
   if(noQty)return `<table><thead><tr><th style="width:112px">${hd[0]}</th><th>${hd[1]}</th></tr></thead>
