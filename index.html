@@ -2329,6 +2329,9 @@ const S_REPL='1QenNK8fW03G5bfQYStkufPa8RybxuK-W9d0ktz-mr4Y';
 const CH={};
 let CFZ=1.6;                     /* ตัวคูณขนาดฟอนต์ในกราฟ (โหมดพรีเซนต์ = 1.6) */
 const cf=n=>Math.round(n*CFZ);
+/* v-lbl: ตัวเลขบนกราฟ (ป้ายบนแท่ง/จุด) เล็กลง ไม่ให้ล้นข้ามเส้นแกนตั้ง-แกนนอน — ปรับตัวเลขนี้ตัวเดียวถ้าอยากใหญ่/เล็กลง */
+const LBLK=0.72;
+const cfl=n=>Math.round(n*CFZ*LBLK);
 const C={teal:'#0D9488',tealD:'#0F766E',plum:'#6366F1',plumD:'#4F46E5',
          amber:'#D89A2E',rose:'#EF4444',good:'#10B981',mute:'#64748B'};
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -2418,7 +2421,7 @@ const barPct={id:'barPct',
       x.beginPath();x.moveTo(ch.chartArea.left,y);x.lineTo(ch.chartArea.right,y);x.stroke();
       x.setLineDash([]);
     }
-    x.font="bold "+cf(op.size||29)+"px 'Baloo 2'";x.fillStyle='#1E1B33';x.textAlign='center';x.textBaseline='bottom';
+    x.font="bold "+cfl(op.size||29)+"px 'Baloo 2'";x.fillStyle='#1E1B33';x.textAlign='center';x.textBaseline='bottom';
     ch.data.datasets.forEach((ds,di)=>{
       const m=ch.getDatasetMeta(di); if(m.hidden)return;
       let lastR=-1e9;                       /* ขอบขวาของป้ายก่อนหน้า — กันตัวเลขทับกัน */
@@ -2442,7 +2445,7 @@ const linePt={id:'linePt',
     if(!op||!op.display)return;
     const x=ch.ctx, area=ch.chartArea;
     x.save();
-    x.font='bold '+cf(30)+'px "Baloo 2"'; x.textAlign='center'; x.textBaseline='bottom';
+    x.font='bold '+cfl(30)+'px "Baloo 2"'; x.textAlign='center'; x.textBaseline='bottom';
     ch.data.datasets.forEach((ds,di)=>{
       const m=ch.getDatasetMeta(di); if(m.hidden)return;
       /* แสดงทุกจุด — จุดที่เลขจะทับกัน ให้สลับไปวางใต้จุดแทน */
@@ -2459,8 +2462,9 @@ const linePt={id:'linePt',
         }
         placed.push({x:pt.x,y,w});
         x.lineJoin='round'; x.lineWidth=5; x.strokeStyle='rgba(255,255,255,.95)';
-        x.strokeText(t,pt.x,y);
-        x.fillStyle='#1E1B33'; x.fillText(t,pt.x,y);
+        const lx=Math.min(area.right-w/2-2,Math.max(area.left+w/2+4,pt.x));   /* ป้ายอยู่ในกรอบกราฟเสมอ ไม่ทับแกน */
+        x.strokeText(t,lx,y);
+        x.fillStyle='#1E1B33'; x.fillText(t,lx,y);
       });
     });
     x.restore();
@@ -2517,7 +2521,7 @@ const stackTot={id:'stackTot',
   afterDatasetsDraw(ch,a,op){
     if(!op||!op.display)return;
     const x=ch.ctx; x.save();
-    x.font='bold '+cf(op.size||26)+'px "Baloo 2"'; x.fillStyle='#1E1B33';
+    x.font='bold '+cfl(op.size||26)+'px "Baloo 2"'; x.fillStyle='#1E1B33';
     x.textAlign='center'; x.textBaseline='bottom';
     let lastR=-1e9;
     (ch.data.labels||[]).forEach((_,i)=>{
@@ -2569,7 +2573,7 @@ const pieLbl={id:'pieLbl',
     const ds=ch.data.datasets[0]; if(!ds)return;
     const m=ch.getDatasetMeta(0), x=ch.ctx;
     x.save();
-    x.font='bold '+cf(op.size||30)+'px "Baloo 2"'; x.textAlign='center'; x.textBaseline='middle';
+    x.font='bold '+cfl(op.size||30)+'px "Baloo 2"'; x.textAlign='center'; x.textBaseline='middle';
     m.data.forEach((arc,i)=>{
       const v=Number(ds.data[i]);
       if(!Number.isFinite(v)||v<min||arc.hidden)return;
@@ -3265,9 +3269,10 @@ const diffLineLbl={id:'diffLineLbl',
       const y=cands.find(yy=>yy-fs>=topLim&&yy<=ar.bottom&&!hit({x1:pt.x-w/2-3,x2:pt.x+w/2+3,y1:yy-fs,y2:yy}));
       if(y==null)return;      /* ไม่มีที่ว่างจริงๆ ข้ามป้ายนั้น (ดูค่าได้จาก tooltip/ตารางด้านล่าง) */
       boxes.push({x1:pt.x-w/2-3,x2:pt.x+w/2+3,y1:y-fs,y2:y});
-      x.lineJoin='round'; x.lineWidth=4; x.strokeStyle='rgba(255,255,255,.95)'; x.strokeText(t,pt.x,y);
+      const lx=Math.min(ar.right-w/2-2,Math.max(ar.left+w/2+4,pt.x));   /* v-lbl: ไม่ทับแกนตั้ง */
+      x.lineJoin='round'; x.lineWidth=4; x.strokeStyle='rgba(255,255,255,.95)'; x.strokeText(t,lx,y);
       x.fillStyle=v>=(op.target||98)?'#0F766E':'#DC2626';
-      x.fillText(t,pt.x,y);
+      x.fillText(t,lx,y);
     });
     x.restore();
   }};
@@ -4319,7 +4324,7 @@ const fcPtLbl={id:'fcPtLbl',
     if(!op||!op.display)return;
     const x=ch.ctx, m=ch.getDatasetMeta(1); if(!m||m.hidden)return;
     const ds=ch.data.datasets[1];
-    x.font='bold '+cf(24)+'px "Baloo 2"'; x.textBaseline='bottom';
+    x.font='bold '+cfl(24)+'px "Baloo 2"'; x.textBaseline='bottom';
     const step=Math.round(28*CFZ);
     const lastIdx=m.data.length-1;
     let placed=[];   /* กันป้ายทับกัน — จุดพยากรณ์ชิดกันตอนดูรายวัน เลยไล่ซ้อนขึ้นเป็นชั้นแทนวางระดับเดียวกันหมด */
@@ -5948,7 +5953,7 @@ const barEnd={id:'barEnd',
     if(!op||!op.display)return;
     const x=ch.ctx, m=ch.getDatasetMeta(0);
     x.save(); x.textAlign='left'; x.textBaseline='middle';
-    x.font='bold '+cf(24)+'px "Baloo 2"';
+    x.font='bold '+cfl(24)+'px "Baloo 2"';
     m.data.forEach((bar,i)=>{
       const t=op.pctOnly?op.pcts[i]+'%':fmt(op.vals[i])+'  ·  '+op.pcts[i]+'%';
       x.fillStyle='#1E1B33';
