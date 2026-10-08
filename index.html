@@ -1305,6 +1305,160 @@ body.present #vKPI .otc .v{font-size:100px}
 #vKPI .hleg.hleg-row button{font-size:23px}
 #vKPI .hleg.hleg-mini button{font-size:25px}
 </style>
+<style id="rptDesign">
+/* ===== v-rptdesign: หน้ารายงานประจำวัน (ทุกทีม) — ดีไซน์ใหม่ทั้งบนจอและตอนบันทึกเป็นรูป
+   เปลี่ยนแค่หน้าตา ตัวเลข/การคำนวณ/รายการที่แสดงเหมือนเดิมทุกอย่าง ===== */
+#vRPT{--rp-card:rgba(255,255,255,.035);--rp-line:rgba(255,255,255,.09);--rp-ink:#F3EFFB;--rp-mute:#B7AEDE}
+#vRPT #shot.cap-slide,#vRPT #shot.cap-full{
+  background:radial-gradient(ellipse 70% 40% at 85% 0%,rgba(59,74,160,.38),rgba(16,13,38,0) 70%),#100D26}
+
+/* ---- หัวรายงาน ---- */
+#vRPT header{border-bottom:0;padding-bottom:0;margin-bottom:30px;display:flex;justify-content:space-between;
+  align-items:center;gap:24px 36px}
+#vRPT .rttl{display:flex;align-items:center;gap:30px;min-width:0}
+#vRPT .rico{flex:none;width:150px;height:150px;border-radius:32px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(145deg,#137C78,#0B4A52);border:1px solid rgba(45,212,191,.35);
+  box-shadow:0 10px 30px rgba(0,0,0,.35)}
+#vRPT .rico svg{width:78px;height:78px}
+#vRPT .rtx{border-left:7px solid #2DD4BF;padding-left:28px;min-width:0}
+#vRPT h1{border-left:0;padding-left:0;margin:0;font-size:84px;line-height:1.15;font-weight:700;color:var(--rp-ink);letter-spacing:-.5px}
+#vRPT .sub{margin:8px 0 0;font-size:36px;color:#B9B0F0;line-height:1.35}
+#vRPT .period{flex:none;text-align:right;background:rgba(255,255,255,.05);border:1px solid var(--rp-line);
+  border-radius:26px;padding:20px 32px 24px;color:var(--rp-mute);font-size:26px;line-height:1.3}
+#vRPT .period small{display:block;font-size:26px;color:var(--rp-mute)}
+#vRPT .prow{display:flex;align-items:center;gap:22px;margin-top:8px}
+#vRPT .pcal{display:inline-flex;width:56px;height:56px}
+#vRPT .pcal svg{width:56px;height:56px}
+#vRPT .period b{display:inline;color:var(--rp-ink);font-size:44px;font-weight:500;white-space:nowrap}
+#vRPT .chip{margin:0;background:linear-gradient(120deg,#7C3AED,#6D4BD8);color:#fff;font-weight:700;
+  font-size:26px;padding:6px 20px;border-radius:14px;white-space:nowrap}
+
+/* ---- การ์ดตัวเลข ---- */
+#vRPT .kpis{gap:22px;margin-bottom:30px}
+#vRPT .kpi,#vRPT .kpi.c0,#vRPT .kpi.c1,#vRPT .kpi.c2,#vRPT .kpi.c3,#vRPT .kpi.c4,
+#vRPT .kpi.rose,#vRPT .kpi.ok,#vRPT .kpi.ink{
+  position:relative;overflow:hidden;display:flex;flex-direction:row;align-items:flex-start;gap:30px;
+  text-align:left;padding:34px 32px 34px;border-radius:26px;color:#fff;
+  border:1px solid rgba(255,255,255,.14);box-shadow:0 12px 30px rgba(0,0,0,.28)}
+#vRPT .kpi.c0,#vRPT .kpi.ok{background:linear-gradient(135deg,#0F857C 0%,#0A5A5F 100%);border-color:rgba(45,212,191,.45)}
+#vRPT .kpi.c1{background:linear-gradient(135deg,#1F55B5 0%,#163777 100%);border-color:rgba(96,165,250,.45)}
+#vRPT .kpi.c2{background:linear-gradient(135deg,#6343D2 0%,#3B2690 100%);border-color:rgba(167,139,250,.5)}
+#vRPT .kpi.c3{background:linear-gradient(135deg,#4F46E5 0%,#2E2A8C 100%);border-color:rgba(129,140,248,.5)}
+#vRPT .kpi.c4{background:linear-gradient(135deg,#C2690C 0%,#7C3A06 100%);border-color:rgba(251,191,36,.45)}
+#vRPT .kpi.rose{background:linear-gradient(135deg,#C02848 0%,#7A1636 100%);border-color:rgba(251,113,133,.5)}
+#vRPT .kpi.ink{background:linear-gradient(135deg,#3A4B78 0%,#232F52 100%);border-color:rgba(148,163,184,.45)}
+#vRPT .kpi.pending{position:relative;overflow:hidden;display:flex;flex-direction:row;align-items:flex-start;gap:30px;
+  text-align:left;padding:34px 32px;border-radius:26px;background:var(--rp-card);color:var(--rp-mute);
+  border:2px dashed var(--rp-line);box-shadow:none}
+#vRPT .kpi .kic{flex:none;position:relative;z-index:1;width:116px;height:116px;border-radius:26px;display:flex;
+  align-items:center;justify-content:center;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.22)}
+#vRPT .kpi .kic svg{width:62px;height:62px}
+#vRPT .kpi.pending .kic{background:rgba(255,255,255,.06)}
+#vRPT .kpi .kbody{position:relative;z-index:1;min-width:0;display:flex;flex-direction:column}
+#vRPT .kpi .l{font-size:34px;color:#fff;opacity:.95;letter-spacing:0;line-height:1.3;font-weight:500}
+#vRPT .kpi .v,#vRPT .kpis.many .kpi .v,#vRPT .kpi.c0 .v,#vRPT .kpi.c1 .v,#vRPT .kpi.c2 .v,#vRPT .kpi.c3 .v,
+#vRPT .kpi.c4 .v,#vRPT .kpi.ok .v,#vRPT .kpi.rose .v,#vRPT .kpi.ink .v{
+  color:#fff;font-size:104px;font-weight:700;line-height:1.05;letter-spacing:-1px;margin:6px 0 4px}
+#vRPT .kpi .n{font-size:31px;color:#fff;opacity:.9;line-height:1.3}
+#vRPT .kpi.pending .l,#vRPT .kpi.pending .n{color:var(--rp-mute)}
+#vRPT .kpi.pending .v{font-size:44px;color:var(--rp-mute);padding-top:10px}
+#vRPT .kpi .kdeco{position:absolute;right:-18px;top:50%;transform:translateY(-50%);width:190px;height:190px;
+  opacity:.13;pointer-events:none}
+#vRPT .kpi .kdeco svg{width:190px;height:190px}
+
+/* ---- กล่องรายการ ---- */
+#vRPT .panels{gap:30px}
+#vRPT .panel{background:var(--rp-card);border:1px solid var(--rp-line);border-radius:30px;padding:0 24px 24px;
+  overflow:visible;min-height:0}
+#vRPT .panel .hd,#vRPT .panel .hd.a,#vRPT .panel .hd.b,#vRPT .panel .hd.c,#vRPT .panel .hd.d{
+  display:flex;align-items:center;gap:26px;padding:26px 6px 24px;background:transparent;border:0;flex:none}
+#vRPT .panel .pic{flex:none;width:96px;height:96px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 8px 20px rgba(0,0,0,.3)}
+#vRPT .panel .pic svg{width:50px;height:50px}
+#vRPT .hd.a .pic{background:linear-gradient(145deg,#14A394,#0B6A66)}
+#vRPT .hd.b .pic{background:linear-gradient(145deg,#7C5BE6,#4A2DA8)}
+#vRPT .hd.c .pic{background:linear-gradient(145deg,#B97B45,#6E4122)}
+#vRPT .hd.d .pic{background:linear-gradient(145deg,#D2405C,#86203A)}
+#vRPT .panel h2.sec{flex:1;min-width:0;margin:0;font-size:56px;font-weight:700;color:var(--rp-ink);
+  display:flex;align-items:baseline;gap:22px;white-space:nowrap}
+#vRPT .panel h2.sec em{font-size:34px;color:var(--rp-mute);font-weight:400;overflow:hidden;text-overflow:ellipsis}
+#vRPT .panel .pdoc{flex:none;width:76px;height:76px;border-radius:20px;display:flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,.06);border:1px solid var(--rp-line)}
+#vRPT .panel .pdoc svg{width:38px;height:38px}
+#vRPT .panel .scroll{background:var(--card);border:0;border-radius:22px;box-shadow:0 6px 18px rgba(0,0,0,.22)}
+#vRPT th{background:#EFEDEA;color:#4A4466;font-weight:600;box-shadow:inset 0 -1px 0 var(--line)}
+#vRPT td.d{color:#4A4466;border-right:1px solid var(--line)}
+#vRPT thead th:first-child{border-right:1px solid var(--line)}
+#vRPT tr.newday td{border-top:1px solid var(--line)}
+#vRPT tbody td{border-top:1px solid #EEE9DF}
+#vRPT tfoot td{font-weight:700;border-top:1px solid var(--line)}
+#vRPT .p-a tfoot td{background:#E2F3EE;color:#0F4F4A}
+#vRPT .p-a tfoot .num{color:#0F766E}
+#vRPT .p-b tfoot td{background:#ECE6FB;color:#4C2E9E}
+#vRPT .p-b tfoot .num{color:#5B3FC4}
+#vRPT .p-c tfoot td{background:#FCE6E8;color:#B4233C}
+#vRPT .p-d tfoot td{background:#FCE6E8;color:#B4233C}
+#vRPT .tag{display:inline-flex;align-items:center;gap:12px;background:#CFEFE8;border:0;color:#0F5F59;
+  border-radius:12px;padding:6px 20px;margin-bottom:10px;line-height:1.3}
+#vRPT .tag .tgi{display:inline-flex;font-style:normal}
+#vRPT .tag .tgi svg{width:1em;height:1em}
+#vRPT .tag.pend{background:var(--rose);color:#fff}
+#vRPT .empty b{color:var(--mute)}
+
+/* ---- ท้ายรายงาน ---- */
+#vRPT .foot{margin-top:30px;padding:24px 32px;border:1px solid var(--rp-line);border-radius:26px;background:var(--rp-card);
+  display:flex;align-items:center;justify-content:space-between;gap:20px 30px;color:var(--rp-mute);font-size:27px;line-height:1.45}
+#vRPT .foot .fsrc{display:flex;align-items:center;gap:26px;min-width:0}
+#vRPT .foot .fsrc b{color:var(--rp-ink);font-weight:500}
+#vRPT .foot .fic{flex:none;width:84px;height:84px;border-radius:22px;display:flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,.07);border:1px solid var(--rp-line)}
+#vRPT .foot .fic svg{width:44px;height:44px}
+#vRPT .foot .fts{flex:none;display:flex;align-items:center;gap:20px;padding-left:34px;border-left:1px solid var(--rp-line);
+  white-space:nowrap;color:var(--rp-ink)}
+#vRPT .foot .fic2 svg{width:52px;height:52px;display:block}
+
+/* ---- จอแคบ / มือถือ ---- */
+@media(max-width:1400px){#vRPT .kpi .kdeco{display:none}}
+body.mobile #vRPT .rico{width:110px;height:110px;border-radius:26px}
+body.mobile #vRPT .rico svg{width:58px;height:58px}
+body.mobile #vRPT .period{text-align:left;width:100%}
+body.mobile #vRPT .foot{flex-direction:column;align-items:flex-start}
+body.mobile #vRPT .foot .fts{border-left:0;padding-left:0}
+body.mobile #vRPT .panel h2.sec{white-space:normal;flex-wrap:wrap}
+body.mobile #vRPT .kpi .kdeco{display:none}
+#vRPT header,#vRPT #shot.cap-tall header{flex-wrap:nowrap}
+#vRPT .rttl{flex:1 1 auto}
+#vRPT .foot .fsrc{flex:1 1 auto}
+#vRPT thead th{white-space:nowrap}
+body.mobile #vRPT header{flex-wrap:wrap}
+#vRPT h1{font-size:76px;white-space:nowrap}
+#vRPT .rttl{flex:0 1 auto;gap:26px}
+#vRPT .rico{width:132px;height:132px;border-radius:30px}
+#vRPT .rico svg{width:70px;height:70px}
+#vRPT .rtx{padding-left:24px}
+#vRPT .sub{font-size:33px}
+#vRPT .period{flex:0 1 auto;min-width:0;padding:18px 28px 22px}
+#vRPT .prow{gap:16px;justify-content:flex-end}
+#vRPT .pcal,#vRPT .pcal svg{width:46px;height:46px;flex:none}
+#vRPT .period b{font-size:38px}
+#vRPT .chip{font-size:24px;padding:5px 16px}
+#vRPT .foot .fsrc{flex:1 1 0}
+body.mobile #vRPT h1{white-space:normal}
+#vRPT header,#vRPT #shot.cap-tall header{flex-wrap:wrap}
+#vRPT .period{margin-left:auto}
+#vRPT h1{font-size:72px}
+#vRPT .period b{font-size:36px}
+#vRPT .ptop{display:flex;align-items:center;justify-content:flex-end;gap:14px}
+#vRPT .ptop small{display:inline}
+#vRPT header{gap:24px 28px}
+/* 4 การ์ดขึ้นไป (รายงาน Admin) — การ์ดแคบลง ย่อไอคอนให้ตัวเลขมีที่พอ */
+#vRPT .kpis:has(>.kpi:nth-child(4)) .kpi{gap:20px;padding:28px 24px}
+#vRPT .kpis:has(>.kpi:nth-child(4)) .kpi .kic{width:86px;height:86px;border-radius:22px}
+#vRPT .kpis:has(>.kpi:nth-child(4)) .kpi .kic svg{width:46px;height:46px}
+#vRPT .kpis:has(>.kpi:nth-child(4)) .kpi .l{font-size:31px}
+#vRPT .kpis:has(>.kpi:nth-child(4)) .kpi .kdeco,#vRPT .kpis:has(>.kpi:nth-child(4)) .kpi .kdeco svg{width:150px;height:150px}
+
+</style>
 </head>
 <body>
 
@@ -1492,16 +1646,21 @@ body.present #vKPI .otc .v{font-size:100px}
 
 <div id="shot">
   <header>
-    <div>
-      <h1 id="title">รายงานทีม Delivery</h1>
-      <div class="sub" id="subtitle"></div>
+    <div class="rttl">
+      <span class="rico" id="rIco" aria-hidden="true"></span>
+      <div class="rtx">
+        <h1 id="title">รายงานทีม Delivery</h1>
+        <div class="sub" id="subtitle"></div>
+      </div>
     </div>
-    <div class="period">ข้อมูลของวันที่<b id="period">—</b><span class="chip" id="chip" style="display:none"></span></div>
+    <div class="period"><div class="ptop"><small>ข้อมูลของวันที่</small><span class="chip" id="chip" style="display:none"></span></div>
+      <div class="prow"><span class="pcal" id="rCal" aria-hidden="true"></span><b id="period">—</b></div></div>
   </header>
   <div class="kpis" id="kpis"></div>
   <div class="panels" id="panels"></div>
   <div class="foot">
-    <span id="source"></span><span id="ts">—</span>
+    <div class="fsrc"><span class="fic" id="rDb" aria-hidden="true"></span><span id="source"></span></div>
+    <div class="fts"><span class="fic2" id="rClk" aria-hidden="true"></span><span id="ts">—</span></div>
   </div>
 </div>
 
@@ -7026,7 +7185,7 @@ async function shotExport({root,btn,name,title,zoomEls,bg=SHOT_BG,fg='#B7AEDE',m
       const x=out.getContext('2d'); x.fillStyle=bg; x.fillRect(0,0,out.width,out.height);
       x.drawImage(c,M,M);
       x.fillStyle=fg; x.font=`500 ${Math.round(FOOT*0.42)}px "Baloo 2","Mitr",sans-serif`; x.textBaseline='middle';
-      x.textAlign='left'; x.fillText('Logistics Dashboard · '+(title||''),M,out.height-FOOT/2);
+      x.textAlign='left'; x.fillText('Logistics Dashboard  ›  '+(title||''),M,out.height-FOOT/2);
       const a=document.createElement('a'); a.download=name+'-fullpage.png';
       a.href=URL.createObjectURL(await shotBlob(out));
       document.body.appendChild(a); a.click(); a.remove();
@@ -7251,7 +7410,7 @@ const TEAMS={
        sheet:JOB, gid:'976094805', empty:'ไม่มีการรับสินค้าเข้าในช่วงนี้'},
       /* v139: ปัญหาของ Warehouse ใช้แท็บ Warehouse ของชีตแจ้งปัญหาเอง (ไม่ใช่เคสที่ Delivery แจ้ง) */
       {k:'issue',t:'แจ้งปัญหาประจำวัน', c:'ป้ายสี = ผู้แจ้ง', hd:'c', unit:'เคส',
-       sheet:OPS, gid:WH_GID, noQty:true, cols:['วันที่พบปัญหา','ผู้แจ้ง · รายละเอียด'], empty:'ไม่มีการแจ้งปัญหาในช่วงนี้'}
+       sheet:OPS, gid:WH_GID, noQty:true, tagIco:'person', cols:['วันที่พบปัญหา','ผู้แจ้ง · รายละเอียด'], empty:'ไม่มีการแจ้งปัญหาในช่วงนี้'}
     ]
   },
   admin:{
@@ -7277,6 +7436,32 @@ const TEAMS={
   }
 };
 const SNAP=[{"year": "2026", "month": "มิถุนายน", "wk": 24, "date": "08/06/2026", "item": "ห่อนมข้น", "qty": 75}, {"year": "2026", "month": "มิถุนายน", "wk": 24, "date": "08/06/2026", "item": "coconut ทีโอ", "qty": 5}, {"year": "2026", "month": "มิถุนายน", "wk": 24, "date": "08/06/2026", "item": "startrt kit back", "qty": 15}, {"year": "2026", "month": "มิถุนายน", "wk": 24, "date": "08/06/2026", "item": "startrt kit white", "qty": 25}, {"year": "2026", "month": "มิถุนายน", "wk": 24, "date": "09/06/2026", "item": "ห่อนมข้น", "qty": 358}, {"year": "2026", "month": "มิถุนายน", "wk": 24, "date": "10/06/2026", "item": "ห่อนมข้น", "qty": 250}, {"year": "2026", "month": "มิถุนายน", "wk": 24, "date": "13/06/2026", "item": "ห่อนมข้น", "qty": 221}, {"year": "2026", "month": "มิถุนายน", "wk": 24, "date": "14/06/2026", "item": "ห่อนมข้น", "qty": 146}, {"year": "2026", "month": "มิถุนายน", "wk": 25, "date": "15/06/2026", "item": "matcha latte", "qty": 140}, {"year": "2026", "month": "มิถุนายน", "wk": 25, "date": "16/06/2026", "item": "เซเล", "qty": 128}, {"year": "2026", "month": "มิถุนายน", "wk": 25, "date": "16/06/2026", "item": "อิม", "qty": 160}, {"year": "2026", "month": "มิถุนายน", "wk": 25, "date": "17/06/2026", "item": "เซเล", "qty": 192}, {"year": "2026", "month": "มิถุนายน", "wk": 25, "date": "17/06/2026", "item": "อิม", "qty": 80}, {"year": "2026", "month": "มิถุนายน", "wk": 25, "date": "18/06/2026", "item": "starter white", "qty": 30}, {"year": "2026", "month": "มิถุนายน", "wk": 25, "date": "18/06/2026", "item": "starter Black", "qty": 20}, {"year": "2026", "month": "มิถุนายน", "wk": 25, "date": "19/06/2026", "item": "ไม่มี", "qty": null}, {"year": "2026", "month": "มิถุนายน", "wk": 25, "date": "20/06/2026", "item": "ห่อนมข้น", "qty": 202}, {"year": "2026", "month": "มิถุนายน", "wk": 25, "date": "21/06/2026", "item": "ติดชากิโล", "qty": 8}, {"year": "2026", "month": "มิถุนายน", "wk": 26, "date": "22/06/2026", "item": "ทรีโอ้", "qty": 5}, {"year": "2026", "month": "มิถุนายน", "wk": 26, "date": "22/06/2026", "item": "มัทฉะลาเต้", "qty": 50}, {"year": "2026", "month": "มิถุนายน", "wk": 26, "date": "23/06/2026", "item": "ทรีโอ้", "qty": 5}, {"year": "2026", "month": "มิถุนายน", "wk": 26, "date": "23/06/2026", "item": "อิม", "qty": 80}, {"year": "2026", "month": "มิถุนายน", "wk": 26, "date": "23/06/2026", "item": "เซเล", "qty": 240}, {"year": "2026", "month": "มิถุนายน", "wk": 26, "date": "24/06/2026", "item": "startrt kit white", "qty": 30}, {"year": "2026", "month": "มิถุนายน", "wk": 26, "date": "24/06/2026", "item": "startrt kit back", "qty": 20}, {"year": "2026", "month": "มิถุนายน", "wk": 26, "date": "24/06/2026", "item": "Rootroute50gX3", "qty": 6}, {"year": "2026", "month": "มิถุนายน", "wk": 26, "date": "28/06/2026", "item": "Matcha Grand Reserve 30 g", "qty": 80}, {"year": "2026", "month": "มิถุนายน", "wk": 26, "date": "28/06/2026", "item": "ติดชากิโล 5 ลัง", "qty": null}, {"year": "2026", "month": "มิถุนายน", "wk": 27, "date": "29/06/2026", "item": "ติดบาร์โค้ดชาวาน", "qty": 9}, {"year": "2026", "month": "มิถุนายน", "wk": 27, "date": "29/06/2026", "item": "Exc 3กรัม 2ซอง", "qty": 50}, {"year": "2026", "month": "มิถุนายน", "wk": 27, "date": "30/06/2026", "item": "M3g 2ซอง", "qty": 25}, {"year": "2026", "month": "มิถุนายน", "wk": 27, "date": "30/06/2026", "item": "Matcha Grand Reserve 30 g", "qty": 80}, {"year": "2026", "month": "กรกฎาคม", "wk": 27, "date": "01/07/2026", "item": "ติิดชากิโล", "qty": 5}, {"year": "2026", "month": "กรกฎาคม", "wk": 27, "date": "02/07/2026", "item": "ห่อนมข้น", "qty": 119}, {"year": "2026", "month": "กรกฎาคม", "wk": 27, "date": "04/07/2026", "item": "ห่อนมข้น", "qty": 389}, {"year": "2026", "month": "กรกฎาคม", "wk": 27, "date": "05/07/2026", "item": "ติดสติ้กเกอร์ ชา กก.", "qty": 7}, {"year": "2026", "month": "กรกฎาคม", "wk": 28, "date": "06/07/2026", "item": "ceremonial", "qty": 240}, {"year": "2026", "month": "กรกฎาคม", "wk": 28, "date": "06/07/2026", "item": "Imperial", "qty": 160}, {"year": "2026", "month": "กรกฎาคม", "wk": 28, "date": "08/07/2026", "item": "ห่อนมข้น", "qty": 113}, {"year": "2026", "month": "กรกฎาคม", "wk": 28, "date": "09/07/2026", "item": "Matcha Grand Reserve", "qty": 80}, {"year": "2026", "month": "กรกฎาคม", "wk": 28, "date": "10/07/2026", "item": "starter kit ขาว", "qty": 80}, {"year": "2026", "month": "กรกฎาคม", "wk": 28, "date": "10/07/2026", "item": "starter kit ดำ", "qty": 10}, {"year": "2026", "month": "กรกฎาคม", "wk": 28, "date": "11/07/2026", "item": "ห่อนมข้น", "qty": 392}, {"year": "2026", "month": "กรกฎาคม", "wk": 28, "date": "12/07/2026", "item": "ห่อนมข้น", "qty": 480}, {"year": "2026", "month": "กรกฎาคม", "wk": 28, "date": "12/07/2026", "item": "ติดชากิโล 4 ลัง", "qty": null}, {"year": "2026", "month": "กรกฎาคม", "wk": 29, "date": "13/07/2026", "item": "ห่อนมข้น", "qty": 506}, {"year": "2026", "month": "กรกฎาคม", "wk": 29, "date": "14/07/2026", "item": "Matcha Grand Reserve", "qty": 80}, {"year": "2026", "month": "กรกฎาคม", "wk": 29, "date": "14/07/2026", "item": "Matcha Latte", "qty": 80}, {"year": "2026", "month": "กรกฎาคม", "wk": 29, "date": "14/07/2026", "item": "Trio Set", "qty": 5}, {"year": "2026", "month": "กรกฎาคม", "wk": 29, "date": "15/07/2026", "item": "ceremonial", "qty": 240}, {"year": "2026", "month": "กรกฎาคม", "wk": 29, "date": "17/07/2026", "item": "starter kit ขาว", "qty": 15}, {"year": "2026", "month": "กรกฎาคม", "wk": 29, "date": "17/07/2026", "item": "starter kit ดำ", "qty": 10}, {"year": "2026", "month": "กรกฎาคม", "wk": 29, "date": "18/07/2026", "item": "Imperial", "qty": 80}, {"year": "2026", "month": "กรกฎาคม", "wk": 29, "date": "19/07/2026", "item": "ห่อนมข้น", "qty": 145}, {"year": "2026", "month": "กรกฎาคม", "wk": 29, "date": "19/07/2026", "item": "ติดชากิโล", "qty": null}, {"year": "2026", "month": "กรกฎาคม", "wk": 30, "date": "20/07/2026", "item": "Rootroute Young Barley Leaf Powder 50 g x 3", "qty": 6}, {"year": "2026", "month": "กรกฎาคม", "wk": 30, "date": "20/07/2026", "item": "Trio Set", "qty": 3}, {"year": "2026", "month": "กรกฎาคม", "wk": 30, "date": "20/07/2026", "item": "ceremonial", "qty": 206}, {"year": "2026", "month": "กรกฎาคม", "wk": 30, "date": "20/07/2026", "item": "Imperial", "qty": 160}, {"year": "2026", "month": "กรกฎาคม", "wk": 30, "date": "21/07/2026", "item": "Matcha Grand Reserve", "qty": 160}, {"year": "2026", "month": "กรกฎาคม", "wk": 30, "date": "22/07/2026", "item": "Excellent Rich 95% 3.1g x 2 sachets", "qty": 50}, {"year": "2026", "month": "กรกฎาคม", "wk": 30, "date": "22/07/2026", "item": "ห่อ Holder ขาว", "qty": 132}, {"year": "2026", "month": "กรกฎาคม", "wk": 30, "date": "22/07/2026", "item": "Matcha Latte", "qty": 80}, {"year": "2026", "month": "กรกฎาคม", "wk": 30, "date": "23/07/2026", "item": "startrt kit white", "qty": 10}, {"year": "2026", "month": "กรกฎาคม", "wk": 30, "date": "23/07/2026", "item": "ห่อนมข้น", "qty": 150}, {"year": "2026", "month": "กรกฎาคม", "wk": 30, "date": "24/07/2026", "item": "Rootroute Wheatgrass ×3", "qty": 4}, {"year": "2026", "month": "กรกฎาคม", "wk": 30, "date": "24/07/2026", "item": "ห่อนมข้น", "qty": 380}, {"year": "2026", "month": "กรกฎาคม", "wk": 30, "date": "25/07/2026", "item": "ห่อนมข้้น", "qty": 121}, {"year": "2026", "month": "กรกฎาคม", "wk": 30, "date": "25/07/2026", "item": "ติดชากิโล", "qty": 4}, {"year": "2026", "month": "กรกฎาคม", "wk": 30, "date": "26/07/2026", "item": "ห่อนมข้น", "qty": 101}, {"year": "2026", "month": "กรกฎาคม", "wk": 30, "date": "26/07/2026", "item": "ติดชากิโล", "qty": 14}, {"year": "2026", "month": "กรกฎาคม", "wk": 31, "date": "27/07/2026", "item": "ห่อนมข้น", "qty": 316}, {"year": "2026", "month": "กรกฎาคม", "wk": 31, "date": "27/07/2026", "item": "Matcha Grand Reserve", "qty": 80}, {"year": "2026", "month": "กรกฎาคม", "wk": 31, "date": "27/07/2026", "item": "Matcha Latte", "qty": 50}, {"year": "2026", "month": "กรกฎาคม", "wk": 31, "date": "28/07/2026", "item": "ceremonial", "qty": 160}, {"year": "2026", "month": "กรกฎาคม", "wk": 31, "date": "28/07/2026", "item": "Excellent Rich 95% 3.1g x 2 sachets", "qty": 25}, {"year": "2026", "month": "กรกฎาคม", "wk": 31, "date": "30/07/2026", "item": "Classic Rich 95% 3.1g x 2 sachets", "qty": 20}, {"year": "2026", "month": "กรกฎาคม", "wk": 31, "date": "30/07/2026", "item": "Genmaicha 95% 3.1g x 2 sachets", "qty": 20}, {"year": "2026", "month": "กรกฎาคม", "wk": 31, "date": "30/07/2026", "item": "Houjicha Rich 95% 3.1 x 2 sachets", "qty": 20}, {"year": "2026", "month": "สิงหาคม", "wk": 31, "date": "01/08/2026", "item": "ห่อนมข้น", "qty": 230}, {"year": "2026", "month": "สิงหาคม", "wk": 31, "date": "01/08/2026", "item": "starter white", "qty": 10}, {"year": "2026", "month": "สิงหาคม", "wk": 31, "date": "01/08/2026", "item": "starter Black", "qty": 10}, {"year": "2026", "month": "สิงหาคม", "wk": 31, "date": "02/08/2026", "item": "ติดชากิโล", "qty": 21}, {"year": "2026", "month": "สิงหาคม", "wk": 32, "date": "03/08/2026", "item": "Rootroute Young Barley Leaf Powder 50 g x 3", "qty": 2}, {"year": "2026", "month": "สิงหาคม", "wk": 32, "date": "03/08/2026", "item": "Genmaicha 3 g x 2 Sachets", "qty": 10}, {"year": "2026", "month": "สิงหาคม", "wk": 32, "date": "03/08/2026", "item": "Houjicha Rich 95% 3.1g x 2 sachets", "qty": 10}, {"year": "2026", "month": "สิงหาคม", "wk": 32, "date": "03/08/2026", "item": "Excellent Rich 95% 3.1g x 2 sachets", "qty": 25}, {"year": "2026", "month": "สิงหาคม", "wk": 32, "date": "03/08/2026", "item": "Matcha Trio Set", "qty": 10}, {"year": "2026", "month": "สิงหาคม", "wk": 32, "date": "03/08/2026", "item": "Matcha Latte", "qty": 130}, {"year": "2026", "month": "สิงหาคม", "wk": 32, "date": "04/08/2026", "item": "Ceremonial", "qty": 240}, {"year": "2026", "month": "สิงหาคม", "wk": 32, "date": "04/08/2026", "item": "อิม", "qty": 160}, {"year": "2026", "month": "สิงหาคม", "wk": 32, "date": "04/08/2026", "item": "แกรน", "qty": 160}, {"year": "2026", "month": "สิงหาคม", "wk": 32, "date": "06/08/2026", "item": "ห่อHolder blak", "qty": 7}, {"year": "2026", "month": "สิงหาคม", "wk": 32, "date": "07/08/2026", "item": "Starterkit (black)", "qty": 10}, {"year": "2026", "month": "สิงหาคม", "wk": 32, "date": "07/08/2026", "item": "Starterkit (White)", "qty": 10}, {"year": "2026", "month": "สิงหาคม", "wk": 32, "date": "08/08/2026", "item": "ติดชากิโล 2 ลัง", "qty": null}, {"year": "2026", "month": "สิงหาคม", "wk": 32, "date": "09/08/2026", "item": "ติดชากิโล 4 ลัง", "qty": null}, {"year": "2026", "month": "สิงหาคม", "wk": 33, "date": "10/08/2026", "item": "Rootroute Wheatgrass Powder 50 g x 3", "qty": 6}, {"year": "2026", "month": "สิงหาคม", "wk": 33, "date": "10/08/2026", "item": "Classic Rich 95% 3.1g x 2 sachets", "qty": 10}, {"year": "2026", "month": "สิงหาคม", "wk": 33, "date": "10/08/2026", "item": "Imperial", "qty": 80}, {"year": "2026", "month": "สิงหาคม", "wk": 33, "date": "10/08/2026", "item": "ติดชากิโล", "qty": 14}, {"year": "2026", "month": "สิงหาคม", "wk": 33, "date": "11/08/2026", "item": "Sifter x Chashaku", "qty": 50}, {"year": "2026", "month": "สิงหาคม", "wk": 33, "date": "11/08/2026", "item": "Ceremonial 30 g", "qty": 240}, {"year": "2026", "month": "สิงหาคม", "wk": 33, "date": "12/08/2026", "item": "Starterkit (White)", "qty": 9}, {"year": "2026", "month": "สิงหาคม", "wk": 33, "date": "12/08/2026", "item": "Matcha Grand Reserve", "qty": 80}, {"year": "2026", "month": "สิงหาคม", "wk": 33, "date": "13/08/2026", "item": "Matcha Latte", "qty": 100}, {"year": "2026", "month": "สิงหาคม", "wk": 33, "date": "15/08/2026", "item": "ห่อนมข้น", "qty": 155}, {"year": "2026", "month": "สิงหาคม", "wk": 33, "date": "16/08/2026", "item": "ติดชากิโล 3ลัง / ติด Chasen32ลัง / ติด Chashaku 1ลัง", "qty": null}, {"year": "2026", "month": "สิงหาคม", "wk": 34, "date": "17/08/2026", "item": "ทรีโอ", "qty": 5}, {"year": "2026", "month": "สิงหาคม", "wk": 34, "date": "17/08/2026", "item": "Exc Rich 95% 3.1g x 2 sachets", "qty": 25}, {"year": "2026", "month": "สิงหาคม", "wk": 34, "date": "17/08/2026", "item": "Matcha Grand Reserve", "qty": 80}, {"year": "2026", "month": "สิงหาคม", "wk": 34, "date": "17/08/2026", "item": "ลาเต้", "qty": 50}, {"year": "2026", "month": "สิงหาคม", "wk": 34, "date": "18/08/2026", "item": "Ceremonial 30 g", "qty": 240}, {"year": "2026", "month": "สิงหาคม", "wk": 34, "date": "19/08/2026", "item": "Starterkit (White)", "qty": 20}, {"year": "2026", "month": "สิงหาคม", "wk": 34, "date": "19/08/2026", "item": "Starterkit (black)", "qty": 10}, {"year": "2026", "month": "สิงหาคม", "wk": 34, "date": "2026-08-20", "item": "Imperial 30 g", "qty": 160}];
+
+/* ===== v-rptdesign: ไอคอนของหน้ารายงาน (ใส่สีตรง ๆ ไม่ใช้ currentColor — ให้ html2canvas วาดสีถูกตอนบันทึกรูป) ===== */
+const RI={
+  warehouse:'<path d="M3 21V9l9-5 9 5v12"/><path d="M7 21v-8h10v8"/><path d="M7 17h10"/>',
+  truck:'<path d="M1 4h14v12H1z"/><path d="M15 8h4l3 3.5V16h-7"/><circle cx="5.5" cy="18" r="2.2"/><circle cx="18" cy="18" r="2.2"/>',
+  clip:'<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12h6M9 16h6"/>',
+  box:'<path d="M21 8l-9-5-9 5v8l9 5 9-5z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/><path d="M7.5 5.5l9 5"/>',
+  boxplus:'<path d="M20 9.5V8l-8-4.5L4 8v8l8 4.5 1.5-.8"/><path d="M4 8l8 4.5L20 8"/><path d="M12 12.5V20"/><circle cx="18" cy="17" r="4.2"/><path d="M18 15v4M16 17h4"/>',
+  warn:'<path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+  docwarn:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h7"/><path d="M14 2v6h6v3"/><path d="M8 9h3M8 13h5"/><path d="M17.5 13.5l-4 7h8z"/><path d="M17.5 16.5v1.5"/>',
+  person:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+  users:'<circle cx="9" cy="8" r="4"/><path d="M1.5 21a7.5 7.5 0 0 1 15 0"/><path d="M16 4a4 4 0 0 1 0 8"/><path d="M22.5 21a7.5 7.5 0 0 0-4.5-6.9"/>',
+  clock:'<circle cx="12" cy="12" r="9.5"/><path d="M12 7v5l3.5 2"/>',
+  cal:'<rect x="3" y="4.5" width="18" height="17" rx="2.5"/><path d="M16 2.5v4M8 2.5v4M3 10h18"/><path d="M7.5 14h.01M12 14h.01M16.5 14h.01M7.5 17.5h.01M12 17.5h.01"/>',
+  db:'<ellipse cx="12" cy="5" rx="8.5" ry="3"/><path d="M3.5 5v14c0 1.7 3.8 3 8.5 3s8.5-1.3 8.5-3V5"/><path d="M3.5 12c0 1.7 3.8 3 8.5 3s8.5-1.3 8.5-3"/>',
+  doc:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h8M8 9h2"/>',
+  xcircle:'<circle cx="12" cy="12" r="9.5"/><path d="M15 9l-6 6M9 9l6 6"/>',
+  ret:'<path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/>'
+};
+const ico=(n,c='#fff',sw=1.9,extra='')=>`<svg viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" ${extra}>${RI[n]||RI.box}</svg>`;
+const TEAM_ICO={warehouse:'warehouse',delivery:'truck',admin:'clip'};
+const PANEL_ICO={gr:'box',issue:'warn',mo:'clip',order:'clock',cancel:'xcircle',ret:'ret'};
+/* ไอคอนการ์ดตัวเลข: [ไอคอนในกรอบ, ไอคอนจาง ๆ ด้านขวา] — เลือกจากชื่อการ์ด (แสดงผลอย่างเดียว ไม่แตะการคำนวณ) */
+const kpiIco=l=>/รับสินค้า/.test(l)?['boxplus','box']:/แจ้งปัญหา/.test(l)?['warn','docwarn']:/พบบ่อย/.test(l)?['person','users']
+  :/ค้างส่ง/.test(l)?['clock','clock']:/MO/.test(l)?['clip','clip']:/ยกเลิก/.test(l)?['xcircle','xcircle']
+  :/ออกไปแล้ว/.test(l)?['ret','ret']:['box','truck'];
 const FD={value:'',options:[]};
 const $=id=> id==='fd' ? FD : document.getElementById(id);
 const el=id=>document.getElementById(id);
@@ -7482,7 +7667,7 @@ function tableHTML(rows,empty,noQty,p){
   let last='',b='';
   rows.forEach(r=>{const n=r.date!==last;
     b+=`<tr class="${n?'newday':''}"><td class="d">${n?show(r.date)+(p.dayCount?`<br><b style="color:var(--ink);font-size:1.1em">${perDay[r.date]}</b> <span style="font-size:.85em">${p.unit}</span>`:''):''}</td>
-        <td>${r.tag?`<span class="tag">${r.tag}</span><br>`:''}${r.item}</td>
+        <td>${r.tag?`<span class="tag">${p.tagIco?`<i class="tgi">${ico(p.tagIco,'#0F766E',2.2)}</i>`:''}${r.tag}</span><br>`:''}${r.item}</td>
         ${noQty?'':`<td class="num">${r.qty!=null?fmt(r.qty):'—'}</td>`}</tr>`;last=r.date;});
   const hd=p.cols||['วันที่พบปัญหา','เกณฑ์ · รายละเอียด'];
   if(noQty)return `<table><thead><tr><th style="width:112px">${hd[0]}</th><th>${hd[1]}</th></tr></thead>
@@ -7500,7 +7685,11 @@ function renderReport(){
   document.body.classList.toggle('rptfull',rptFiltered());
   el('title').textContent=c.title;
   el('subtitle').textContent=c.sub;
-  el('source').textContent='ที่มา: '+c.source;
+  el('source').innerHTML='<b>ที่มา:</b> '+esc(c.source);
+  el('rIco').innerHTML=ico(TEAM_ICO[TEAM]||'warehouse','#fff',1.8);
+  el('rCal').innerHTML=ico('cal','#E9E4FF',1.8);
+  el('rDb').innerHTML=ico('db','#C9C1EE',1.8);
+  el('rClk').innerHTML=ico('clock','#E9E4FF',1.9);
 
   const shipSel=hasShip()?SHIPROWS.filter(match):[];
   const sets=c.panels.map(p=>({p,rows:p.ship?shipProblemRows(shipSel):(DATA[p.k]||[]).filter(match)}));
@@ -7549,15 +7738,19 @@ function renderReport(){
   }
   el('kpis').style.gridTemplateColumns=`repeat(${k.length},1fr)`;
   el('kpis').classList.toggle('many',k.length>4);
-  el('kpis').innerHTML=k.map((x,i)=>
-    `<div class="kpi ${x.pending?'pending':(x.cls||'c'+i)}"><div class="l">${x.l}</div>
-     <div class="v">${typeof x.v==='number'?fmt(x.v):x.v}</div><div class="n">${x.n}</div></div>`).join('');
+  el('kpis').innerHTML=k.map((x,i)=>{const [ia,ib]=kpiIco(x.l);
+    return `<div class="kpi ${x.pending?'pending':(x.cls||'c'+i)}"><span class="kic">${ico(ia,'#fff',1.8)}</span>
+     <div class="kbody"><div class="l">${x.l}</div>
+     <div class="v">${typeof x.v==='number'?fmt(x.v):x.v}</div><div class="n">${x.n}</div></div>
+     <span class="kdeco" aria-hidden="true">${ico(ib,'#fff',1.3)}</span></div>`;}).join('');
 
   /* ---- ช่องข้อมูล ---- */
   el('panels').style.gridTemplateColumns=`repeat(${sets.length},1fr)`;
   el('panels').innerHTML=sets.map(s=>
-    `<div class="panel"><div class="hd ${s.p.hd}">
-       <h2 class="sec">${s.p.t} <em>${s.rows.length} ${s.p.unit} · ${s.p.c}</em><span></span></h2></div>
+    `<div class="panel p-${s.p.hd}"><div class="hd ${s.p.hd}">
+       <span class="pic" aria-hidden="true">${ico(PANEL_ICO[s.p.k]||'doc','#fff',1.9)}</span>
+       <h2 class="sec">${s.p.t} <em>${s.rows.length} ${s.p.unit} · ${s.p.c}</em></h2>
+       <span class="pdoc" aria-hidden="true">${ico('doc','#D9D3F5',1.7)}</span></div>
      <div class="scroll">${s.p.ship?shipTableHTML(s.rows,s.p.empty):tableHTML(s.rows,s.p.empty,s.p.form||s.p.noQty,s.p)}</div></div>`).join('');
 
   const ks=[...new Set([...days,...shipSel.map(r=>r.date)])].filter(Boolean).sort();
