@@ -8034,9 +8034,16 @@ async function grab(p){
        แล้วเรียงชื่อสินค้า · เรียงเฉพาะการแสดงผล ยอดรวม/จำนวนรายการเหมือนเดิม */
     if(p.k==='gr'){
       const ord=t=>/raw/i.test(t)?0:/packag/i.test(t)?1:/finish/i.test(t)?2:t?3:4;
+      /* ไซซ์เรียงจากเล็กไปใหญ่ (Box XS → S → M → L → XL → 1XL) ไม่ใช่ตามตัวอักษร */
+      const SZ={XXS:0,XS:1,S:2,M:3,L:4,XL:5,'1XL':6,XXL:7,'2XL':7,'3XL':8,'4XL':9};
+      const szRe=/\b(XXS|XS|S|M|L|XL|XXL|[1-9]XL)\b/i;
+      const key=t=>{t=String(t||'');const m=t.match(szRe);
+        return m?{base:t.replace(szRe,'').replace(/\s+/g,' ').trim(),sz:SZ[m[1].toUpperCase()]}:{base:t,sz:-1};};
+      const cmpName=(x,y)=>{const a1=key(x),b1=key(y);
+        return a1.base.localeCompare(b1.base,'th',{numeric:true})||(a1.sz-b1.sz);};
       rows.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1
         :(ord(a.tag)-ord(b.tag))||String(a.tag).localeCompare(String(b.tag))
-        ||String(a.item).localeCompare(String(b.item),'th',{numeric:true}));
+        ||cmpName(a.item,b.item));
     }
     return rows;
   }
