@@ -1657,6 +1657,15 @@ body.rptfull:not(.cap):not(.mobile) #vRPT #shot{flex:1 0 auto!important;display:
 body.rptfull:not(.cap):not(.mobile) #vRPT .panels{flex:1 0 auto!important;align-items:stretch!important}
 body.rptfull:not(.cap):not(.mobile) #vRPT .panel{display:flex!important;flex-direction:column}
 body.rptfull:not(.cap):not(.mobile) #vRPT .panel .scroll{flex:1 0 auto!important}
+
+/* v-rptround: มุมกล่องตารางรายงานประจำวันโค้งมนทุกมุม (เดิมหัวตาราง/แถวรวมเป็นสี่เหลี่ยมทับมุมโค้งของกล่อง) */
+#vRPT .panel .scroll{border-radius:22px}
+#vRPT .panel .scroll>table{border-collapse:separate;border-spacing:0}
+#vRPT .panel .scroll>table thead tr:first-child>th:first-child{border-top-left-radius:22px}
+#vRPT .panel .scroll>table thead tr:first-child>th:last-child{border-top-right-radius:22px}
+#vRPT .panel .scroll>.empty{border-radius:22px}
+/* กล่องตัดมุมตามขอบโค้ง (กล่องสูงเท่าเนื้อหาเสมอเวลากางทุกแถว จึงไม่มีอะไรถูกตัดหาย) */
+body.rptfull #vRPT .panel .scroll,#vRPT #shot.cap-full .panel .scroll{overflow:hidden!important}
 </style>
 </head>
 <body>
