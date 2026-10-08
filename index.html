@@ -1528,10 +1528,8 @@ body.mobile #vRPT .rf-modes button,body.mobile #vKPI .rf-modes button{flex:1 1 3
 body.mobile #vRPT .rf-ar,body.mobile #vKPI .rf-ar{width:96px;height:96px}
 body.mobile #vRPT #rfSel,body.mobile #vKPI #rfkSel{height:96px;font-size:40px}
 
-/* ===== v-kdark: หน้าย่อย KPI (ยกเว้น ภาพรวม KPI ทุกแผนก / รายงานประจำวัน / หน้าเอกสารที่ฝัง) — ธีมเข้มแบบภาพตัวอย่าง
-   เปลี่ยนเฉพาะหน้าตา (สี กรอบ ไอคอน การจัดวาง) ไม่แตะข้อมูล วิธีคำนวณ หรือสิ่งที่แสดง ===== */
-body.kdark #vKPI #detail{--card:#141A3D;--soft:#1A2150;--line:rgba(255,255,255,.11);--ink:#EEEAFB;--mute:#A9A3CF;
-  --ink-faint:#C9C3EA;--teal-d:#2DD4BF;--plum-d:#A78BFA;--bad:#FB7185;--good:#34D399;--amber:#FBBF24}
+/* ===== v-kdark: หน้าย่อย KPI (ยกเว้น ภาพรวม / รายงานประจำวัน / หน้าเอกสารที่ฝัง) — หัวหน้า แถบวงแหวน การ์ด ชิป แบบภาพตัวอย่าง
+   เปลี่ยนเฉพาะหน้าตา ไม่แตะข้อมูล วิธีคำนวณ หรือสิ่งที่แสดง ===== */
 /* หัวหน้า */
 body.kdark #vKPI #kShot>header{border-bottom:0;padding-bottom:0;margin-bottom:22px;align-items:center}
 body.kdark #vKPI #kShot>header>.khd{display:flex;align-items:center;gap:28px;min-width:0}
@@ -1546,7 +1544,7 @@ body.kdark #vKPI #kShot>header .period{background:rgba(255,255,255,.05) url("dat
 body.kdark #vKPI #kShot>header .period b{font-weight:600}
 body.kdark #vKPI .kchip{background:linear-gradient(120deg,#7C3AED,#6D4BD8);font-weight:bold;border-radius:12px}
 /* ตัวกรองย่อย (ชิป) */
-body.kdark #vKPI #detail .fbar button{background:rgba(255,255,255,.04);border:2px solid rgba(255,255,255,.16);color:var(--ink);
+body.kdark #vKPI #detail .fbar button{background:rgba(255,255,255,.04);border:2px solid rgba(255,255,255,.16);color:#EEEAFB;
   border-radius:16px;padding:10px 28px}
 body.kdark #vKPI #detail .fbar button:hover{background:rgba(45,212,191,.10);border-color:#2DD4BF}
 body.kdark #vKPI #detail .fbar button.on{background:linear-gradient(100deg,#0F766E,#14B8A6);border-color:#14B8A6;color:#fff;
@@ -1601,52 +1599,56 @@ body.kdark #vKPI #detail h2.sec{color:#F3EFFB}
 body.kdark #vKPI #detail h2.sec::before{content:"";flex:none;width:12px;height:1.05em;border-radius:6px;
   background:linear-gradient(180deg,#2DD4BF,#7C5BE6)}
 body.kdark #vKPI #detail h2.sec span{background:rgba(255,255,255,.10)}
-body.kdark #vKPI #detail .cpanel{background:#141A3D;border:1px solid rgba(255,255,255,.10);
-  border-radius:24px;box-shadow:0 10px 26px rgba(0,0,0,.25)}
-/* ตาราง */
-body.kdark #vKPI #detail table.dt{background:#121839;color:var(--ink)}
-body.kdark #vKPI #detail table.dt th{background:#1C2458;color:#D4CEF5;font-weight:600;box-shadow:inset 0 -1px 0 rgba(255,255,255,.10)}
-body.kdark #vKPI #detail table.dt td{border-top:1px solid rgba(255,255,255,.07)}
-body.kdark #vKPI #detail table.dt tr:hover td,body.kdark #vKPI #detail table.dt.big-rows tbody tr:nth-child(even) td,
-body.kdark #vKPI #detail table.dt.dock-dt tbody tr:nth-child(even) td{background:rgba(255,255,255,.035)}
-body.kdark #vKPI #detail table.dt td .bad{display:inline-block;background:#E11D48;color:#fff;padding:3px 16px;border-radius:10px}
-body.kdark #vKPI #detail table.dt td .good{display:inline-block;background:#059669;color:#fff;padding:3px 16px;border-radius:10px}
-body.kdark #vKPI #detail table.dt td span[style*="--amber"]{display:inline-block;background:#B45309;color:#fff!important;padding:3px 16px;border-radius:10px}
-body.kdark #vKPI #detail .tscroll{border:1px solid rgba(255,255,255,.10);border-radius:20px}
-body.kdark #vKPI #detail .tscroll::-webkit-scrollbar-track{background:#121839}
-body.kdark #vKPI #detail .tscroll::-webkit-scrollbar-thumb{background:#3A4378;border-color:#121839}
-body.kdark #vKPI #detail .why{background:rgba(255,255,255,.08);color:var(--mute)}
-body.kdark #vKPI #detail .why.has{background:rgba(167,139,250,.18);color:#D8CCFF}
-body.kdark #vKPI #detail .empty2{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.14);color:var(--mute)}
-body.kdark #vKPI #detail .badge.pass{background:rgba(52,211,153,.18)}
-body.kdark #vKPI #detail .badge.fail{background:rgba(251,113,133,.18)}
-body.kdark #vKPI #detail input,body.kdark #vKPI #detail select{background:#1A2150;color:var(--ink);border-color:rgba(255,255,255,.18)}
-body.kdark #vKPI .foot{border-top-color:rgba(255,255,255,.10)}
-@media(max-width:1100px){body.kdark #vKPI #detail .ring{flex-direction:column;text-align:center}
-  body.kdark #vKPI #detail .ring .cap{align-items:center}}
-/* Forecast · Packing · Picking — กล่องที่เดิมเป็นพื้นขาว */
-body.kdark #vKPI #detail .rbar,body.kdark #vKPI #detail .pkbar{background:rgba(255,255,255,.10)}
-body.kdark #vKPI #detail .fcacc{background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.10);box-shadow:0 10px 26px rgba(0,0,0,.25)}
-body.kdark #vKPI #detail .fcacc-card{background:linear-gradient(135deg,#1A3170 0%,#16224E 100%);border-color:rgba(96,165,250,.35)}
-body.kdark #vKPI #detail .fcacc-card i{color:#2DD4BF}
-body.kdark #vKPI #detail .fcacc-card b{color:#DCD7F7}
-body.kdark #vKPI #detail .fcacc-card span{color:#fff}
-body.kdark #vKPI #detail .fcacc-card span.up{color:#FBBF24}
-body.kdark #vKPI #detail .fcacc-card span.down{color:#2DD4BF}
-body.kdark #vKPI #detail .fcacc-card small{color:#A9A3CF}
-body.kdark #vKPI #detail .fcacc-panel{background:#141A3D;border-color:rgba(255,255,255,.10)}
-body.kdark #vKPI #detail .fcacc-h{color:#F3EFFB}
-body.kdark #vKPI #detail .fcacc-h em{color:#A9A3CF}
-body.kdark #vKPI #detail .fcacc-tblwrap{border-top-color:rgba(255,255,255,.10)}
-body.kdark #vKPI #detail .fcacc-tbl th{background:#1C2458;color:#D4CEF5}
-body.kdark #vKPI #detail .fcacc-tbl td{color:#EEEAFB;border-top-color:rgba(255,255,255,.07)}
-body.kdark #vKPI #detail .fcacc-tbl .up{color:#FBBF24}
-body.kdark #vKPI #detail .fcacc-tbl .down{color:#2DD4BF}
-body.kdark #vKPI #detail tr.ddrow td{background:rgba(251,146,60,.14)!important}
 /* html2canvas วาดเงาเบลอของกล่องใหญ่เพี้ยน (เป็นแถบสี่เหลี่ยมทึบ) ตอนบันทึกรูป → ใช้กรอบแทนเงา */
 body.kdark #vKPI #detail .cpanel,body.kdark #vKPI #detail .ring,body.kdark #vKPI #detail .scard,
 body.kdark #vKPI #detail .fcacc,body.kdark #vKPI #detail .fcacc-panel{box-shadow:none}
 body.kdark #vKPI #detail .ring::after{display:none}
+/* v-kdark2: กล่องข้อมูลกลับเป็นพื้นสว่างอ่านง่าย (โทนเดียวกับการ์ดหน้าภาพรวม) — ตาราง/กราฟใช้สไตล์สว่างเดิม
+   การ์ดตัวเลข: พื้นอ่อนตามความหมายของค่า + ไอคอนในกรอบสีทึบ */
+body.kdark #vKPI #detail .scard{background:#F4F7FE;border:1px solid #D6E0F7}
+body.kdark #vKPI #detail .scard .sl{color:#4A4F66;font-weight:600}
+body.kdark #vKPI #detail .scard .sv{color:#1E1B33}
+body.kdark #vKPI #detail .scard::before{background-color:#3B6FD8;border:0}
+body.kdark #vKPI #detail .scard:has(>.sv.teal){background:#EEFAF5;border-color:#BFE9D7}
+body.kdark #vKPI #detail .scard:has(>.sv.teal)::before{background-color:#13A07C}
+body.kdark #vKPI #detail .scard:has(>.sv.teal) .sv{color:#0E8A6B}
+body.kdark #vKPI #detail .scard:has(>.sv .bad),body.kdark #vKPI #detail .scard:has(>.sv.rose){background:#FFF1F2;border-color:#F8C9CF}
+body.kdark #vKPI #detail .scard:has(>.sv .bad)::before,body.kdark #vKPI #detail .scard:has(>.sv.rose)::before{background-color:#E5484D}
+body.kdark #vKPI #detail .scard:has(>.sv .bad) .sv,body.kdark #vKPI #detail .scard:has(>.sv.rose) .sv{color:#D63340}
+body.kdark #vKPI #detail .scard:has(>.sv.amber){background:#FFF8EA;border-color:#F4DDAE}
+body.kdark #vKPI #detail .scard:has(>.sv.amber)::before{background-color:#E39B17}
+body.kdark #vKPI #detail .scard:has(>.sv.amber) .sv{color:#B7790A}
+body.kdark #vKPI #detail .scard:has(>.sv.plum){background:#F4F1FF;border-color:#DDD3FB}
+body.kdark #vKPI #detail .scard:has(>.sv.plum)::before{background-color:#7A55F0}
+body.kdark #vKPI #detail .scard:has(>.sv.plum) .sv{color:#6A43E0}
+body.kdark #vKPI #detail .scard:has(>.sv.mute){background:#F3F2F8;border-color:#DEDCEA}
+body.kdark #vKPI #detail .scard:has(>.sv.mute)::before{background-color:#8A85A8}
+body.kdark #vKPI #detail .scard:has(>.sv.mute) .sv{color:#6B6485}
+body.kdark #vKPI #detail .scard:has(>.sv.shp-min){background:#FFF8D6;border-color:#F2D14B}
+body.kdark #vKPI #detail .scard:has(>.sv.shp-max){background:#FDECEC;border-color:#F3A5A5}
+@media(max-width:1100px){body.kdark #vKPI #detail .ring{flex-direction:column;text-align:center}
+  body.kdark #vKPI #detail .ring .cap{align-items:center}}
+
+/* v-dockpres: โหมดพรีเซนต์ — ตาราง "รายละเอียดรายการ" หน้า Dock To Stock พอดีความกว้างจอ ไม่ต้องเลื่อนข้าง
+   (เดิมล็อกความกว้างขั้นต่ำ 2100px) · ตัดบรรทัดในช่องแทนการล้นออกขวา · ข้อมูลครบทุกคอลัมน์เหมือนเดิม */
+body.present #vKPI .tscroll:has(>table.dt.dock-dt){overflow-x:hidden!important}
+body.present #vKPI table.dt.dock-dt{min-width:0!important;width:100%!important;table-layout:fixed}
+body.present #vKPI table.dt.dock-dt th{white-space:normal!important;overflow-wrap:anywhere;line-height:1.25;padding:14px 10px;vertical-align:bottom}
+body.present #vKPI table.dt.dock-dt td{padding:14px 10px;white-space:normal!important;overflow-wrap:anywhere}
+body.present #vKPI table.dt.dock-dt td:nth-child(1),body.present #vKPI table.dt.dock-dt td:nth-child(n+5):nth-child(-n+11){overflow-wrap:normal;word-break:keep-all}
+body.present #vKPI table.dt.dock-dt .why{padding:4px 10px;overflow-wrap:normal;word-break:keep-all}
+body.present #vKPI table.dt.dock-dt th:nth-child(1){width:6%!important}
+body.present #vKPI table.dt.dock-dt th:nth-child(2){width:7%!important}
+body.present #vKPI table.dt.dock-dt th:nth-child(3){width:11%!important}
+body.present #vKPI table.dt.dock-dt th:nth-child(4){width:9%!important}
+body.present #vKPI table.dt.dock-dt th:nth-child(5){width:10%!important}
+body.present #vKPI table.dt.dock-dt th:nth-child(6){width:9%!important}
+body.present #vKPI table.dt.dock-dt th:nth-child(7){width:9%!important}
+body.present #vKPI table.dt.dock-dt th:nth-child(8){width:9%!important}
+body.present #vKPI table.dt.dock-dt th:nth-child(9){width:6%!important}
+body.present #vKPI table.dt.dock-dt th:nth-child(10){width:6%!important}
+body.present #vKPI table.dt.dock-dt th:nth-child(11){width:7%!important}
+body.present #vKPI table.dt.dock-dt th:nth-child(12){width:11%!important}
 </style>
 </head>
 <body>
@@ -2595,7 +2597,7 @@ if(window.Chart&&!Chart.registry.plugins.get('pieLbl'))Chart.register(pieLbl);
 
 /* ===== v-kdark: กราฟในหน้าย่อยธีมเข้ม — เปลี่ยนเฉพาะสีตัวหนังสือ/เส้นตาราง ให้อ่านออกบนพื้นเข้ม ไม่แตะข้อมูล ===== */
 const KD_TXT={'#1e1b33':'#EEEAFB','#64748b':'#B7B0E0','#475569':'#C9C3EA','#6b6485':'#B7B0E0','#22252c':'#EEEAFB'};
-const kdCv=cv=>{try{return document.body.classList.contains('kdark')&&!!cv&&!!cv.closest('#detail');}catch(e){return false;}};
+const kdCv=cv=>false;   /* v-kdark2: แผงกราฟกลับเป็นพื้นสว่าง → ใช้สีตัวหนังสือเดิมของกราฟ */
 const kdOn=ch=>kdCv(ch&&ch.canvas);
 const kDark={id:'kDark',
   beforeInit(ch){ const x=ch.ctx; if(!x||x.__kd)return; x.__kd=1; const f=x.fillText;
