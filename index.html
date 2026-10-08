@@ -2085,6 +2085,47 @@ const linePt={id:'linePt',
     x.restore();
   }};
 if(window.Chart&&!Chart.registry.plugins.get('barPct'))Chart.register(barPct);
+/* ===== v-pal1: โทนสีกราฟของหน้าย่อยให้เข้าชุดกับหน้า "ภาพรวม KPI ทุกแผนก" =====
+   เปลี่ยนเฉพาะ "สี" ของเส้น/แท่ง/จุด ตอนสร้างกราฟ — ไม่แตะข้อมูล วิธีคิด ค่าเป้า หรือจำนวนสิ่งที่แสดง
+   ความหมายของสีคงเดิม: เขียว = ผ่าน/ปกติ · แดง = ไม่ผ่าน · ม่วง = ข้อมูลรอง · ส้ม = เตือน
+   ใช้เฉพาะกราฟในหน้า KPI (#vKPI) — หน้า "รายงานประจำวัน" คงสีเดิม */
+const OV_PAL=(()=>{
+  const RGB={'13,148,136':'34,197,154','15,118,110':'14,156,118','16,185,129':'34,197,154',
+             '99,102,241':'139,108,255','79,70,229':'122,85,240',
+             '239,68,68':'242,84,91','220,38,38':'229,72,77',
+             '216,154,46':'245,181,63','180,83,9':'226,140,40'};
+  const LINE='155,123,255';                       /* ม่วงของกราฟแนวโน้มหน้าภาพรวม */
+  const hex2=h=>{h=h.replace('#','');return [0,2,4].map(i=>parseInt(h.substr(i,2),16)).join(',');};
+  const toHex=t=>'#'+t.split(',').map(n=>(+n).toString(16).padStart(2,'0')).join('').toUpperCase();
+  const mapStr=(v,line)=>{
+    if(typeof v!=='string')return v;
+    const t=v.trim();
+    let m=t.match(/^#([0-9a-f]{6})$/i);
+    if(m){const k=hex2(t); const r=(line&&k==='13,148,136')?LINE:RGB[k]; return r?toHex(r):v;}
+    m=t.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+)\s*)?\)$/i);
+    if(m){const k=m[1]+','+m[2]+','+m[3]; const r=(line&&k==='13,148,136')?LINE:RGB[k];
+      return r?(m[4]!=null?`rgba(${r},${m[4]})`:`rgb(${r})`):v;}
+    return v;
+  };
+  const mapAny=(v,line)=>Array.isArray(v)?v.map(x=>mapStr(x,line))
+    :(typeof v==='function'?function(){return mapAny(v.apply(this,arguments),line);}:mapStr(v,line));
+  const KEYS_LINE=['borderColor','backgroundColor'];             /* สีตัวเส้น + พื้นใต้เส้น */
+  const KEYS=['backgroundColor','borderColor','pointBackgroundColor','pointBorderColor',
+              'hoverBackgroundColor','hoverBorderColor','pointHoverBackgroundColor'];
+  return {id:'ovPal',beforeInit(ch){
+    try{
+      if(!ch.canvas||!ch.canvas.closest||!ch.canvas.closest('#vKPI #detail'))return;
+      const baseType=ch.config.type;
+      (ch.config.data.datasets||[]).forEach(ds=>{
+        const isLine=(ds.type||baseType)==='line';
+        KEYS.forEach(k=>{ if(ds[k]==null)return;
+          const lineMain=isLine&&KEYS_LINE.includes(k)&&!Array.isArray(ds[k]);
+          ds[k]=mapAny(ds[k],lineMain); });
+      });
+    }catch(e){}
+  }};
+})();
+if(window.Chart&&!Chart.registry.plugins.get('ovPal'))Chart.register(OV_PAL);
 /* ยอดรวมของแต่ละแท่งในโหมดซ้อน — วางไว้เหนือแท่งบนสุด */
 const stackTot={id:'stackTot',
   beforeLayout(ch,a,op){ if(!op||!op.display)return;
