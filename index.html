@@ -1649,6 +1649,14 @@ body.present #vKPI table.dt.dock-dt th:nth-child(9){width:6%!important}
 body.present #vKPI table.dt.dock-dt th:nth-child(10){width:6%!important}
 body.present #vKPI table.dt.dock-dt th:nth-child(11){width:7%!important}
 body.present #vKPI table.dt.dock-dt th:nth-child(12){width:11%!important}
+
+/* v-rptfill2: เลือกช่วงเวลาแล้ว (กางทุกแถว) กล่องยังยืดลงจนสุดจอ ไม่เหลือพื้นที่ว่างด้านล่าง
+   รายการยาวกว่าจอ → หน้าเลื่อนลงตามปกติ (ไม่มีแถบเลื่อนในกล่อง) */
+body.rptfull:not(.cap):not(.mobile) #vRPT .wrap{min-height:calc(100vh / var(--z,1))!important;display:flex!important;flex-direction:column}
+body.rptfull:not(.cap):not(.mobile) #vRPT #shot{flex:1 0 auto!important;display:flex!important;flex-direction:column}
+body.rptfull:not(.cap):not(.mobile) #vRPT .panels{flex:1 0 auto!important;align-items:stretch!important}
+body.rptfull:not(.cap):not(.mobile) #vRPT .panel{display:flex!important;flex-direction:column}
+body.rptfull:not(.cap):not(.mobile) #vRPT .panel .scroll{flex:1 0 auto!important}
 </style>
 </head>
 <body>
@@ -8131,7 +8139,7 @@ function renderReport(){
   el('rDb').innerHTML=ico('db','#C9C1EE',1.8);
   el('rClk').innerHTML=ico('clock','#E9E4FF',1.9);
 
-  const shipSel=hasShip()?SHIPROWS.filter(match):[];
+  const shipSel=(hasShip()&&!RLOADING)?SHIPROWS.filter(match):[];
   const sets=c.panels.map(p=>({p,rows:p.ship?shipProblemRows(shipSel):(DATA[p.k]||[]).filter(match)}));
   const work=sets.filter(s=>!s.p.ship);
 
@@ -8176,6 +8184,7 @@ function renderReport(){
     const top=Object.entries(tg).sort((a,b)=>b[1]-a[1])[0];
     k.push({l:'พบบ่อยที่สุด',v:top?top[1]:0,n:top?top[0]:'—'});
   }
+  if(RLOADING)k=k.map(x=>({l:x.l,v:'กำลังโหลด…',n:'',pending:true}));
   el('kpis').style.gridTemplateColumns=`repeat(${k.length},1fr)`;
   el('kpis').classList.toggle('many',k.length>4);
   el('kpis').innerHTML=k.map((x,i)=>{const [ia,ib]=kpiIco(x.l);
@@ -8191,7 +8200,8 @@ function renderReport(){
        <span class="pic" aria-hidden="true">${ico(PANEL_ICO[s.p.k]||'doc','#fff',1.9)}</span>
        <h2 class="sec">${s.p.t} <em>${s.rows.length} ${s.p.unit} · ${s.p.c}</em></h2>
        <span class="pdoc" aria-hidden="true">${ico('doc','#D9D3F5',1.7)}</span></div>
-     <div class="scroll">${s.p.ship?shipTableHTML(s.rows,s.p.empty):tableHTML(s.rows,s.p.empty,s.p.form||s.p.noQty,s.p)}</div></div>`).join('');
+     <div class="scroll">${(()=>{const em=RLOADING?'กำลังโหลดข้อมูล…':s.p.empty;
+       return s.p.ship?shipTableHTML(s.rows,em):tableHTML(s.rows,em,s.p.form||s.p.noQty,s.p);})()}</div></div>`).join('');
 
   const ks=[...new Set([...days,...shipSel.map(r=>r.date)])].filter(Boolean).sort();
   el('period').textContent=RMODE==='day'?showLong(RVAL)
@@ -8305,9 +8315,11 @@ function stamp(){const d=new Date();
 
 /* v135: กันโหลดซ้อน — สลับทีมเร็ว ๆ (เช่น เปิดมาที่ Delivery แล้วกดไป Admin) ผลของทีมเก่าที่มาช้า
    เคยทับข้อมูลทีมใหม่ ทำให้ยกเลิก/Return เป็น 0 และช่องแจ้งปัญหาโชว์ข้อมูลของ Delivery */
-let LOAD_SEQ=0;
+let LOAD_SEQ=0, RLOADING=false;
 async function load(){
   const seq=++LOAD_SEQ;
+  /* v-rptload: สลับทีมแล้วล้างหน้าเป็นของทีมใหม่ทันที (ขึ้น "กำลังโหลด…") ไม่ค้างข้อมูลทีมเดิมไว้ระหว่างรอ */
+  RLOADING=true; DATA={}; try{renderReport();}catch(e){}
   for(const k in CSV_CACHE)delete CSV_CACHE[k];
   ['fy','fm'].forEach(i=>el(i).value='');RWK=[];RYEAR_INIT=false;FD.value='';calYM=null;
   el('stat').className='stat';el('stat').textContent='กำลังดึงข้อมูล…';el('reload').disabled=true;
@@ -8318,6 +8330,7 @@ async function load(){
     : grab(p)));
   if(extra)await extra;
   if(seq!==LOAD_SEQ)return;          /* มีการโหลดใหม่กว่าแล้ว ทิ้งผลนี้ */
+  RLOADING=false;
   buildShipRows();
   DATA={};const bad=[];
   res.forEach((r,i)=>{
