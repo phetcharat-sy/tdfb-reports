@@ -2008,6 +2008,7 @@ body.mobile .side{width:540px}
   </main>
 </div>
 
+<script>window.PIMG_DATA=null;/*PIMG_DATA*/</script>
 <script>
 /* ================= v-pimg: รูปสินค้าจาก Odoo =================
    ไฟล์ product-thumbs.json (วางคู่กับ index.html) สร้างจากหน้า "ดึงรูปสินค้าจาก Odoo" ปุ่ม "สร้างไฟล์รูปสำหรับแดชบอร์ด"
@@ -2038,7 +2039,9 @@ window.PIMG=(function(){
     }
     return bs>=0.8?best.img:null;
   }
-  fetch('product-thumbs.json',{cache:'no-cache'}).then(r=>r.ok?r.json():null).then(j=>{
+  const load=window.PIMG_DATA?Promise.resolve(window.PIMG_DATA)
+    :fetch('product-thumbs.json',{cache:'no-cache'}).then(r=>r.ok?r.json():null);
+  load.then(j=>{
     if(!j||!Array.isArray(j.items))return;
     j.items.forEach(it=>{ if(!it.img)return;
       if(it.sku)bySku[it.sku]=it.img;
