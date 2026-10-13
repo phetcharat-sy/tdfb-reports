@@ -4228,7 +4228,6 @@ function recalcStaff(){
 }
 
 let FC_CTX=null;
-const DEP_LBL={crit:'วิกฤต',warn:'เฝ้าระวัง',ok:'ปกติ',nod:'ไม่มี demand',all:'ทั้งหมด'};
 function secForecast(){
   if(!RAW.length){
     /* แยก 3 กรณี: กำลังโหลดชีตใหญ่ / โหลดไม่สำเร็จ / โหลดแล้วแต่ไม่มีข้อมูลจริง */
@@ -4308,13 +4307,6 @@ function secForecast(){
   const crit=dep.filter(r=>r.weeksLeft!=null&&r.weeksLeft<2).length;
   const warn=dep.filter(r=>r.weeksLeft!=null&&r.weeksLeft>=2&&r.weeksLeft<4).length;
   const okc=dep.filter(r=>r.weeksLeft==null||r.weeksLeft>=4).length;
-  /* v-depf: ตัวกรองสถานะของตาราง Stock Depletion — เปิดมาแสดงเฉพาะ "วิกฤต" ก่อน (การคำนวณเดิมทุกอย่าง) */
-  const okn=dep.filter(r=>r.weeksLeft!=null&&r.weeksLeft>=4).length;
-  const nod=dep.filter(r=>r.weeksLeft==null).length;
-  const depF=sf('dep_f','crit');
-  const depKeep={crit:r=>r.weeksLeft!=null&&r.weeksLeft<2, warn:r=>r.weeksLeft!=null&&r.weeksLeft>=2&&r.weeksLeft<4,
-    ok:r=>r.weeksLeft!=null&&r.weeksLeft>=4, nod:r=>r.weeksLeft==null, all:()=>true};
-  const depRows=dep.filter(depKeep[depF]||depKeep.all);
 
   /* กำลังคน 7 วันข้างหน้า — คงไว้ 7 วันเหมือนเดิม แม้พยากรณ์รายวันด้านบนขยายเป็น 14 วันแล้ว
      (จำกัดด้วย .slice(0,7) เพราะ dOrd.fc ตอนนี้มี 14 ค่า) */
@@ -4499,13 +4491,13 @@ function secForecast(){
         <div class="cbox" style="height:${Math.max(420,items4.length*54)}px"><canvas id="c_fc4w"></canvas></div></div>
     </div>`:''}
 
-    ${dep.length?`<h2 class="sec">Stock Depletion Forecast <em>${DEP_LBL[depF]} · ${fmt(depRows.length)} จาก ${fmt(dep.length)} สินค้า · เรียงจากวิกฤตที่สุด</em><span></span><div class="h2f">${chipOne('dep_f','แสดง',[['crit','วิกฤต ('+fmt(crit)+')'],['warn','เฝ้าระวัง ('+fmt(warn)+')'],['ok','ปกติ ('+fmt(okn)+')'],['nod','ไม่มี demand ('+fmt(nod)+')'],['all','ทั้งหมด ('+fmt(dep.length)+')']],depF)}</div></h2>
-    ${depRows.length?`<div class="tscroll" style="max-height:none;overflow:visible"><table class="dt"><thead><tr>
+    ${dep.length?`<h2 class="sec">Stock Depletion Forecast <em>${fmt(dep.length)} สินค้า · เรียงจากวิกฤตที่สุด</em><span></span></h2>
+    <div class="tscroll" style="max-height:none;overflow:visible"><table class="dt"><thead><tr>
       <th>Product</th><th class="num">Demand เฉลี่ย/สัปดาห์</th>
       <th class="num">Stock WH300</th><th class="num">เหลือ (สัปดาห์)</th>
       <th class="num">สถานะ</th><th>สาเหตุที่ยังไม่เติม</th>
     </tr></thead><tbody>`
-    +depRows.map(r=>{
+    +dep.map(r=>{
       const w=r.weeksLeft;
       const st=w==null?'<span style="color:var(--mute)">ไม่มี demand</span>'
         :w<2?'<span class="bad">วิกฤต</span>'
@@ -4519,7 +4511,6 @@ function secForecast(){
         <td>${r.remark?`<span class="why has">${esc(r.remark)}</span>`:'<span class="why">—</span>'}</td></tr>`;
     }).join('')
     +'</tbody></table></div>'
-    :`<div class="empty2">ไม่มีสินค้าสถานะ “${DEP_LBL[depF]}” · กดปุ่มด้านบนเพื่อดูสถานะอื่น</div>`}`
     :'<div class="empty2">ยังไม่มีข้อมูล Replenishment สำหรับคำนวณ Stock Depletion</div>'}`;
 }
 
@@ -6862,12 +6853,6 @@ function loadAcc(){
   if(ACC_P)return ACC_P;
   ACC_P=(async()=>{ try{
     const raw=await smallSheet(S_ACC,'0',null);
-    ACC=parseAccRaw(raw);
-  }catch(e){ ACC=null; ACC_ERR=e.message; } finally{ ACC_P=null; } })();
-  return ACC_P;
-}
-/* v-hist: แยกตัวอ่านตารางออกมา ให้ข้อมูลสด และข้อมูลย้อนหลังจากแท็บ History ใช้วิธีอ่านเดียวกันเป๊ะ */
-function parseAccRaw(raw){
     const t=table(raw,/Porduct|Product|Max/i);
     if(!t)throw new Error('หาหัวตารางไม่เจอ');
     const c={p:t.col('Porduct','Product','สินค้า'),st:t.col('Stockคงเหลือ'),mx:t.col('Max(ชิ้น)','Max'),mn:t.col('Min(ชิ้น)','Min'),
@@ -6875,8 +6860,10 @@ function parseAccRaw(raw){
     if(c.p<0)throw new Error('หาคอลัมน์ Product ไม่เจอ · หัวตาราง: '+t.H.slice(0,8).join(' / '));
     const g=(r,i)=>{const v=i>=0?String(r[i]==null?'':r[i]).trim():''; return /^#/.test(v)?'':v;};
     const n=(r,i)=>{const v=g(r,i); return v===''?null:parseQty(v);};
-    return t.rows.map(r=>({product:g(r,c.p),stock:n(r,c.st),max:n(r,c.mx),min:n(r,c.mn),rule:g(r,c.k),qty:n(r,c.q)||0,
+    ACC=t.rows.map(r=>({product:g(r,c.p),stock:n(r,c.st),max:n(r,c.mx),min:n(r,c.mn),rule:g(r,c.k),qty:n(r,c.q)||0,
       dem:n(r,c.d),days:n(r,c.dy),zone:n(r,c.z),status:g(r,c.s)})).filter(r=>r.product);
+  }catch(e){ ACC=null; ACC_ERR=e.message; } finally{ ACC_P=null; } })();
+  return ACC_P;
 }
 const accNeed=r=>/เติม/.test(r.rule)&&!/ไม่ต้อง/.test(r.rule);
 function secAcc(){
@@ -6906,10 +6893,10 @@ function secAcc(){
       :'<div class="empty2">ไม่มีอุปกรณ์ที่ต้องเติม</div>'}
 
     <h2 class="sec">สต็อกอยู่ได้กี่วัน <em>10 รายการที่ใกล้หมดที่สุด · แดง ≤ 7 วัน · ส้ม ≤ 14 วัน</em><span></span></h2>
-    <div class="cpanel"><div class="cbox"><canvas id="c_accdays"></canvas></div></div>
+    <div class="cpanel"><div class="cbox" style="height:${Math.max(360,Math.min(10,ACC.filter(r=>r.days!=null&&(r.dem||0)>0).length)*78+70)}px"><canvas id="c_accdays"></canvas></div></div>
 
-    <h2 class="sec" data-shot-skip="1">รวมทั้งหมด <em>${af==='need'?'เฉพาะที่ต้องเติม':af==='non'?'เฉพาะที่ไม่ต้องเติม':'เรียง “ต้องเติม” ก่อน'} · ${fmt(all.length)} รายการ · เรียงตามลำดับในชีต</em><span></span><div class="h2f">${chipOne('acc_f','แสดง',[['need','ต้องเติม ('+fmt(need.length)+')'],['non','ไม่ต้องเติม ('+fmt(non.length)+')'],['all','ทั้งหมด ('+fmt(ACC.length)+')']],af)}</div></h2>
-    ${all.length?`<div class="tscroll" data-shot-skip="1" style="overflow-x:auto"><table class="dt" style="min-width:1000px"><thead><tr>
+    <h2 class="sec" data-shot-skip="1">รวมทั้งหมด <em>${af==='need'?'เฉพาะที่ต้องเติม':af==='non'?'เฉพาะที่ไม่ต้องเติม':'เรียง “ต้องเติม” ก่อน'} · ${fmt(all.length)} รายการ</em><span></span><div class="h2f">${chipOne('acc_f','แสดง',[['need','ต้องเติม ('+fmt(need.length)+')'],['non','ไม่ต้องเติม ('+fmt(non.length)+')'],['all','ทั้งหมด ('+fmt(ACC.length)+')']],af)}</div></h2>
+    ${all.length?`<div class="tscroll" data-shot-skip="1" style="overflow-x:auto"><table class="dt" style="min-width:1100px"><thead><tr>
       <th>Product</th><th>สถานะ</th><th class="num">Stock คงเหลือ</th><th class="num">Min</th><th class="num">Max</th>
       <th class="num">Demand/สัปดาห์</th><th class="num">อยู่ได้ (วัน)</th><th class="num">Stock Zone จัดเก็บ</th>
       <th class="num">ต้องเติม</th><th>Status</th></tr></thead><tbody>`
@@ -6929,29 +6916,23 @@ function drawAcc(){
   destroy('accdays');
   const o=baseOpts(false); o.indexAxis='y'; o.layout={padding:{right:110,left:6}};
   o.plugins.legend={display:false};
-  o.scales.y.ticks.font={size:cf(24),weight:'600'}; o.scales.y.grid={display:false};
+  o.scales.y.ticks.font={size:cf(30),weight:'600'}; o.scales.y.grid={display:false};
   o.scales.x.ticks.font={size:cf(22)}; o.scales.x.beginAtZero=true;
   o.plugins.tooltip.callbacks={label:c=>{const r=rows[c.dataIndex];return `อยู่ได้ ${fmt(r.days)} วัน · Stock ${fmt(r.stock||0)} · Demand ${fmt(r.dem||0)}/สัปดาห์`;}};
   const endLbl={id:'accEnd',afterDatasetsDraw(ch){const x=ch.ctx,m=ch.getDatasetMeta(0);x.save();
-    x.font=`800 ${cf(24)}px ${getComputedStyle(document.body).fontFamily}`;x.textBaseline='middle';
+    x.font=`800 ${cf(30)}px ${getComputedStyle(document.body).fontFamily}`;x.textBaseline='middle';
     m.data.forEach((b,i)=>{const r=rows[i];x.fillStyle=r.days<=7?'#DC2626':r.days<=14?'#B45309':'#0F766E';
       x.fillText(fmt(r.days)+' วัน',b.x+12,b.y);});x.restore();}};
   CH.accdays=new Chart(cv,{type:'bar',data:{labels:rows.map(r=>r.product),
     datasets:[{data:rows.map(r=>r.days),backgroundColor:rows.map(r=>r.days<=7?C.rose:r.days<=14?C.amber:C.teal),
-      borderRadius:8,categoryPercentage:.8,barPercentage:.9,maxBarThickness:84,minBarLength:6}]},options:o,plugins:[endLbl]});
+      borderRadius:8,barThickness:Math.round(cf(40)),minBarLength:6}]},options:o,plugins:[endLbl]});
 }
 
 async function loadRepl(){
   loadAcc().then(()=>{try{if(SEC==='repl')renderKPI();}catch(e){}});
-  loadHist().then(()=>{try{if(SEC==='repl'){fillFiltersKPI();renderKPI();}}catch(e){}});
   if(REPL)return;
   try{
     const raw=await smallSheet(S_REPL,'0',s=>SHEET_STATE.repl=s);
-    REPL=parseReplRaw(raw);
-    SHEET_STATE.repl=`${fmt(REPL.length)} สินค้า`;
-  }catch(e){ REPL=null; REPL_ERR=e.message; SHEET_STATE.repl='ผิดพลาด — '+e.message; }
-}
-function parseReplRaw(raw){
     const t=table(raw,/Product|สินค้า|คะแนนขายดี|WH300|QUOTA/i);
     if(!t)throw new Error('หาหัวตารางไม่เจอ · แถวแรกที่อ่านได้: '
       +((raw&&raw[0])?raw[0].slice(0,6).join(' / '):'ว่าง'));
@@ -6960,15 +6941,16 @@ function parseReplRaw(raw){
              o:t.col('OWH'),qa:t.col('Quarantine'),y:t.col('จำนวนที่ต้องเติม'),r:t.col('Remark'),
              ss:t.col('SafetyStock','Safetystock','SAFETYSTOCK','Safety','SAFETY','safety')};
     const g=(row,i)=>i>=0?String(row[i]||'').trim():'';
-    const out=t.rows.map(r=>({
+    REPL=t.rows.map(r=>({
       no:g(r,c.no), product:g(r,c.p), score:parseQty(g(r,c.s)),
       need:g(r,c.n), wh300:g(r,c.w), quota:g(r,c.q), planPd:g(r,c.pd),
       fac16:g(r,c.f), owh:g(r,c.o), quarantine:g(r,c.qa), safety:g(r,c.ss),
       qty:parseQty(g(r,c.y)), remark:g(r,c.r)
     })).filter(r=>r.product&&!isExcludedProduct(r.product));
     if(c.p<0)throw new Error('หาคอลัมน์ Product ไม่เจอ · หัวตาราง: '+t.H.slice(0,8).join(' / '));
-    if(!out.length)throw new Error('ไม่พบรายการสินค้า · หัวตาราง: '+t.H.slice(0,8).join(' / '));
-    return out;
+    if(!REPL.length)throw new Error('ไม่พบรายการสินค้า · หัวตาราง: '+t.H.slice(0,8).join(' / '));
+    SHEET_STATE.repl=`${fmt(REPL.length)} สินค้า`;
+  }catch(e){ REPL=null; REPL_ERR=e.message; SHEET_STATE.repl='ผิดพลาด — '+e.message; }
 }
 
 let REPL_CTX=null;
@@ -6984,60 +6966,10 @@ function replTabs(cur){
   return `<div class="rtabs">${[['matcha','🍵 Matcha'],['acc','🧰 Accessories']].map(([v,t])=>
     `<button type="button" data-sf="repl_cat" data-v="${v}" class="${cur===v?'on':''}">${t}</button>`).join('')}</div>`;
 }
-/* v-hist: ประวัติ Replenishment รายวัน — Apps Script ถ่าย snapshot ทุกวันลง 2 แท็บในชีต Replenishment
-   คอลัมน์ A = วันที่ (yyyy-mm-dd) · B = เวลาบันทึก · ที่เหลือ = หัวตารางเดิมของชีตต้นทาง
-   เลือก "รายวัน" เป็นวันก่อนหน้า → อ่านจากแท็บนี้ · วันนี้ / ช่วงอื่น → ข้อมูลสดเหมือนเดิม */
-const HIST_TAB={matcha:'History Matcha',acc:'History Accessories'};
-let HIST=null, HIST_ERR='', HIST_P=null;
-async function histFetch(name){
-  const u=`https://docs.google.com/spreadsheets/d/${S_REPL}/gviz/tq?tqx=out:csv&headers=1&sheet=${encodeURIComponent(name)}&_=${Date.now()}`;
-  const r=await fetch(u); if(!r.ok)throw new Error('HTTP '+r.status);
-  const t=await r.text();
-  if(/^\/\*O_o\*\//.test(t)||/"errors"/.test(t))return null;   /* ยังไม่มีแท็บนี้ */
-  const rows=parseCSV(t); if(!rows.length)return null;
-  /* ถ้ายังไม่มีแท็บ Google จะส่งแท็บแรกมาแทน — เช็คหัวคอลัมน์ให้ตรงก่อนใช้ */
-  if(String(rows[0][0]).trim()!=='วันที่'||String(rows[0][1]).trim()!=='เวลาบันทึก')return null;
-  const H=rows[0], by={};
-  rows.slice(1).forEach(r=>{const k=toKey(r[0]); if(k)(by[k]=by[k]||[]).push(r);});
-  return {H,by};
-}
-function loadHist(){
-  if(HIST)return Promise.resolve();
-  if(HIST_P)return HIST_P;
-  HIST_P=(async()=>{ try{
-    const [m,a]=await Promise.all([histFetch(HIST_TAB.matcha),histFetch(HIST_TAB.acc)]);
-    HIST={matcha:m,acc:a};
-  }catch(e){ HIST=null; HIST_ERR=e.message; } finally{ HIST_P=null; } })();
-  return HIST_P;
-}
-const histDates=()=>{ if(!HIST)return []; const s=new Set();
-  ['matcha','acc'].forEach(c=>{ if(HIST[c])Object.keys(HIST[c].by).forEach(k=>s.add(k)); }); return [...s]; };
-/* วันที่ย้อนหลังที่กำลังเลือก (เฉพาะโหมดรายวัน และไม่ใช่วันนี้) */
-const replHistDay=()=>(DAYSEL&&DAYSEL<rfkToday())?DAYSEL:'';
-function histSnap(cat,day){
-  const h=HIST&&HIST[cat]; const rows=h&&h.by[day]; if(!rows||!rows.length)return null;
-  const raw=[h.H.slice(2),...rows.map(r=>r.slice(2))];
-  return {raw,time:String(rows[0][1]||'').trim()};
-}
 function secRepl(){
   const cat=sf('repl_cat','matcha');
-  const day=replHistDay();
-  if(!day)return cat==='acc'?secAcc():secReplM();   /* v-replcat2: แท็บย้ายไปอยู่ข้างหัวข้อหน้า */
-  if(!HIST){ if(!HIST_ERR)loadHist().then(()=>{try{if(SEC==='repl')renderKPI();}catch(e){}});
-    return `<div class="empty2">${HIST_ERR?'อ่านแท็บประวัติไม่ได้ — '+esc(HIST_ERR):'กำลังโหลดประวัติ…'}</div>`; }
-  const snap=histSnap(cat,day);
-  if(!snap)return `<div class="empty2">ยังไม่มีประวัติของวันที่ ${showD(day)}<br><span style="font-size:.6em;opacity:.8">ระบบเริ่มเก็บประวัติวันละครั้งตั้งแต่วันที่ติดตั้ง · กดลูกศรหรือเลือกวันอื่นจากรายการ</span></div>`;
-  let list; try{ list=cat==='acc'?parseAccRaw(snap.raw):parseReplRaw(snap.raw); }
-  catch(e){ return `<div class="empty2">อ่านประวัติวันที่ ${showD(day)} ไม่ได้ — ${esc(e.message)}</div>`; }
-  /* ใช้หน้าตา + วิธีคำนวณเดิมทั้งหมด แค่สลับแหล่งข้อมูลชั่วคราวระหว่างวาดหน้า */
-  const keep=cat==='acc'?ACC:REPL;
-  if(cat==='acc')ACC=list; else REPL=list;
-  let html;
-  try{ html=cat==='acc'?secAcc():secReplM(); }
-  finally{ if(cat==='acc')ACC=keep; else REPL=keep; }
-  return `<div class="chint"><b>ดูย้อนหลัง</b> — รายการ ณ วันที่ <b>${showD(day)}</b>${snap.time?` เวลา ${esc(snap.time)} น.`:''}
-      (snapshot ที่บันทึกไว้ในวันนั้น) · เลือกวันนี้เพื่อกลับไปดูข้อมูลปัจจุบัน</div>`
-    +html.replace('เป็นภาพ ณ ปัจจุบัน ไม่ขึ้นกับตัวกรองวันที่',`เป็นภาพย้อนหลัง ณ วันที่ ${showD(day)}`);
+  if(cat==='acc')return secAcc();   /* v-replcat2: แท็บย้ายไปอยู่ข้างหัวข้อหน้า */
+  return secReplM();
 }
 function secReplM(){
   if(!REPL)return `<div class="empty2">${REPL_ERR?'อ่านชีตไม่ได้ — '+REPL_ERR:'กำลังโหลดข้อมูล…'}</div>`;
@@ -7790,7 +7722,6 @@ const rfkDockDates=()=>(DOCK_ROWS||[]).map(r=>{
 function rfkLatest(){
   const d=new Date(),
         t=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  if(SEC==='repl')return t;   /* v-hist: หน้า Replenishment เปิดมา = วันนี้ (ข้อมูลสด) */
   const mx=a=>{let b='';for(const x of a||[]){const k=String(x||'').slice(0,10);
     if(k.length===10&&/^\d{4}-\d{2}-\d{2}$/.test(k)&&k<=t&&k>b)b=k;}return b;};
   let src=null;
@@ -7904,7 +7835,6 @@ function rfkDates(){
   try{ if(SHIP&&SHIP.list)add(SHIP.list.map(r=>r.day)); }catch(e){}
   try{ if(PACK&&PACK.list)add(PACK.list.map(r=>r.d&&r.d.fd)); }catch(e){}
   try{ if(SEC==='dock')add(rfkDockDates()); }catch(e){}
-  try{ if(SEC==='repl')add(histDates()); }catch(e){}   /* v-hist */
   return s;
 }
 let RFK_OPTS=[];
