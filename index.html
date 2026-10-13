@@ -1283,10 +1283,11 @@ body.present #vKPI .otc .v{font-size:100px}
 #vKPI .rnqty{flex:none;text-align:center;min-width:170px}
 #vKPI .rnqty span{display:block;font-size:24px;font-weight:700;color:#B91C1C;letter-spacing:.02em}
 #vKPI .rnqty b{display:block;font-size:76px;font-weight:800;color:#DC2626;line-height:1.05;font-variant-numeric:tabular-nums}
-#vKPI .rtabs{display:flex;gap:16px;margin:0 0 26px}
-#vKPI .rtabs button{flex:1;max-width:520px;font:inherit;font-size:40px;font-weight:800;padding:22px 30px;border-radius:22px;cursor:pointer;
+#kHdTabs{margin-left:36px;align-self:center}
+#kHdTabs .rtabs{display:flex;gap:14px;margin:0}
+#kHdTabs .rtabs button{font:inherit;font-size:30px;white-space:nowrap;font-weight:800;padding:12px 30px;border-radius:999px;cursor:pointer;
   border:3px solid var(--page-line,rgba(255,255,255,.18));background:rgba(255,255,255,.05);color:var(--page-ink,#F3EFFB)}
-#vKPI .rtabs button.on{background:linear-gradient(135deg,#14B8A6,#0D9488);border-color:#14B8A6;color:#fff;box-shadow:0 8px 24px rgba(13,148,136,.35)}
+#kHdTabs .rtabs button.on{background:linear-gradient(135deg,#14B8A6,#0D9488);border-color:#14B8A6;color:#fff;box-shadow:0 8px 24px rgba(13,148,136,.35)}
 </style>
 <style id="hlegV17">
 /* v-hleg: ป้ายสีกราฟแบบ HTML ของหน้า Packing — นำกลับมาจากเวอร์ชัน (17) */
@@ -1925,7 +1926,7 @@ body.mobile .side{width:540px}
     <div class="khd"><span class="kico" id="kIco" aria-hidden="true"></span><div>
       <h1 id="kTitle">ภาพรวม KPI ทุกแผนก</h1>
       <div class="sub" id="kSub">Warehouse · Delivery · Admin</div>
-    </div></div>
+    </div><div id="kHdTabs"></div></div>
     <div class="period">ข้อมูลของวันที่<b id="kPeriod">—</b><span class="kchip" id="kChip" style="display:none"></span>
       <div id="cmpNote" style="font-size:17px;margin-top:4px">เทียบกับเดือนก่อน</div></div>
   </header>
@@ -6924,8 +6925,8 @@ function replTabs(cur){
 }
 function secRepl(){
   const cat=sf('repl_cat','matcha');
-  if(cat==='acc')return replTabs(cat)+secAcc();
-  return replTabs(cat)+secReplM();
+  if(cat==='acc')return secAcc();   /* v-replcat2: แท็บย้ายไปอยู่ข้างหัวข้อหน้า */
+  return secReplM();
 }
 function secReplM(){
   if(!REPL)return `<div class="empty2">${REPL_ERR?'อ่านชีตไม่ได้ — '+REPL_ERR:'กำลังโหลดข้อมูล…'}</div>`;
@@ -7208,6 +7209,8 @@ function renderKPI(){
   const tt=TITLE[SEC]||TITLE.overview;
   el('kTitle').textContent=tt[0];
   el('kSub').textContent=tt[1];
+  { const ht=el('kHdTabs'); if(ht){ ht.innerHTML=SEC==='repl'?replTabs(sf('repl_cat','matcha')):'';
+      ht.onclick=e=>{const b=e.target.closest('[data-sf]'); if(!b)return; SUBF[b.dataset.sf]=b.dataset.v; renderKPI();}; } }
   document.body.classList.toggle('sopmode', SEC==='sop'||SEC==='sopcr'||SEC==='ret'||SEC==='can'||SEC==='cr');
   document.body.classList.toggle('crmode', SEC==='cr');
   /* v-kdark: ธีมเข้มของหน้าย่อย KPI (ไม่ใช้กับหน้าภาพรวม และหน้าเอกสาร/หน้าที่ฝังไฟล์แยก) */
