@@ -8422,6 +8422,13 @@ window.LOGI_OOS={
   list:()=>RAW&&RAW.length?RAW:null,
   err:()=>OTP_ERR
 };
+/* v-rptpick3: รายงานประจำวัน Warehouse นับจำนวนสินค้าที่หยิบจากชีต Performance Picking (ชุดเดียวกับหน้า Picking) */
+window.LOGI_PICK={
+  load:()=>loadPick(),
+  loading:()=>PICK_LOADING,
+  list:()=>PICK&&PICK.list&&PICK.list.length?PICK.list:null,
+  err:()=>PICK_ERR
+};
 /* v-rptshot: ให้หน้ารายงานใช้ตัวบันทึกรูปตัวเดียวกับหน้า KPI */
 window.LOGI_SHOT={run:o=>shotExport(o),menu:(b,f)=>shotMenu(b,f)};
 
@@ -8480,8 +8487,8 @@ const TEAMS={
   warehouse:{
     title:'รายงานทีม Warehouse',
     sub:'จำนวนสินค้าที่หยิบ · รับสินค้าเข้าระบบ · การแจ้งปัญหาประจำวัน',
-    pickStats:true,   /* v-rptpick2: การ์ดจำนวนสินค้าที่หยิบ (ชีต KPI Out Of Stock ชุดเดียวกับหน้า KPI Out Of Stock) */
-    source:'KPI Out Of Stock (จำนวนสินค้าที่หยิบ · ตามวันที่ WH ส่งให้ PK) · Job Daily Operation (แท็บ GR Warehouse) และ แจ้งรายการมีปัญหาประจำวันของ Operation (แท็บ Warehouse)',
+    pickStats:true,   /* v-rptpick3: การ์ดจำนวนสินค้าที่หยิบ (ชีต Performance Picking ชุดเดียวกับหน้า Picking) */
+    source:'Performance Picking (จำนวนสินค้าที่หยิบ · ตาม Pick Date) · Job Daily Operation (แท็บ GR Warehouse) และ แจ้งรายการมีปัญหาประจำวันของ Operation (แท็บ Warehouse)',
     panels:[
       /* v137: รายการรับสินค้าเข้าระบบ — n8n เติมจาก Odoo ทุกวัน 16:30 */
       {k:'gr',t:'รับสินค้าเข้าระบบ', c:'GR Warehouse', hd:'a', unit:'รายการ',
@@ -8768,11 +8775,14 @@ const hasShip=()=>shipPanel()||!!cfg().shipStats;   /* v-shipadm: ทีมไ�
 let PICKROWS=[];
 const hasPick=()=>!!cfg().pickStats;
 const NOSHIP_RE=/ไม่ต้องจัดส่ง/;
+/* v-rptpick3: เปลี่ยนแหล่งเป็นชีต Performance Picking — นับแบบเดียวกับการ์ด "รวมสินค้าที่หยิบ (ชิ้น)" ในหน้า Picking
+   (batch ที่ปิดงานแล้ว · batch ละครั้ง · ตัดแถวที่ไม่มีชื่อพนักงาน · วันที่ = Pick Date) */
+const PICK_NONAME=v=>!v||/^[-–—]$/.test(v)||v==='ไม่ระบุ';
 function buildPickRows(){
-  const src=(window.LOGI_OOS&&LOGI_OOS.list())||[];
-  PICKROWS=src.filter(x=>x.whd&&!NOSHIP_RE.test([x.wh,x.pack,x.dstat,x.rteam].join(' ')))
-    .map(x=>({date:x.whd,qty:x.qty,ref:x.ref,y:x.whd.slice(0,4),m:x.whd.slice(5,7),
-              wk:LOGI_SHIP.isoWeek(x.whd)}));
+  const src=(window.LOGI_PICK&&LOGI_PICK.list())||[];
+  PICKROWS=src.filter(x=>x.date&&!PICK_NONAME(x.who))
+    .map(x=>({date:x.date,qty:x.qty,ref:x.bat||'',who:x.who,y:x.date.slice(0,4),m:x.date.slice(5,7),
+              wk:LOGI_SHIP.isoWeek(x.date)}));
 }
 const allRows=()=>cfg().panels.filter(p=>!p.ship).flatMap(p=>DATA[p.k]||[])
                    .concat(hasShip()?SHIPROWS:[]).concat(hasPick()?PICKROWS:[]);
@@ -8898,17 +8908,17 @@ function renderReport(){
     const pickSel=PICKROWS.filter(match);
     let pk;
     if(!PICKROWS.length){
-      const er=window.LOGI_OOS&&LOGI_OOS.err();
-      const ld=window.LOGI_OOS&&LOGI_OOS.loading();
-      pk={l:'จำนวนสินค้าที่หยิบ',v:er?'ดึงไม่ได้':ld?'กำลังโหลด…':0,n:'ชีต KPI Out Of Stock',pending:!!(er||ld),cls:'ink'};
+      const er=window.LOGI_PICK&&LOGI_PICK.err();
+      const ld=window.LOGI_PICK&&LOGI_PICK.loading();
+      pk={l:'จำนวนสินค้าที่หยิบ',v:er?'ดึงไม่ได้':ld?'กำลังโหลด…':0,n:'ชีต Performance Picking',pending:!!(er||ld),cls:'ink'};
     }else if(!pickSel.length){
       pk={l:'จำนวนสินค้าที่หยิบ',v:0,n:'ยังไม่มีข้อมูลในช่วงนี้',cls:'ink'};
     }else{
       const q=pickSel.reduce((a,r)=>a+(r.qty||0),0);
       const pd=new Set(pickSel.map(r=>r.date)).size;
-      const od=new Set(pickSel.map(r=>r.ref)).size;
+      const od=new Set(pickSel.map((r,i)=>r.ref||('r'+i))).size;
       pk={l:'จำนวนสินค้าที่หยิบ',v:q,cls:'ink',
-          n:`ชิ้น · ${fmt(od)} ออเดอร์`+(pd>1?` · เฉลี่ย ${fmt(q/pd)}/วัน`:'')};
+          n:`ชิ้น · ${fmt(od)} batch`+(pd>1?` · เฉลี่ย ${fmt(q/pd)}/วัน`:'')};
     }
     k.unshift(pk);
   }
@@ -9064,6 +9074,7 @@ async function load(){
     ? LOGI_SHIP.load(true).then(r=>{ if(!r)throw new Error(LOGI_SHIP.err()||'ดึงไม่ได้'); return []; })
     : grab(p)));
   if(extra)await extra;
+  if(cfg().pickStats&&window.LOGI_PICK)await LOGI_PICK.load().catch(()=>null);   /* v-rptpick3: ชีต Picking เล็ก โหลดรอได้ */
   if(seq!==LOAD_SEQ)return;          /* มีการโหลดใหม่กว่าแล้ว ทิ้งผลนี้ */
   RLOADING=false;
   buildShipRows();
@@ -9079,10 +9090,6 @@ async function load(){
   else{el('stat').className='stat err';
     el('stat').innerHTML=`<b>ดึงไม่ได้: ${bad.join(', ')}</b>${live?' · ส่วนที่เหลือเป็นข้อมูลสด':''}`;}
   el('reload').disabled=false;fillFiltersReport();renderReport();stamp();
-  /* v-rptpick2: ชีต KPI Out Of Stock ใหญ่ — ไม่ให้รายงานรอ · โหลดเสร็จเมื่อไรค่อยเติมการ์ด */
-  if(cfg().pickStats&&window.LOGI_OOS&&LOGI_OOS.loading()){
-    LOGI_OOS.wait().then(()=>{ if(seq!==LOAD_SEQ)return; buildPickRows(); fillFiltersReport(); renderReport(); });
-  }
 }
 
 /* ---------- สลับทีม ---------- */
