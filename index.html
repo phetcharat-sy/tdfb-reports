@@ -2087,6 +2087,9 @@ window.PIMG=(function(){
     .replace(/[×*]/g,' x ').replace(/[^\p{L}\p{N}\s]/gu,' ')
     .replace(/\s+/g,' ').trim();
   const toks=t=>new Set(norm(t).split(' ').filter(Boolean));
+  const byBase={};
+  const base=t=>{const w=norm(t).split(' ').filter(x=>x&&!/^\d+(g|kg|ml|l|กรัม)?$/.test(x)&&!/^(sachets?|ซอง|x|pcs)$/.test(x));
+    const b=w.join(' '); return (b.length>=4&&/[a-z\u0e00-\u0e7f]/.test(b))?b:'';};
   function find(text){
     if(!ready||!text)return null;
     const raw=strip(text);
@@ -2106,6 +2109,8 @@ window.PIMG=(function(){
     for(const k in BOXDIM){ if(new RegExp('(^|\\D)'+BOXDIM[k]+'(?!\\d)').test(dm)&&byBox[k])return byBox[k]; }
     /* v-pcontain: ข้อความมีชื่อสินค้าอยู่ข้างใน (เช่น มีเลข MO / จำนวน / หมายเหตุ ต่อท้าย) → ใช้ชื่อที่ยาวที่สุดที่เจอ */
     { const nn=' '+n+' '; for(const it of list){ if(it.n.length>=6&&nn.includes(' '+it.n+' '))return it.img; } }
+    /* v-pbase: ไม่เจอรูปขนาดนั้น (เช่น 40 g / 3.1g (1 sachet)) → ใช้รูปของสินค้าตัวเดียวกันขนาดอื่น */
+    { const b=base(raw); if(b&&byBase[b])return byBase[b]; }
     /* ชื่อในชีตอาจมีคำต่อท้าย/สลับเล็กน้อย → เลือกชื่อที่คำตรงกันมากที่สุด (ต้องตรงกันอย่างน้อย 80%) */
     const a=toks(raw); let best=null, bs=0;
     for(const it of list){
@@ -2124,6 +2129,7 @@ window.PIMG=(function(){
       if(it.kw){try{byKw.push({re:new RegExp(it.kw,'i'),img:it.img});}catch(e){} return;}
       if(it.sku)bySku[it.sku]=it.img;
       const n=norm(it.name); if(n&&!byName[n])byName[n]=it.img;
+      { const b=base(it.name); if(b&&!byBase[b])byBase[b]=it.img; }
       list.push({t:toks(it.name),n:norm(it.name),img:it.img}); });
     list.sort((x,y)=>y.n.length-x.n.length);
     ready=true; waiters.splice(0).forEach(f=>{try{f();}catch(e){}});
