@@ -6827,7 +6827,56 @@ const BLOCKED=['ไม่มีโควต้า','ไม่มีโควต�
 const isBlocked=r=>{const s=(r.remark||'').toLowerCase();return !!s&&BLOCKED.some(k=>s.includes(k));};
 const isNeed=r=>r.need.includes('ต้องเติม')&&!r.need.includes('ไม่ต้อง');
 
+/* v-acc: Max-Min Stock เติมอุปกรณ์ — ชีต "Max-Min Stock เติมสินค้า" แท็บ Data (gid 0) */
+const S_ACC='1cQYvVqE0N68XZlGKEd--lVfHczskiNTOkvVip8V8COY';
+let ACC=null, ACC_ERR='', ACC_P=null;
+function loadAcc(){
+  if(ACC)return Promise.resolve();
+  if(ACC_P)return ACC_P;
+  ACC_P=(async()=>{ try{
+    const raw=await smallSheet(S_ACC,'0',null);
+    const t=table(raw,/Porduct|Product|Max/i);
+    if(!t)throw new Error('หาหัวตารางไม่เจอ');
+    const c={p:t.col('Porduct','Product','สินค้า'),st:t.col('Stockคงเหลือ'),mx:t.col('Max(ชิ้น)','Max'),mn:t.col('Min(ชิ้น)','Min'),
+             k:t.col('เกณฑ์'),q:t.col('จำนวนที่ต้องเติม'),d:t.col('Demand'),dy:t.col('อยู่ได้กี่วัน','กี่วัน'),z:t.col('Zone'),s:t.col('Status')};
+    if(c.p<0)throw new Error('หาคอลัมน์ Product ไม่เจอ · หัวตาราง: '+t.H.slice(0,8).join(' / '));
+    const g=(r,i)=>{const v=i>=0?String(r[i]==null?'':r[i]).trim():''; return /^#/.test(v)?'':v;};
+    const n=(r,i)=>{const v=g(r,i); return v===''?null:parseQty(v);};
+    ACC=t.rows.map(r=>({product:g(r,c.p),stock:n(r,c.st),max:n(r,c.mx),min:n(r,c.mn),rule:g(r,c.k),qty:n(r,c.q)||0,
+      dem:n(r,c.d),days:n(r,c.dy),zone:n(r,c.z),status:g(r,c.s)})).filter(r=>r.product);
+  }catch(e){ ACC=null; ACC_ERR=e.message; } finally{ ACC_P=null; } })();
+  return ACC_P;
+}
+const accNeed=r=>/เติม/.test(r.rule)&&!/ไม่ต้อง/.test(r.rule);
+function secAcc(){
+  if(!ACC){ if(!ACC_ERR)loadAcc().then(()=>{try{if(SEC==='repl')renderKPI();}catch(e){}});
+    return `<h2 class="sec">เติมอุปกรณ์ <em>Max-Min Stock</em><span></span></h2><div class="empty2">${ACC_ERR?'อ่านชีตไม่ได้ — '+esc(ACC_ERR):'กำลังโหลดข้อมูล…'}</div>`; }
+  const pc=p=>PIMG.wrap(`<b>${esc(p)}</b>`,p);
+  const need=ACC.filter(accNeed), af=sf('acc_f','need');
+  const list=ACC.filter(r=>af==='all'||(af==='need'?accNeed(r):!accNeed(r)))
+    .sort((a,b)=>(accNeed(b)-accNeed(a))||(b.qty-a.qty)||((a.days??1e9)-(b.days??1e9)));
+  const totQ=need.reduce((t,r)=>t+(r.qty>0?r.qty:0),0);
+  const low=ACC.filter(r=>r.days!=null&&r.days<=7&&(r.dem||0)>0).length;
+  const v=x=>x==null?'—':fmt(x);
+  return `<h2 class="sec">เติมอุปกรณ์ <em>Max-Min Stock · ชีต “Max-Min Stock เติมสินค้า”</em><span></span>
+      <div class="h2f">${chipOne('acc_f','แสดง',[['need','ต้องเติม ('+fmt(need.length)+')'],['non','ไม่ต้องเติม ('+fmt(ACC.length-need.length)+')'],['all','ทั้งหมด ('+fmt(ACC.length)+')']],af)}</div></h2>
+    <div class="sgrid">${card('อุปกรณ์ทั้งหมด',ACC.length)}${card('ต้องเติม',need.length,'rose')}
+      ${card('จำนวนรวมที่ต้องเติม (ชิ้น)',totQ,'amber')}${card('สต็อกอยู่ได้ ≤ 7 วัน',low,low?'rose':'teal')}</div>
+    ${list.length?`<div class="tscroll" style="overflow-x:auto"><table class="dt" style="min-width:1100px"><thead><tr>
+      <th>Product</th><th class="num">Stock คงเหลือ</th><th class="num">Min</th><th class="num">Max</th>
+      <th class="num">Demand/สัปดาห์</th><th class="num">อยู่ได้ (วัน)</th><th class="num">Stock Zone จัดเก็บ</th>
+      <th style="text-align:center">จำนวนที่ต้องเติม</th><th>Status</th></tr></thead><tbody>`
+     +list.map(r=>{const nd=accNeed(r);
+       return `<tr><td>${pc(r.product)}</td><td class="num">${v(r.stock)}</td><td class="num">${v(r.min)}</td><td class="num">${v(r.max)}</td>
+        <td class="num">${v(r.dem)}</td><td class="num"${r.days!=null&&r.days<=7&&(r.dem||0)>0?' style="color:var(--bad);font-weight:800"':''}>${v(r.days)}</td>
+        <td class="num">${v(r.zone)}</td>
+        <td style="text-align:center">${nd?`<span class="qbig">${fmt(r.qty)}</span>`:'<span class="good">ไม่ต้องเติม</span>'}</td>
+        <td>${esc(r.status||'—')}</td></tr>`;}).join('')+'</tbody></table></div>'
+     :`<div class="empty2">${af==='need'?'ไม่มีอุปกรณ์ที่ต้องเติม':'ไม่มีรายการ'}</div>`}`;
+}
+
 async function loadRepl(){
+  loadAcc().then(()=>{try{if(SEC==='repl')renderKPI();}catch(e){}});
   if(REPL)return;
   try{
     const raw=await smallSheet(S_REPL,'0',s=>SHEET_STATE.repl=s);
@@ -6914,7 +6963,7 @@ function secRepl(){
         <td class="num">${esc(r.owh||'—')}</td><td class="num">${esc(r.quarantine||'—')}</td>
         <td class="num">${n?'<span class="qty">'+fmt(r.qty)+'</span>':'—'}</td>
         <td>${esc(r.remark||'—')}</td></tr>`;}).join('')
-     +'</tbody></table></div>';
+     +'</tbody></table></div>'+secAcc();
 }
 
 function drawRepl(){
