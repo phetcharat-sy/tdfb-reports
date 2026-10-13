@@ -6892,8 +6892,8 @@ function secAcc(){
         meta:`Stock ${v(r.stock)} · Min ${v(r.min)} · Max ${v(r.max)}`+(r.days!=null?` · อยู่ได้ ${v(r.days)} วัน`:'')+(r.status?` · ${esc(r.status)}`:'')})))
       :'<div class="empty2">ไม่มีอุปกรณ์ที่ต้องเติม</div>'}
 
-    <h2 class="sec">สต็อกอยู่ได้กี่วัน <em>เฉพาะที่มียอดขาย · น้อย → มาก · เส้นประ = 7 วัน</em><span></span></h2>
-    <div class="cpanel"><div class="cbox"><canvas id="c_accdays"></canvas></div></div>
+    <h2 class="sec">สต็อกอยู่ได้กี่วัน <em>10 รายการที่ใกล้หมดที่สุด · แดง ≤ 7 วัน · ส้ม ≤ 14 วัน</em><span></span></h2>
+    <div class="cpanel"><div class="cbox" style="height:${Math.max(360,Math.min(10,ACC.filter(r=>r.days!=null&&(r.dem||0)>0).length)*78+70)}px"><canvas id="c_accdays"></canvas></div></div>
 
     <h2 class="sec" data-shot-skip="1">รวมทั้งหมด <em>${af==='need'?'เฉพาะที่ต้องเติม':af==='non'?'เฉพาะที่ไม่ต้องเติม':'เรียง “ต้องเติม” ก่อน'} · ${fmt(all.length)} รายการ</em><span></span><div class="h2f">${chipOne('acc_f','แสดง',[['need','ต้องเติม ('+fmt(need.length)+')'],['non','ไม่ต้องเติม ('+fmt(non.length)+')'],['all','ทั้งหมด ('+fmt(ACC.length)+')']],af)}</div></h2>
     ${all.length?`<div class="tscroll" data-shot-skip="1" style="overflow-x:auto"><table class="dt" style="min-width:1100px"><thead><tr>
@@ -6911,16 +6911,21 @@ function secAcc(){
 let ACC_CTX=null;
 function drawAcc(){
   const cv=document.getElementById('c_accdays'); if(!cv||!ACC_CTX)return;
-  const rows=ACC_CTX.list.filter(r=>r.days!=null&&(r.dem||0)>0).sort((a,b)=>a.days-b.days).slice(0,15);
+  /* v-accbar: แท่งแนวนอน 10 อันดับใกล้หมด · ชื่ออ่านง่าย · ตัวเลขวันที่ปลายแท่ง */
+  const rows=ACC_CTX.list.filter(r=>r.days!=null&&(r.dem||0)>0).sort((a,b)=>a.days-b.days).slice(0,10);
   destroy('accdays');
-  const o=baseOpts(false); o.layout={padding:{top:40}};
-  o.plugins.barPct={display:true,raw:true};
-  o.plugins.diffTargetLine={display:true,target:7};
-  o.scales.x.ticks.font={size:cf(20)};
+  const o=baseOpts(false); o.indexAxis='y'; o.layout={padding:{right:110,left:6}};
+  o.plugins.legend={display:false};
+  o.scales.y.ticks.font={size:cf(30),weight:'600'}; o.scales.y.grid={display:false};
+  o.scales.x.ticks.font={size:cf(22)}; o.scales.x.beginAtZero=true;
   o.plugins.tooltip.callbacks={label:c=>{const r=rows[c.dataIndex];return `อยู่ได้ ${fmt(r.days)} วัน · Stock ${fmt(r.stock||0)} · Demand ${fmt(r.dem||0)}/สัปดาห์`;}};
-  CH.accdays=new Chart(cv,{type:'bar',data:{labels:rows.map(r=>r.product.length>22?r.product.slice(0,21)+'…':r.product),
-    datasets:[{data:rows.map(r=>r.days),backgroundColor:rows.map(r=>r.days<=7?C.rose:r.days<=14?C.amber:C.teal),borderRadius:6,maxBarThickness:80}]},options:o});
-  CH.accdays.data._unit='วัน';
+  const endLbl={id:'accEnd',afterDatasetsDraw(ch){const x=ch.ctx,m=ch.getDatasetMeta(0);x.save();
+    x.font=`800 ${cf(30)}px ${getComputedStyle(document.body).fontFamily}`;x.textBaseline='middle';
+    m.data.forEach((b,i)=>{const r=rows[i];x.fillStyle=r.days<=7?'#DC2626':r.days<=14?'#B45309':'#0F766E';
+      x.fillText(fmt(r.days)+' วัน',b.x+12,b.y);});x.restore();}};
+  CH.accdays=new Chart(cv,{type:'bar',data:{labels:rows.map(r=>r.product),
+    datasets:[{data:rows.map(r=>r.days),backgroundColor:rows.map(r=>r.days<=7?C.rose:r.days<=14?C.amber:C.teal),
+      borderRadius:8,barThickness:Math.round(cf(40)),minBarLength:6}]},options:o,plugins:[endLbl]});
 }
 
 async function loadRepl(){
