@@ -4228,6 +4228,7 @@ function recalcStaff(){
 }
 
 let FC_CTX=null;
+const DEP_LBL={crit:'วิกฤต',warn:'เฝ้าระวัง',ok:'ปกติ',nod:'ไม่มี demand',all:'ทั้งหมด'};
 function secForecast(){
   if(!RAW.length){
     /* แยก 3 กรณี: กำลังโหลดชีตใหญ่ / โหลดไม่สำเร็จ / โหลดแล้วแต่ไม่มีข้อมูลจริง */
@@ -4307,6 +4308,13 @@ function secForecast(){
   const crit=dep.filter(r=>r.weeksLeft!=null&&r.weeksLeft<2).length;
   const warn=dep.filter(r=>r.weeksLeft!=null&&r.weeksLeft>=2&&r.weeksLeft<4).length;
   const okc=dep.filter(r=>r.weeksLeft==null||r.weeksLeft>=4).length;
+  /* v-depf: ตัวกรองสถานะของตาราง Stock Depletion — เปิดมาแสดงเฉพาะ "วิกฤต" ก่อน (การคำนวณเดิมทุกอย่าง) */
+  const okn=dep.filter(r=>r.weeksLeft!=null&&r.weeksLeft>=4).length;
+  const nod=dep.filter(r=>r.weeksLeft==null).length;
+  const depF=sf('dep_f','crit');
+  const depKeep={crit:r=>r.weeksLeft!=null&&r.weeksLeft<2, warn:r=>r.weeksLeft!=null&&r.weeksLeft>=2&&r.weeksLeft<4,
+    ok:r=>r.weeksLeft!=null&&r.weeksLeft>=4, nod:r=>r.weeksLeft==null, all:()=>true};
+  const depRows=dep.filter(depKeep[depF]||depKeep.all);
 
   /* กำลังคน 7 วันข้างหน้า — คงไว้ 7 วันเหมือนเดิม แม้พยากรณ์รายวันด้านบนขยายเป็น 14 วันแล้ว
      (จำกัดด้วย .slice(0,7) เพราะ dOrd.fc ตอนนี้มี 14 ค่า) */
@@ -4491,13 +4499,13 @@ function secForecast(){
         <div class="cbox" style="height:${Math.max(420,items4.length*54)}px"><canvas id="c_fc4w"></canvas></div></div>
     </div>`:''}
 
-    ${dep.length?`<h2 class="sec">Stock Depletion Forecast <em>${fmt(dep.length)} สินค้า · เรียงจากวิกฤตที่สุด</em><span></span></h2>
-    <div class="tscroll" style="max-height:none;overflow:visible"><table class="dt"><thead><tr>
+    ${dep.length?`<h2 class="sec">Stock Depletion Forecast <em>${DEP_LBL[depF]} · ${fmt(depRows.length)} จาก ${fmt(dep.length)} สินค้า · เรียงจากวิกฤตที่สุด</em><span></span><div class="h2f">${chipOne('dep_f','แสดง',[['crit','วิกฤต ('+fmt(crit)+')'],['warn','เฝ้าระวัง ('+fmt(warn)+')'],['ok','ปกติ ('+fmt(okn)+')'],['nod','ไม่มี demand ('+fmt(nod)+')'],['all','ทั้งหมด ('+fmt(dep.length)+')']],depF)}</div></h2>
+    ${depRows.length?`<div class="tscroll" style="max-height:none;overflow:visible"><table class="dt"><thead><tr>
       <th>Product</th><th class="num">Demand เฉลี่ย/สัปดาห์</th>
       <th class="num">Stock WH300</th><th class="num">เหลือ (สัปดาห์)</th>
       <th class="num">สถานะ</th><th>สาเหตุที่ยังไม่เติม</th>
     </tr></thead><tbody>`
-    +dep.map(r=>{
+    +depRows.map(r=>{
       const w=r.weeksLeft;
       const st=w==null?'<span style="color:var(--mute)">ไม่มี demand</span>'
         :w<2?'<span class="bad">วิกฤต</span>'
@@ -4511,6 +4519,7 @@ function secForecast(){
         <td>${r.remark?`<span class="why has">${esc(r.remark)}</span>`:'<span class="why">—</span>'}</td></tr>`;
     }).join('')
     +'</tbody></table></div>'
+    :`<div class="empty2">ไม่มีสินค้าสถานะ “${DEP_LBL[depF]}” · กดปุ่มด้านบนเพื่อดูสถานะอื่น</div>`}`
     :'<div class="empty2">ยังไม่มีข้อมูล Replenishment สำหรับคำนวณ Stock Depletion</div>'}`;
 }
 
@@ -6893,10 +6902,10 @@ function secAcc(){
       :'<div class="empty2">ไม่มีอุปกรณ์ที่ต้องเติม</div>'}
 
     <h2 class="sec">สต็อกอยู่ได้กี่วัน <em>10 รายการที่ใกล้หมดที่สุด · แดง ≤ 7 วัน · ส้ม ≤ 14 วัน</em><span></span></h2>
-    <div class="cpanel"><div class="cbox" style="height:${Math.max(360,Math.min(10,ACC.filter(r=>r.days!=null&&(r.dem||0)>0).length)*78+70)}px"><canvas id="c_accdays"></canvas></div></div>
+    <div class="cpanel"><div class="cbox"><canvas id="c_accdays"></canvas></div></div>
 
-    <h2 class="sec" data-shot-skip="1">รวมทั้งหมด <em>${af==='need'?'เฉพาะที่ต้องเติม':af==='non'?'เฉพาะที่ไม่ต้องเติม':'เรียง “ต้องเติม” ก่อน'} · ${fmt(all.length)} รายการ</em><span></span><div class="h2f">${chipOne('acc_f','แสดง',[['need','ต้องเติม ('+fmt(need.length)+')'],['non','ไม่ต้องเติม ('+fmt(non.length)+')'],['all','ทั้งหมด ('+fmt(ACC.length)+')']],af)}</div></h2>
-    ${all.length?`<div class="tscroll" data-shot-skip="1" style="overflow-x:auto"><table class="dt" style="min-width:1100px"><thead><tr>
+    <h2 class="sec" data-shot-skip="1">รวมทั้งหมด <em>${af==='need'?'เฉพาะที่ต้องเติม':af==='non'?'เฉพาะที่ไม่ต้องเติม':'เรียง “ต้องเติม” ก่อน'} · ${fmt(all.length)} รายการ · เรียงตามลำดับในชีต</em><span></span><div class="h2f">${chipOne('acc_f','แสดง',[['need','ต้องเติม ('+fmt(need.length)+')'],['non','ไม่ต้องเติม ('+fmt(non.length)+')'],['all','ทั้งหมด ('+fmt(ACC.length)+')']],af)}</div></h2>
+    ${all.length?`<div class="tscroll" data-shot-skip="1" style="overflow-x:auto"><table class="dt" style="min-width:1000px"><thead><tr>
       <th>Product</th><th>สถานะ</th><th class="num">Stock คงเหลือ</th><th class="num">Min</th><th class="num">Max</th>
       <th class="num">Demand/สัปดาห์</th><th class="num">อยู่ได้ (วัน)</th><th class="num">Stock Zone จัดเก็บ</th>
       <th class="num">ต้องเติม</th><th>Status</th></tr></thead><tbody>`
@@ -6916,16 +6925,16 @@ function drawAcc(){
   destroy('accdays');
   const o=baseOpts(false); o.indexAxis='y'; o.layout={padding:{right:110,left:6}};
   o.plugins.legend={display:false};
-  o.scales.y.ticks.font={size:cf(30),weight:'600'}; o.scales.y.grid={display:false};
+  o.scales.y.ticks.font={size:cf(24),weight:'600'}; o.scales.y.grid={display:false};
   o.scales.x.ticks.font={size:cf(22)}; o.scales.x.beginAtZero=true;
   o.plugins.tooltip.callbacks={label:c=>{const r=rows[c.dataIndex];return `อยู่ได้ ${fmt(r.days)} วัน · Stock ${fmt(r.stock||0)} · Demand ${fmt(r.dem||0)}/สัปดาห์`;}};
   const endLbl={id:'accEnd',afterDatasetsDraw(ch){const x=ch.ctx,m=ch.getDatasetMeta(0);x.save();
-    x.font=`800 ${cf(30)}px ${getComputedStyle(document.body).fontFamily}`;x.textBaseline='middle';
+    x.font=`800 ${cf(24)}px ${getComputedStyle(document.body).fontFamily}`;x.textBaseline='middle';
     m.data.forEach((b,i)=>{const r=rows[i];x.fillStyle=r.days<=7?'#DC2626':r.days<=14?'#B45309':'#0F766E';
       x.fillText(fmt(r.days)+' วัน',b.x+12,b.y);});x.restore();}};
   CH.accdays=new Chart(cv,{type:'bar',data:{labels:rows.map(r=>r.product),
     datasets:[{data:rows.map(r=>r.days),backgroundColor:rows.map(r=>r.days<=7?C.rose:r.days<=14?C.amber:C.teal),
-      borderRadius:8,barThickness:Math.round(cf(40)),minBarLength:6}]},options:o,plugins:[endLbl]});
+      borderRadius:8,categoryPercentage:.8,barPercentage:.9,maxBarThickness:84,minBarLength:6}]},options:o,plugins:[endLbl]});
 }
 
 async function loadRepl(){
