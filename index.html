@@ -1263,6 +1263,10 @@ body.present #vKPI .otc .v{font-size:100px}
 #vKPI #shCarList .t5img{width:320px;height:110px;cursor:default;border-radius:16px}
 #vKPI #shCarList .t5img img{width:100%;height:100%;padding:8px 12px;box-sizing:border-box}
 #vKPI #shCarList .t5img img.full{padding:0}
+#vKPI .pitem{display:inline-flex;align-items:center;gap:18px;vertical-align:middle}
+#vKPI .pthumb{width:110px;height:110px;flex:none;object-fit:contain;border-radius:14px;background:#fff;border:1px solid var(--line);padding:3px;cursor:zoom-in}
+#vKPI h2.sec .h2f{margin-left:auto;order:9;flex:none;font-weight:normal}
+#vKPI h2.sec .h2f .fbar{margin:0}
 </style>
 <style id="hlegV17">
 /* v-hleg: ป้ายสีกราฟแบบ HTML ของหน้า Packing — นำกลับมาจากเวอร์ชัน (17) */
@@ -6853,6 +6857,10 @@ function secRepl(){
   const blk=need.filter(isBlocked);
   const totalQty=act.reduce((s,r)=>s+(r.qty>0?r.qty:0),0);
   REPL_CTX={need};
+  /* v-replimg: รูปสินค้า + ตัวกรองตาราง "รวมทั้งหมด" */
+  const pc=p=>PIMG.wrap(`<b>${esc(p)}</b>`,p);
+  if(!PIMG.ready()&&!secRepl._w){secRepl._w=1;PIMG.onReady(()=>{try{renderKPI();}catch(e){}});}
+  const rf=sf('repl_all','need');
 
   const bySale=[...act].sort((a,b)=>b.score-a.score);
   /* เรียงตัวที่มีสาเหตุ (Remark) ก่อน ตัวที่ไม่มี ("—") ไปอยู่ท้ายตาราง แล้วค่อยเรียงตามจำนวนที่ต้องเติมมาก→น้อย */
@@ -6879,7 +6887,7 @@ function secRepl(){
     <h2 class="sec">รายการที่ต้องเติม Stock <em>เรียงตามคะแนนขายดี · ไม่รวมที่ติดปัญหา</em><span></span></h2>
     ${bySale.length?`<div class="tscroll"><table class="dt"><thead><tr>
        <th>Product</th><th class="num">คะแนนขายดี</th></tr></thead><tbody>`
-      +bySale.map(r=>`<tr><td><b>${esc(r.product)}</b></td>
+      +bySale.map(r=>`<tr><td>${pc(r.product)}</td>
         <td class="num">${r.score?fmt(r.score):'—'}</td></tr>`).join('')
       +'</tbody></table></div>':'<div class="empty2">ไม่มีสินค้าที่ต้องเติม</div>'}
 
@@ -6895,20 +6903,20 @@ function secRepl(){
       return `<div class="tscroll"><table class="dt"><thead><tr>
        <th>Product</th><th class="num">คะแนนขายดี</th>${cols.map(([,h])=>`<th class="num">${h}</th>`).join('')}
        <th class="num">จำนวนที่ต้องเติม</th><th>Remark</th></tr></thead><tbody>`
-      +byQty.map(r=>`<tr><td><b>${esc(r.product)}</b></td>
+      +byQty.map(r=>`<tr><td>${pc(r.product)}</td>
         <td class="num">${r.score?fmt(r.score):'—'}</td>
         ${cols.map(([k])=>`<td class="num">${esc(r[k]||'—')}</td>`).join('')}
         <td class="num"><span class="qty">${fmt(r.qty)}</span></td>
         <td>${esc(r.remark||'—')}</td></tr>`).join('')+'</tbody></table></div>';})():''}
 
-    <h2 class="sec" data-shot-skip="1">รวมทั้งหมด <em>เรียง “ต้องเติม” ก่อน แล้วตามคะแนนขายดี</em><span></span></h2>
+    <h2 class="sec" data-shot-skip="1">รวมทั้งหมด <em>${rf==='need'?'เฉพาะที่ต้องเติม':rf==='non'?'เฉพาะที่ไม่ต้องเติม':'เรียง “ต้องเติม” ก่อน'} · ${fmt(all.filter(r=>rf==='all'||(rf==='need'?isNeed(r):!isNeed(r))).length)} รายการ · เรียงตามคะแนนขายดี</em><span></span><div class="h2f">${chipOne('repl_all','แสดง',[['need','ต้องเติม ('+fmt(need.length)+')'],['non','ไม่ต้องเติม ('+fmt(RP.length-need.length)+')'],['all','ทั้งหมด ('+fmt(RP.length)+')']],rf)}</div></h2>
     <div class="tscroll" data-shot-skip="1" style="overflow-x:auto"><table class="dt" style="min-width:1000px"><thead><tr>
       <th>No</th><th>Product</th><th class="num">คะแนนขายดี</th><th>สถานะ</th>
       <th class="num">WH300</th><th class="num">QUOTA</th><th class="num">Plan PD</th>
       <th class="num">FAC16</th><th class="num">OWH</th><th class="num">Quarantine</th>
       <th class="num">ต้องเติม</th><th>Remark</th></tr></thead><tbody>`
-     +all.map(r=>{const n=isNeed(r);
-        return `<tr><td>${esc(r.no||'—')}</td><td><b>${esc(r.product)}</b></td>
+     +all.filter(r=>rf==='all'||(rf==='need'?isNeed(r):!isNeed(r))).map(r=>{const n=isNeed(r);
+        return `<tr><td>${esc(r.no||'—')}</td><td>${pc(r.product)}</td>
         <td class="num">${r.score?fmt(r.score):'—'}</td>
         <td>${n?'<span class="bad">ต้องเติม</span>':'<span class="good">ไม่ต้องเติม</span>'}</td>
         <td class="num">${esc(r.wh300||'—')}</td><td class="num">${esc(r.quota||'—')}</td>
