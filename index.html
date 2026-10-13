@@ -6862,7 +6862,7 @@ function secRepl(){
   if(!PIMG.ready()&&!secRepl._w){secRepl._w=1;PIMG.onReady(()=>{try{renderKPI();}catch(e){}});}
   const rf=sf('repl_all','need');
 
-  const bySale=[...act].sort((a,b)=>b.score-a.score);
+  const bySale=[...act].sort((a,b)=>(b.qty||0)-(a.qty||0)||b.score-a.score);   /* v-replqty: เรียงตามจำนวนที่ต้องเติม */
   /* เรียงตัวที่มีสาเหตุ (Remark) ก่อน ตัวที่ไม่มี ("—") ไปอยู่ท้ายตาราง แล้วค่อยเรียงตามจำนวนที่ต้องเติมมาก→น้อย */
   const byQty=[...need].sort((a,b)=>{
     const ar=a.remark?1:0, br=b.remark?1:0;
@@ -6884,11 +6884,11 @@ function secRepl(){
       เป็นภาพ ณ ปัจจุบัน ไม่ขึ้นกับตัวกรองวันที่ · ${fmt(act.length)} รายการที่สั่งเติมได้จริง
       (ตัดที่ไม่มีโควต้า / ไม่มี Raw Material ออกแล้ว)</div>
 
-    <h2 class="sec">รายการที่ต้องเติม Stock <em>เรียงตามคะแนนขายดี · ไม่รวมที่ติดปัญหา</em><span></span></h2>
+    <h2 class="sec">รายการที่ต้องเติม Stock <em>เรียงตามจำนวนที่ต้องเติม · ไม่รวมที่ติดปัญหา</em><span></span></h2>
     ${bySale.length?`<div class="tscroll"><table class="dt"><thead><tr>
-       <th>Product</th><th class="num">คะแนนขายดี</th></tr></thead><tbody>`
+       <th>Product</th><th class="num">จำนวนที่ต้องเติม</th></tr></thead><tbody>`
       +bySale.map(r=>`<tr><td>${pc(r.product)}</td>
-        <td class="num">${r.score?fmt(r.score):'—'}</td></tr>`).join('')
+        <td class="num"><span class="qty">${r.qty>0?fmt(r.qty):'—'}</span></td></tr>`).join('')
       +'</tbody></table></div>':'<div class="empty2">ไม่มีสินค้าที่ต้องเติม</div>'}
 
     <h2 class="sec">สาเหตุที่ยังไม่ได้เติม <em>Products blocked, by reason</em><span></span></h2>
