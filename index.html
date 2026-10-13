@@ -1264,7 +1264,7 @@ body.present #vKPI .otc .v{font-size:100px}
 #vKPI #shCarList .t5img img{width:100%;height:100%;padding:8px 12px;box-sizing:border-box}
 #vKPI #shCarList .t5img img.full{padding:0}
 #vKPI .pitem{display:inline-flex;align-items:center;gap:18px;vertical-align:middle}
-#vKPI .pthumb{width:110px;height:110px;flex:none;object-fit:contain;border-radius:14px;background:#fff;border:1px solid var(--line);padding:3px;cursor:zoom-in}
+#vKPI .pthumb{width:170px;height:170px;flex:none;object-fit:contain;border-radius:14px;background:#fff;border:1px solid var(--line);padding:3px;cursor:zoom-in}
 #vKPI h2.sec .h2f{margin-left:auto;order:9;flex:none;font-weight:normal}
 #vKPI h2.sec .h2f .fbar{margin:0}
 </style>
@@ -6893,21 +6893,7 @@ function secRepl(){
 
     <h2 class="sec">สาเหตุที่ยังไม่ได้เติม <em>Products blocked, by reason</em><span></span></h2>
     <div class="cpanel"><div class="cbox"><canvas id="c_remark"></canvas></div></div>
-    ${byQty.length?(()=>{
-      /* Safety Stock + WH300 แสดงเสมอ · คอลัมน์อื่นแสดงเฉพาะรอบที่มีตัวเลขอย่างน้อย 1 แถว
-         (ว่าง / 0 / - ถือว่าไม่มีเลข) */
-      const hasNum=v=>!!v&&!/^[\s\-—–0.,]*$/.test(v);
-      const cols=[['safety','Safety Stock',true],['wh300','WH300',true],['quota','QUOTA'],
-                  ['planPd','Plan PD'],['fac16','FAC16'],['owh','OWH'],['quarantine','Quarantine']]
-        .filter(([k,,keep])=>keep||byQty.some(r=>hasNum(r[k])));
-      return `<div class="tscroll"><table class="dt"><thead><tr>
-       <th>Product</th><th class="num">คะแนนขายดี</th>${cols.map(([,h])=>`<th class="num">${h}</th>`).join('')}
-       <th class="num">จำนวนที่ต้องเติม</th><th>Remark</th></tr></thead><tbody>`
-      +byQty.map(r=>`<tr><td>${pc(r.product)}</td>
-        <td class="num">${r.score?fmt(r.score):'—'}</td>
-        ${cols.map(([k])=>`<td class="num">${esc(r[k]||'—')}</td>`).join('')}
-        <td class="num"><span class="qty">${fmt(r.qty)}</span></td>
-        <td>${esc(r.remark||'—')}</td></tr>`).join('')+'</tbody></table></div>';})():''}
+    
 
     <h2 class="sec" data-shot-skip="1">รวมทั้งหมด <em>${rf==='need'?'เฉพาะที่ต้องเติม':rf==='non'?'เฉพาะที่ไม่ต้องเติม':'เรียง “ต้องเติม” ก่อน'} · ${fmt(all.filter(r=>rf==='all'||(rf==='need'?isNeed(r):!isNeed(r))).length)} รายการ · เรียงตามคะแนนขายดี</em><span></span><div class="h2f">${chipOne('repl_all','แสดง',[['need','ต้องเติม ('+fmt(need.length)+')'],['non','ไม่ต้องเติม ('+fmt(RP.length-need.length)+')'],['all','ทั้งหมด ('+fmt(RP.length)+')']],rf)}</div></h2>
     <div class="tscroll" data-shot-skip="1" style="overflow-x:auto"><table class="dt" style="min-width:1000px"><thead><tr>
