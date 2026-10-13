@@ -1271,18 +1271,19 @@ body.present #vKPI .otc .v{font-size:100px}
 #vKPI table.rneed td{font-size:38px}
 #vKPI .qbig{display:inline-block;min-width:160px;padding:14px 26px;border-radius:18px;background:#FDECEC;color:#B91C1C;
   font-size:56px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
-#vKPI .rngrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(780px,1fr));gap:22px;margin-bottom:10px}
-#vKPI .rncard{display:flex;align-items:center;gap:26px;background:var(--card);border:1px solid var(--line);border-left:10px solid #EF4444;
-  border-radius:22px;padding:22px 30px 22px 22px}
+#vKPI .rnlist{background:var(--card);border:1px solid var(--line);border-radius:22px;overflow:hidden;margin-bottom:10px}
+#vKPI .rnrow{display:grid;grid-template-columns:150px minmax(0,1fr) auto;align-items:center;gap:30px;padding:18px 40px 18px 22px;
+  border-bottom:1px solid var(--line);border-left:10px solid #EF4444}
+#vKPI .rnrow:last-child{border-bottom:0}
 #vKPI .rnimg{width:150px;height:150px;flex:none;border-radius:16px;background:#fff;border:1px solid var(--line);display:grid;place-items:center;overflow:hidden}
 #vKPI .rnimg .pthumb{width:100%;height:100%;border:0;border-radius:0;padding:4px}
 #vKPI .rnimg i{font-style:normal;font-size:60px;font-weight:800;color:#CBD5E1}
-#vKPI .rnbody{flex:1;min-width:0}
-#vKPI .rnname{font-size:38px;font-weight:800;color:var(--ink);line-height:1.25}
-#vKPI .rnmeta{font-size:26px;color:var(--mute);margin-top:8px}
-#vKPI .rnqty{flex:none;text-align:center;min-width:170px}
-#vKPI .rnqty span{display:block;font-size:24px;font-weight:700;color:#B91C1C;letter-spacing:.02em}
-#vKPI .rnqty b{display:block;font-size:76px;font-weight:800;color:#DC2626;line-height:1.05;font-variant-numeric:tabular-nums}
+#vKPI .rnbody{min-width:0}
+#vKPI .rnname{font-size:40px;font-weight:800;color:var(--ink);line-height:1.25}
+#vKPI .rnmeta{font-size:27px;color:var(--mute);margin-top:8px}
+#vKPI .rnqty{text-align:center;min-width:200px;background:#FDECEC;border-radius:18px;padding:12px 26px}
+#vKPI .rnqty span{display:block;font-size:24px;font-weight:700;color:#B91C1C}
+#vKPI .rnqty b{display:block;font-size:72px;font-weight:800;color:#DC2626;line-height:1.05;font-variant-numeric:tabular-nums}
 #kHdTabs{margin-left:36px;align-self:center}
 #kHdTabs .rtabs{display:flex;gap:14px;margin:0}
 #kHdTabs .rtabs button{font:inherit;font-size:30px;white-space:nowrap;font-weight:800;padding:12px 30px;border-radius:999px;cursor:pointer;
@@ -6867,29 +6868,59 @@ function loadAcc(){
 const accNeed=r=>/เติม/.test(r.rule)&&!/ไม่ต้อง/.test(r.rule);
 function secAcc(){
   if(!ACC){ if(!ACC_ERR)loadAcc().then(()=>{try{if(SEC==='repl')renderKPI();}catch(e){}});
-    return `<h2 class="sec">เติมอุปกรณ์ <em>Max-Min Stock</em><span></span></h2><div class="empty2">${ACC_ERR?'อ่านชีตไม่ได้ — '+esc(ACC_ERR):'กำลังโหลดข้อมูล…'}</div>`; }
+    return `<div class="empty2">${ACC_ERR?'อ่านชีต Max-Min Stock ไม่ได้ — '+esc(ACC_ERR):'กำลังโหลดข้อมูล…'}</div>`; }
   const pc=p=>PIMG.wrap(`<b>${esc(p)}</b>`,p);
-  const need=ACC.filter(accNeed), af=sf('acc_f','need');
-  const list=ACC.filter(r=>af==='all'||(af==='need'?accNeed(r):!accNeed(r)))
-    .sort((a,b)=>(accNeed(b)-accNeed(a))||(b.qty-a.qty)||((a.days??1e9)-(b.days??1e9)));
-  const totQ=need.reduce((t,r)=>t+(r.qty>0?r.qty:0),0);
-  const low=ACC.filter(r=>r.days!=null&&r.days<=7&&(r.dem||0)>0).length;
   const v=x=>x==null?'—':fmt(x);
-  return `<h2 class="sec">เติมอุปกรณ์ <em>Max-Min Stock · ชีต “Max-Min Stock เติมสินค้า”</em><span></span>
-      <div class="h2f">${chipOne('acc_f','แสดง',[['need','ต้องเติม ('+fmt(need.length)+')'],['non','ไม่ต้องเติม ('+fmt(ACC.length-need.length)+')'],['all','ทั้งหมด ('+fmt(ACC.length)+')']],af)}</div></h2>
-    <div class="sgrid">${card('อุปกรณ์ทั้งหมด',ACC.length)}${card('ต้องเติม',need.length,'rose')}
-      ${card('จำนวนรวมที่ต้องเติม (ชิ้น)',totQ,'amber')}${card('สต็อกอยู่ได้ ≤ 7 วัน',low,low?'rose':'teal')}</div>
-    ${list.length?`<div class="tscroll" style="overflow-x:auto"><table class="dt" style="min-width:1100px"><thead><tr>
-      <th>Product</th><th class="num">Stock คงเหลือ</th><th class="num">Min</th><th class="num">Max</th>
+  const isLow=r=>r.days!=null&&r.days<=7&&(r.dem||0)>0;
+  const need=ACC.filter(accNeed), non=ACC.filter(r=>!accNeed(r)), low=ACC.filter(isLow);
+  const totQ=need.reduce((t,r)=>t+(r.qty>0?r.qty:0),0);
+  const byQ=[...need].sort((a,b)=>(b.qty-a.qty)||((a.days??1e9)-(b.days??1e9)));
+  const af=sf('acc_f','need');
+  const all=ACC.filter(r=>af==='all'||(af==='need'?accNeed(r):!accNeed(r)))
+    .sort((a,b)=>(accNeed(b)-accNeed(a))||(b.qty-a.qty)||((a.days??1e9)-(b.days??1e9)));
+  ACC_CTX={list:ACC};
+  return `<div class="sgrid">${card('อุปกรณ์ทั้งหมด',ACC.length)}
+      ${card('ต้องเติม',need.length,'rose')}
+      ${card('สต็อกอยู่ได้ ≤ 7 วัน',low.length,'amber')}
+      ${card('ไม่ต้องเติม',non.length,'teal')}
+      ${card('จำนวนรวมที่ต้องเติม',totQ,'amber')}</div>
+    <div style="font-size:19px;color:var(--mute);margin:-4px 0 18px">
+      จากชีต “Max-Min Stock เติมสินค้า” แท็บ Data · ต้องเติม = เกณฑ์ “เติมของ” (Stock ต่ำกว่า Min) · เป็นภาพ ณ ปัจจุบัน ไม่ขึ้นกับตัวกรองวันที่</div>
+
+    <h2 class="sec">รายการที่ต้องเติม Stock <em>เรียงตามจำนวนที่ต้องเติม</em><span></span></h2>
+    ${byQ.length?rnList(byQ.map(r=>({name:r.product,qty:r.qty,
+        meta:`Stock ${v(r.stock)} · Min ${v(r.min)} · Max ${v(r.max)}`+(r.days!=null?` · อยู่ได้ ${v(r.days)} วัน`:'')+(r.status?` · ${esc(r.status)}`:'')})))
+      :'<div class="empty2">ไม่มีอุปกรณ์ที่ต้องเติม</div>'}
+
+    <h2 class="sec">สต็อกอยู่ได้กี่วัน <em>เฉพาะที่มียอดขาย · น้อย → มาก · เส้นประ = 7 วัน</em><span></span></h2>
+    <div class="cpanel"><div class="cbox"><canvas id="c_accdays"></canvas></div></div>
+
+    <h2 class="sec" data-shot-skip="1">รวมทั้งหมด <em>${af==='need'?'เฉพาะที่ต้องเติม':af==='non'?'เฉพาะที่ไม่ต้องเติม':'เรียง “ต้องเติม” ก่อน'} · ${fmt(all.length)} รายการ</em><span></span><div class="h2f">${chipOne('acc_f','แสดง',[['need','ต้องเติม ('+fmt(need.length)+')'],['non','ไม่ต้องเติม ('+fmt(non.length)+')'],['all','ทั้งหมด ('+fmt(ACC.length)+')']],af)}</div></h2>
+    ${all.length?`<div class="tscroll" data-shot-skip="1" style="overflow-x:auto"><table class="dt" style="min-width:1100px"><thead><tr>
+      <th>Product</th><th>สถานะ</th><th class="num">Stock คงเหลือ</th><th class="num">Min</th><th class="num">Max</th>
       <th class="num">Demand/สัปดาห์</th><th class="num">อยู่ได้ (วัน)</th><th class="num">Stock Zone จัดเก็บ</th>
-      <th style="text-align:center">จำนวนที่ต้องเติม</th><th>Status</th></tr></thead><tbody>`
-     +list.map(r=>{const nd=accNeed(r);
-       return `<tr><td>${pc(r.product)}</td><td class="num">${v(r.stock)}</td><td class="num">${v(r.min)}</td><td class="num">${v(r.max)}</td>
-        <td class="num">${v(r.dem)}</td><td class="num"${r.days!=null&&r.days<=7&&(r.dem||0)>0?' style="color:var(--bad);font-weight:800"':''}>${v(r.days)}</td>
-        <td class="num">${v(r.zone)}</td>
-        <td style="text-align:center">${nd?`<span class="qbig">${fmt(r.qty)}</span>`:'<span class="good">ไม่ต้องเติม</span>'}</td>
+      <th class="num">ต้องเติม</th><th>Status</th></tr></thead><tbody>`
+     +all.map(r=>{const nd=accNeed(r);
+       return `<tr><td>${pc(r.product)}</td><td>${nd?'<span class="bad">ต้องเติม</span>':'<span class="good">ไม่ต้องเติม</span>'}</td>
+        <td class="num">${v(r.stock)}</td><td class="num">${v(r.min)}</td><td class="num">${v(r.max)}</td>
+        <td class="num">${v(r.dem)}</td><td class="num"${isLow(r)?' style="color:var(--bad);font-weight:800"':''}>${v(r.days)}</td>
+        <td class="num">${v(r.zone)}</td><td class="num">${nd?'<span class="qty">'+fmt(r.qty)+'</span>':'—'}</td>
         <td>${esc(r.status||'—')}</td></tr>`;}).join('')+'</tbody></table></div>'
-     :`<div class="empty2">${af==='need'?'ไม่มีอุปกรณ์ที่ต้องเติม':'ไม่มีรายการ'}</div>`}`;
+     :`<div class="empty2" data-shot-skip="1">${af==='need'?'ไม่มีอุปกรณ์ที่ต้องเติม':'ไม่มีรายการ'}</div>`}`;
+}
+let ACC_CTX=null;
+function drawAcc(){
+  const cv=document.getElementById('c_accdays'); if(!cv||!ACC_CTX)return;
+  const rows=ACC_CTX.list.filter(r=>r.days!=null&&(r.dem||0)>0).sort((a,b)=>a.days-b.days).slice(0,15);
+  destroy('accdays');
+  const o=baseOpts(false); o.layout={padding:{top:40}};
+  o.plugins.barPct={display:true,raw:true};
+  o.plugins.diffTargetLine={display:true,target:7};
+  o.scales.x.ticks.font={size:cf(20)};
+  o.plugins.tooltip.callbacks={label:c=>{const r=rows[c.dataIndex];return `อยู่ได้ ${fmt(r.days)} วัน · Stock ${fmt(r.stock||0)} · Demand ${fmt(r.dem||0)}/สัปดาห์`;}};
+  CH.accdays=new Chart(cv,{type:'bar',data:{labels:rows.map(r=>r.product.length>22?r.product.slice(0,21)+'…':r.product),
+    datasets:[{data:rows.map(r=>r.days),backgroundColor:rows.map(r=>r.days<=7?C.rose:r.days<=14?C.amber:C.teal),borderRadius:6,maxBarThickness:80}]},options:o});
+  CH.accdays.data._unit='วัน';
 }
 
 async function loadRepl(){
@@ -6918,6 +6949,13 @@ async function loadRepl(){
 }
 
 let REPL_CTX=null;
+/* v-rnlist: รายการที่ต้องเติม — แถวยาวเต็มความกว้าง (รูป · ชื่อ · รายละเอียด · จำนวน) */
+function rnList(rows){
+  return `<div class="rnlist">`+rows.map(r=>{const src=PIMG.find(r.name);
+    return `<div class="rnrow"><div class="rnimg">${src?`<img class="pthumb" src="${src}" alt="">`:`<i>${esc(String(r.name).trim().slice(0,1))}</i>`}</div>
+      <div class="rnbody"><div class="rnname">${esc(r.name)}</div><div class="rnmeta">${r.meta||''}</div></div>
+      <div class="rnqty"><span>ต้องเติม</span><b>${r.qty>0?fmt(r.qty):'—'}</b></div></div>`;}).join('')+`</div>`;
+}
 /* v-replcat: แท็บใหญ่ Matcha / Accessories */
 function replTabs(cur){
   return `<div class="rtabs">${[['matcha','🍵 Matcha'],['acc','🧰 Accessories']].map(([v,t])=>
@@ -6965,13 +7003,8 @@ function secReplM(){
       (ตัดที่ไม่มีโควต้า / ไม่มี Raw Material ออกแล้ว)</div>
 
     <h2 class="sec">รายการที่ต้องเติม Stock <em>เรียงตามจำนวนที่ต้องเติม · ไม่รวมที่ติดปัญหา</em><span></span></h2>
-    ${bySale.length?`<div class="rngrid">`   /* v-rncard: การ์ดสินค้าที่ต้องเติม */
-      +bySale.map(r=>{const src=PIMG.find(r.product);
-        return `<div class="rncard"><div class="rnimg">${src?`<img class="pthumb" src="${src}" alt="">`:`<i>${esc(String(r.product).trim().slice(0,1))}</i>`}</div>
-          <div class="rnbody"><div class="rnname">${esc(r.product)}</div>
-            <div class="rnmeta">${r.remark?esc(r.remark):'พร้อมเติม'}${r.score?` · คะแนนขายดี ${fmt(r.score)}`:''}</div></div>
-          <div class="rnqty"><span>ต้องเติม</span><b>${r.qty>0?fmt(r.qty):'—'}</b></div></div>`;}).join('')
-      +'</div>':'<div class="empty2">ไม่มีสินค้าที่ต้องเติม</div>'}
+    ${bySale.length?rnList(bySale.map(r=>({name:r.product,qty:r.qty,
+        meta:esc(r.remark||'พร้อมเติม')+(r.score?` · คะแนนขายดี ${fmt(r.score)}`:'')+(r.wh300?` · WH300 ${esc(r.wh300)}`:'')}))):'<div class="empty2">ไม่มีสินค้าที่ต้องเติม</div>'}
 
     <h2 class="sec">สาเหตุที่ยังไม่ได้เติม <em>Products blocked, by reason</em><span></span></h2>
     <div class="cpanel"><div class="cbox"><canvas id="c_remark"></canvas></div></div>
@@ -6996,6 +7029,7 @@ function secReplM(){
 }
 
 function drawRepl(){
+  try{drawAcc();}catch(e){}
   if(!REPL_CTX||!document.getElementById('c_remark'))return;
   const cnt={},prod={};
   REPL_CTX.need.forEach(r=>{
