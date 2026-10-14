@@ -6951,14 +6951,14 @@ async function loadRepl(){
       +((raw&&raw[0])?raw[0].slice(0,6).join(' / '):'ว่าง'));
     const c={no:t.col('No'),p:t.col('Product'),s:t.col('คะแนนขายดี'),n:t.col('รายการเติมสินค้า'),
              w:t.col('WH300'),q:t.col('QUOTA'),pd:t.col('PlanPD'),f:t.col('FAC16'),
-             o:t.col('OWH'),qa:t.col('Quarantine'),y:t.col('จำนวนที่ต้องเติม'),r:t.col('Remark'),
+             o:t.col('OWH'),qa:t.col('Quarantine'),y:t.col('จำนวนที่ต้องเติม'),r:t.col('Remark'),st:t.col('Status','STATUS','status','สถานะ'),
              ss:t.col('SafetyStock','Safetystock','SAFETYSTOCK','Safety','SAFETY','safety')};
     const g=(row,i)=>i>=0?String(row[i]||'').trim():'';
     REPL=t.rows.map(r=>({
       no:g(r,c.no), product:g(r,c.p), score:parseQty(g(r,c.s)),
       need:g(r,c.n), wh300:g(r,c.w), quota:g(r,c.q), planPd:g(r,c.pd),
       fac16:g(r,c.f), owh:g(r,c.o), quarantine:g(r,c.qa), safety:g(r,c.ss),
-      qty:parseQty(g(r,c.y)), remark:g(r,c.r)
+      qty:parseQty(g(r,c.y)), remark:g(r,c.r), status:g(r,c.st)
     })).filter(r=>r.product&&!isExcludedProduct(r.product));
     if(c.p<0)throw new Error('หาคอลัมน์ Product ไม่เจอ · หัวตาราง: '+t.H.slice(0,8).join(' / '));
     if(!REPL.length)throw new Error('ไม่พบรายการสินค้า · หัวตาราง: '+t.H.slice(0,8).join(' / '));
@@ -7000,11 +7000,14 @@ function secReplM(){
 
   /* v-noprod: "ไม่มีผลิตสินค้า" ไม่ขึ้นในรายการที่ต้องเติม (ยังอยู่ในตาราง รวมทั้งหมด) */
   const noProd=r=>/ไม่มีผลิต/.test(r.remark||'');
-  /* v-rstatus: คอลัมน์ Status ในตาราง รวมทั้งหมด */
-  const rst=r=>{const [t,c,b]=!isNeed(r)?['ไม่ต้องเติม','#0F766E','#DCF3EC']
-      :(isBlocked(r)||noProd(r))?['เติมไม่ได้','#B91C1C','#FDE2E2']
-      :(r.remark||'').trim()?['รอของ','#B45309','#FEF0D6']:['พร้อมเติม','#1D4ED8','#E0EAFE'];
-    return `<span style="display:inline-block;padding:4px 12px;border-radius:999px;font-weight:700;white-space:nowrap;color:${c};background:${b}">${t}</span>`;};
+  /* v-rstatus: คอลัมน์ Status จากชีต (ปิด / Limit / เปิดปกติ / Pre-order) */
+  const rst=r=>{const t=(r.status||'').trim(); if(!t)return '—';
+    const k=t.toLowerCase();
+    const [c,b]=k.includes('ปิด')&&!k.includes('เปิด')?['#B91C1C','#FDE2E2']
+      :k.includes('limit')?['#92400E','#FDECC8']
+      :k.includes('pre')?['#1D4ED8','#E0EAFE']
+      :['#0F766E','#DCF3EC'];
+    return `<span style="display:inline-block;padding:4px 12px;border-radius:999px;font-weight:700;white-space:nowrap;color:${c};background:${b}">${esc(t)}</span>`;};
   const bySale=[...act].filter(r=>!noProd(r)).sort((a,b)=>(b.qty||0)-(a.qty||0)||b.score-a.score);   /* v-replqty: เรียงตามจำนวนที่ต้องเติม */
   /* เรียงตัวที่มีสาเหตุ (Remark) ก่อน ตัวที่ไม่มี ("—") ไปอยู่ท้ายตาราง แล้วค่อยเรียงตามจำนวนที่ต้องเติมมาก→น้อย */
   const byQty=[...need].sort((a,b)=>{
