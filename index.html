@@ -6998,7 +6998,14 @@ function secReplM(){
   if(!PIMG.ready()&&!secRepl._w){secRepl._w=1;PIMG.onReady(()=>{try{renderKPI();}catch(e){}});}
   const rf=sf('repl_all','need');
 
-  const bySale=[...act].sort((a,b)=>(b.qty||0)-(a.qty||0)||b.score-a.score);   /* v-replqty: เรียงตามจำนวนที่ต้องเติม */
+  /* v-noprod: "ไม่มีผลิตสินค้า" ไม่ขึ้นในรายการที่ต้องเติม (ยังอยู่ในตาราง รวมทั้งหมด) */
+  const noProd=r=>/ไม่มีผลิต/.test(r.remark||'');
+  /* v-rstatus: คอลัมน์ Status ในตาราง รวมทั้งหมด */
+  const rst=r=>{const [t,c,b]=!isNeed(r)?['ไม่ต้องเติม','#0F766E','#DCF3EC']
+      :(isBlocked(r)||noProd(r))?['เติมไม่ได้','#B91C1C','#FDE2E2']
+      :(r.remark||'').trim()?['รอของ','#B45309','#FEF0D6']:['พร้อมเติม','#1D4ED8','#E0EAFE'];
+    return `<span style="display:inline-block;padding:4px 12px;border-radius:999px;font-weight:700;white-space:nowrap;color:${c};background:${b}">${t}</span>`;};
+  const bySale=[...act].filter(r=>!noProd(r)).sort((a,b)=>(b.qty||0)-(a.qty||0)||b.score-a.score);   /* v-replqty: เรียงตามจำนวนที่ต้องเติม */
   /* เรียงตัวที่มีสาเหตุ (Remark) ก่อน ตัวที่ไม่มี ("—") ไปอยู่ท้ายตาราง แล้วค่อยเรียงตามจำนวนที่ต้องเติมมาก→น้อย */
   const byQty=[...need].sort((a,b)=>{
     const ar=a.remark?1:0, br=b.remark?1:0;
@@ -7030,8 +7037,8 @@ function secReplM(){
     
 
     <h2 class="sec" data-shot-skip="1">รวมทั้งหมด <em>${rf==='need'?'เฉพาะที่ต้องเติม':rf==='non'?'เฉพาะที่ไม่ต้องเติม':'เรียง “ต้องเติม” ก่อน'} · ${fmt(all.filter(r=>rf==='all'||(rf==='need'?isNeed(r):!isNeed(r))).length)} รายการ · เรียงตามลำดับในชีต</em><span></span><div class="h2f">${chipOne('repl_all','แสดง',[['need','ต้องเติม ('+fmt(need.length)+')'],['non','ไม่ต้องเติม ('+fmt(RP.length-need.length)+')'],['all','ทั้งหมด ('+fmt(RP.length)+')']],rf)}</div></h2>
-    <div class="tscroll" data-shot-skip="1" style="overflow-x:auto"><table class="dt" style="min-width:1000px"><thead><tr>
-      <th>No</th><th>Product</th><th class="num">คะแนนขายดี</th><th>สถานะ</th>
+    <div class="tscroll" data-shot-skip="1" style="overflow-x:auto"><table class="dt" style="min-width:1120px"><thead><tr>
+      <th>No</th><th>Product</th><th class="num">คะแนนขายดี</th><th>สถานะ</th><th>Status</th>
       <th class="num">WH300</th><th class="num">QUOTA</th><th class="num">Plan PD</th>
       <th class="num">FAC16</th><th class="num">OWH</th><th class="num">Quarantine</th>
       <th class="num">ต้องเติม</th><th>Remark</th></tr></thead><tbody>`
@@ -7039,6 +7046,7 @@ function secReplM(){
         return `<tr><td>${esc(r.no||'—')}</td><td>${pc(r.product)}</td>
         <td class="num">${r.score?fmt(r.score):'—'}</td>
         <td>${n?'<span class="bad">ต้องเติม</span>':'<span class="good">ไม่ต้องเติม</span>'}</td>
+        <td>${rst(r)}</td>
         <td class="num">${esc(r.wh300||'—')}</td><td class="num">${esc(r.quota||'—')}</td>
         <td class="num">${esc(r.planPd||'—')}</td><td class="num">${esc(r.fac16||'—')}</td>
         <td class="num">${esc(r.owh||'—')}</td><td class="num">${esc(r.quarantine||'—')}</td>
